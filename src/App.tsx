@@ -11,6 +11,7 @@ import HeadHunting from "./pages/HeadHunting.tsx";
 import DavaoHub from "./pages/DavaoHub.tsx";
 import Source from "./pages/Source.tsx";
 import ComplianceDocsUpload from "./pages/ComplianceDocsUpload.tsx";
+import AssessmentPage from "./pages/AssessmentPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/davao-hub" element={<DavaoHub />} />
           <Route path="/source/:name" element={<Source />} />
           <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
+          <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

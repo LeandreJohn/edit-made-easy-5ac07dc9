@@ -870,4 +870,40 @@ export function getDiscReportUrl(code: string, contactId: string): string {
   return imxUrl(`/disc/report/${withContactId(code, contactId)}`);
 }
 
+// ------------------------ Standalone US Assessment ------------------------
+//
+// Creates a lightweight contact for the /assessment page (no full wizard).
+// Returns the backend `contact_id` we then thread through every IMX call.
+
+export interface UsAssessmentResponse {
+  contact_id: string;
+  [key: string]: unknown;
+}
+
+export async function createUsAssessmentContact(payload: {
+  email: string;
+  firstname: string;
+  lastname: string;
+}): Promise<UsAssessmentResponse> {
+  if (!API_BASE) {
+    throw new Error('VITE_API_BASE_URL is not configured. Edit your .env file.');
+  }
+  const res = await fetch(`${API_BASE}${PREFIX}/us-assessment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { const j = await res.json(); detail = j?.detail ?? detail; } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  const data = (await res.json()) as UsAssessmentResponse;
+  if (!data?.contact_id) {
+    throw new Error('Server did not return a contact_id.');
+  }
+  return data;
+}
+
+
 

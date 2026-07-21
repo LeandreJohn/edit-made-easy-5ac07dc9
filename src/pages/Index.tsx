@@ -24,7 +24,7 @@ import PortfolioStep from '@/components/steps/PortfolioStep';
 import CertificationsStep from '@/components/steps/CertificationsStep';
 import WorkSetupStep, { WorkSetupStepHandle } from '@/components/steps/WorkSetupStep';
 import ComplianceStep from '@/components/steps/ComplianceStep';
-import AssessmentStep, { AssessmentStepHandle } from '@/components/steps/ValuesAssessmentStep';
+import AssessmentStep, { AssessmentStepHandle, AssessmentPhase } from '@/components/steps/ValuesAssessmentStep';
 import CompletionStep from '@/components/steps/CompletionStep';
 import WizardSidebar from '@/components/wizard/WizardSidebar';
 import WizardNavigation from '@/components/wizard/WizardNavigation';
@@ -120,6 +120,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   );
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [assessmentCooldown, setAssessmentCooldown] = useState(0);
+  const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
   const [leaving, setLeaving] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
 
@@ -515,6 +516,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 email={values.email}
                 firstName={values.personalInfo.firstName}
                 lastName={values.personalInfo.lastName}
+                onPhaseChange={setAssessmentPhase}
                 onCompleted={() => setAssessmentCompleted(true)}
               />
             )}
@@ -528,6 +530,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               isSubmitting={submitting}
               cooldownSeconds={currentSubStep === 12 ? assessmentCooldown : 0}
               checkingLabel={currentSubStep === 12 && submitting ? 'Checking…' : undefined}
+              nextLabel={currentSubStep === 12 ? (assessmentPhase === 'disc' ? 'Submit' : 'Next') : undefined}
               disableNext={!isSubStepValid(currentSubStep, values)}
             />
 

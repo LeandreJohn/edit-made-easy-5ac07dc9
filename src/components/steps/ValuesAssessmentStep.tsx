@@ -21,7 +21,7 @@ import type { AssessmentQuestion } from '@/data/valuesAssessment';
  * PDF button is intentionally NOT shown here — that's admin-only.
  */
 
-type Phase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
+export type AssessmentPhase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
 
 export interface AssessmentStepHandle {
   /**
@@ -35,6 +35,8 @@ export interface AssessmentStepHandle {
   checkAndAdvance: () => Promise<'advance' | 'stay' | 'incomplete' | 'error'>;
   /** True when both Values and DISC are done. */
   isFullyComplete: () => boolean;
+  /** Current internal phase. */
+  getPhase: () => AssessmentPhase;
 }
 
 interface AssessmentStepProps {
@@ -44,6 +46,8 @@ interface AssessmentStepProps {
   lastName?: string;
   /** Called when both Values and DISC are confirmed complete. */
   onCompleted?: () => void;
+  /** Fires whenever the internal phase changes. */
+  onPhaseChange?: (phase: AssessmentPhase) => void;
 }
 
 const codeCacheKey = (kind: 'values' | 'disc', contactId: string) =>
@@ -73,8 +77,15 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
   firstName,
   lastName,
   onCompleted,
+  onPhaseChange,
 }, ref) => {
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [phase, setPhaseState] = useState<AssessmentPhase>('loading');
+  const phaseRef = useRef<AssessmentPhase>('loading');
+  const setPhase = useCallback((p: AssessmentPhase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
+    onPhaseChange?.(p);
+  }, [onPhaseChange]);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [valuesCode, setValuesCode] = useState<string>('');
   const [discCode, setDiscCode] = useState<string>('');
@@ -241,6 +252,7 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
 
   useImperativeHandle(ref, () => ({
     isFullyComplete: () => valuesDone && discDone,
+    getPhase: () => phaseRef.current,
     checkAndAdvance: async () => {
       if (!contactId) return 'error';
       try {
@@ -290,9 +302,11 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           Please complete the embedded assessment below. Your progress is saved automatically —
-          if you close the page you can return later and pick up where you left off. Once
-          you're done, click <span className="font-semibold text-foreground">Next</span> to
-          continue.
+          if you close the page you can return later and pick up where you left off. The
+          assessment is embedded in this page, so there's no need to close the browser if
+          prompted after finishing. When you finish the Values assessment click{' '}
+          <span className="font-semibold text-foreground">Next</span>, and when you finish
+          DISC click <span className="font-semibold text-foreground">Submit</span>.
         </p>
       </div>
 

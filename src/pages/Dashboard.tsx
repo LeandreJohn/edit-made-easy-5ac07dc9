@@ -14,7 +14,7 @@ import PortfolioStep from '@/components/steps/PortfolioStep';
 import ValuePropositionStep from '@/components/steps/ValuePropositionStep';
 import WorkSetupStep, { WorkSetupData, emptyWorkSetup } from '@/components/steps/WorkSetupStep';
 import ComplianceStep, { ComplianceFormData, emptyCompliance } from '@/components/steps/ComplianceStep';
-import AssessmentStep, { AssessmentStepHandle } from '@/components/steps/ValuesAssessmentStep';
+import AssessmentStep, { AssessmentStepHandle, AssessmentPhase } from '@/components/steps/ValuesAssessmentStep';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -147,6 +147,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const submittingAssessment = assessmentChecking;
   const assessmentRef = useRef<AssessmentStepHandle>(null);
   const [assessmentConfirmOpen, setAssessmentConfirmOpen] = useState(false);
+  const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
 
 
   // Attendance (attendance dashboard variant)
@@ -810,6 +811,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             email={profile.valueProposition ? undefined : undefined}
             firstName={profile.firstName}
             lastName={profile.lastName}
+            onPhaseChange={setAssessmentPhase}
             onCompleted={() => setAssessmentDone(true)}
           />
           <DialogFooter className="gap-2 sm:gap-2">
@@ -850,7 +852,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 ? 'Checking…'
                 : assessmentCooldown > 0
                   ? `Try again in ${assessmentCooldown}s`
-                  : 'Continue'}
+                  : assessmentPhase === 'disc' ? 'Submit' : 'Next'}
             </button>
           </DialogFooter>
         </DialogContent>
