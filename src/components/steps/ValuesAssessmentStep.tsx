@@ -302,9 +302,11 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           Please complete the embedded assessment below. Your progress is saved automatically —
-          if you close the page you can return later and pick up where you left off. Once
-          you're done, click <span className="font-semibold text-foreground">Next</span> to
-          continue.
+          if you close the page you can return later and pick up where you left off. The
+          assessment is embedded in this page, so there's no need to close the browser if
+          prompted after finishing. When you finish the Values assessment click{' '}
+          <span className="font-semibold text-foreground">Next</span>, and when you finish
+          DISC click <span className="font-semibold text-foreground">Submit</span>.
         </p>
       </div>
 
