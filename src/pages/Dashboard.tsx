@@ -852,7 +852,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 ? 'Checking…'
                 : assessmentCooldown > 0
                   ? `Try again in ${assessmentCooldown}s`
-                  : 'Continue'}
+                  : assessmentPhase === 'disc' ? 'Submit' : 'Next'}
             </button>
           </DialogFooter>
         </DialogContent>
