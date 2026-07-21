@@ -147,6 +147,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const submittingAssessment = assessmentChecking;
   const assessmentRef = useRef<AssessmentStepHandle>(null);
   const [assessmentConfirmOpen, setAssessmentConfirmOpen] = useState(false);
+  const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
 
 
   // Attendance (attendance dashboard variant)
