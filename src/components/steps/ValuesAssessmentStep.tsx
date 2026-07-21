@@ -252,6 +252,7 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
 
   useImperativeHandle(ref, () => ({
     isFullyComplete: () => valuesDone && discDone,
+    getPhase: () => phaseRef.current,
     checkAndAdvance: async () => {
       if (!contactId) return 'error';
       try {
