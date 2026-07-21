@@ -515,6 +515,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 email={values.email}
                 firstName={values.personalInfo.firstName}
                 lastName={values.personalInfo.lastName}
+                onPhaseChange={setAssessmentPhase}
                 onCompleted={() => setAssessmentCompleted(true)}
               />
             )}
@@ -528,6 +529,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               isSubmitting={submitting}
               cooldownSeconds={currentSubStep === 12 ? assessmentCooldown : 0}
               checkingLabel={currentSubStep === 12 && submitting ? 'Checking…' : undefined}
+              nextLabel={currentSubStep === 12 ? (assessmentPhase === 'disc' ? 'Submit' : 'Next') : undefined}
               disableNext={!isSubStepValid(currentSubStep, values)}
             />
 
