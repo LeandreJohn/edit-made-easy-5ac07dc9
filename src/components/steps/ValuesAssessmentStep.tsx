@@ -79,8 +79,15 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
   firstName,
   lastName,
   onCompleted,
+  onPhaseChange,
 }, ref) => {
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [phase, setPhaseState] = useState<AssessmentPhase>('loading');
+  const phaseRef = useRef<AssessmentPhase>('loading');
+  const setPhase = useCallback((p: AssessmentPhase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
+    onPhaseChange?.(p);
+  }, [onPhaseChange]);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [valuesCode, setValuesCode] = useState<string>('');
   const [discCode, setDiscCode] = useState<string>('');
