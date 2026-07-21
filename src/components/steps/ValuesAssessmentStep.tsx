@@ -23,6 +23,8 @@ import type { AssessmentQuestion } from '@/data/valuesAssessment';
 
 type Phase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
 
+export type AssessmentPhase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
+
 export interface AssessmentStepHandle {
   /**
    * Ask the current phase whether it's complete.
@@ -35,6 +37,8 @@ export interface AssessmentStepHandle {
   checkAndAdvance: () => Promise<'advance' | 'stay' | 'incomplete' | 'error'>;
   /** True when both Values and DISC are done. */
   isFullyComplete: () => boolean;
+  /** Current internal phase. */
+  getPhase: () => AssessmentPhase;
 }
 
 interface AssessmentStepProps {
@@ -44,6 +48,8 @@ interface AssessmentStepProps {
   lastName?: string;
   /** Called when both Values and DISC are confirmed complete. */
   onCompleted?: () => void;
+  /** Fires whenever the internal phase changes. */
+  onPhaseChange?: (phase: AssessmentPhase) => void;
 }
 
 const codeCacheKey = (kind: 'values' | 'disc', contactId: string) =>
