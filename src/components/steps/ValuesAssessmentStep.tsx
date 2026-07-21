@@ -21,8 +21,6 @@ import type { AssessmentQuestion } from '@/data/valuesAssessment';
  * PDF button is intentionally NOT shown here — that's admin-only.
  */
 
-type Phase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
-
 export type AssessmentPhase = 'loading' | 'error' | 'values' | 'disc' | 'completed';
 
 export interface AssessmentStepHandle {
