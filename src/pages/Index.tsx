@@ -24,7 +24,7 @@ import PortfolioStep from '@/components/steps/PortfolioStep';
 import CertificationsStep from '@/components/steps/CertificationsStep';
 import WorkSetupStep, { WorkSetupStepHandle } from '@/components/steps/WorkSetupStep';
 import ComplianceStep from '@/components/steps/ComplianceStep';
-import AssessmentStep, { AssessmentStepHandle } from '@/components/steps/ValuesAssessmentStep';
+import AssessmentStep, { AssessmentStepHandle, AssessmentPhase } from '@/components/steps/ValuesAssessmentStep';
 import CompletionStep from '@/components/steps/CompletionStep';
 import WizardSidebar from '@/components/wizard/WizardSidebar';
 import WizardNavigation from '@/components/wizard/WizardNavigation';
