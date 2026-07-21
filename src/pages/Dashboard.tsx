@@ -14,7 +14,7 @@ import PortfolioStep from '@/components/steps/PortfolioStep';
 import ValuePropositionStep from '@/components/steps/ValuePropositionStep';
 import WorkSetupStep, { WorkSetupData, emptyWorkSetup } from '@/components/steps/WorkSetupStep';
 import ComplianceStep, { ComplianceFormData, emptyCompliance } from '@/components/steps/ComplianceStep';
-import AssessmentStep, { AssessmentStepHandle } from '@/components/steps/ValuesAssessmentStep';
+import AssessmentStep, { AssessmentStepHandle, AssessmentPhase } from '@/components/steps/ValuesAssessmentStep';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
