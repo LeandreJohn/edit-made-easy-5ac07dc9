@@ -32,6 +32,7 @@ const App = () => (
           <Route path="/davao-hub" element={<DavaoHub />} />
           <Route path="/source/:name" element={<Source />} />
           <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
+          <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
