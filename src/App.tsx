@@ -11,6 +11,7 @@ import HeadHunting from "./pages/HeadHunting.tsx";
 import DavaoHub from "./pages/DavaoHub.tsx";
 import Source from "./pages/Source.tsx";
 import ComplianceDocsUpload from "./pages/ComplianceDocsUpload.tsx";
+import AssessmentPage from "./pages/AssessmentPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
