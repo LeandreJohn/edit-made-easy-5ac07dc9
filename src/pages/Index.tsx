@@ -120,6 +120,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   );
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [assessmentCooldown, setAssessmentCooldown] = useState(0);
+  const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
   const [leaving, setLeaving] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
 
