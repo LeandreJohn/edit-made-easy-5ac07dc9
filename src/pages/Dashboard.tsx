@@ -811,6 +811,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             email={profile.valueProposition ? undefined : undefined}
             firstName={profile.firstName}
             lastName={profile.lastName}
+            onPhaseChange={setAssessmentPhase}
             onCompleted={() => setAssessmentDone(true)}
           />
           <DialogFooter className="gap-2 sm:gap-2">
