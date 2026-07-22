@@ -555,6 +555,41 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     && sectionChecks.valueProp && sectionChecks.workSetup;
   const canReapply = (daysSince === null || daysSince >= 60) && coreReapplyReady;
 
+  const isDraftSectionValid = (): boolean => {
+    switch (activeSection) {
+      case 'personal': return isPersonalInfoValid(draftProfile);
+      case 'education': return isEducationValid(draftEducation);
+      case 'professional': return isProfessionalValid(draftProfessional);
+      case 'tools': return isToolsValid(draftTools);
+      case 'skills': return isSkillsValid(draftSkills);
+      case 'valueProp': return isValuePropositionValid(draftProfile.valueProposition);
+      case 'workSetup': return isWorkSetupValid({
+        primaryDevice: draftWorkSetup.primaryDevice,
+        hasNoiseCancellingHeadset: draftWorkSetup.headset,
+        hasHDWebcam: draftWorkSetup.webcam,
+        secondaryDevice: draftWorkSetup.secondaryDevice,
+        primaryInternetProvider: draftWorkSetup.primaryISP,
+        secondaryInternetProvider: draftWorkSetup.secondaryISP,
+        primaryISPSpeedtest: draftWorkSetup.primaryISPSpeedtest ?? '',
+        secondaryISPSpeedtest: draftWorkSetup.secondaryISPSpeedtest ?? '',
+        documents: [],
+        deviceScreenshots: draftWorkSetup.deviceScreenshots ?? [],
+        secondaryDeviceScreenshots: draftWorkSetup.secondaryDeviceScreenshots ?? [],
+        systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
+      });
+      case 'compliance': return isComplianceValid({
+        authorizeBackgroundCheck: draftCompliance.authorized,
+        validId: draftCompliance.validId ?? null,
+        nbiClearance: draftCompliance.nbiClearance ?? null,
+        policeClearance: draftCompliance.policeClearance ?? null,
+        proofOfSeparation: draftCompliance.proofOfSeparation ?? null,
+        nbiValidity: draftCompliance.nbiValidity,
+        policeValidity: draftCompliance.policeValidity,
+      });
+      default: return true;
+    }
+  };
+
   const handleReapplyClick = () => {
     if (!canReapply) return;
     setReapplyCode('');
