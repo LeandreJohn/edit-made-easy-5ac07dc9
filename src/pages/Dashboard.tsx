@@ -600,24 +600,21 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Logo className="h-11 w-auto" variant="black" />
-          <div className="flex items-center gap-2">
-            {variant === 'reapply' && (
-              <>
-                {daysLeft !== null && daysLeft > 0 && (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground bg-muted px-2.5 py-1.5 rounded-md whitespace-nowrap">
-                    <Clock className="w-3.5 h-3.5" />
-                    {daysLeft} day{daysLeft === 1 ? '' : 's'} left
-                  </span>
-                )}
-                <button
-                  onClick={handleReapplyClick}
-                  disabled={!canReapply}
-                  title={canReapply ? 'Reapply' : `Available in ${daysLeft} day(s)`}
-                  className="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Reapply
-                </button>
-              </>
+          <div className="flex items-center gap-3">
+            {variant === 'reapply' && canReapply && (
+              <button
+                onClick={handleReapplyClick}
+                title="Reapply"
+                className="btn-primary text-sm px-5 py-2"
+              >
+                Reapply
+              </button>
+            )}
+            {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground bg-muted px-2.5 py-1.5 rounded-md whitespace-nowrap">
+                <Clock className="w-3.5 h-3.5" />
+                Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
+              </span>
             )}
             {variant === 'attendance' && (
               <>
@@ -637,54 +634,194 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 </button>
               </>
             )}
-            <button
-              onClick={() => navigate('/')}
-              className="btn-outline text-sm px-4 py-2 inline-flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" /> Sign out
-            </button>
+
+            {/* User chip + dropdown */}
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((o) => !o)}
+                className="inline-flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-muted transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-muted overflow-hidden flex items-center justify-center border border-border">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+                <span className="text-sm font-medium text-foreground max-w-[160px] truncate">
+                  {fullName}
+                </span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-lg border border-border shadow-lg py-1 z-50">
+                  <button
+                    onClick={() => { setUserMenuOpen(false); setChangePwOpen(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                  >
+                    <Lock className="w-4 h-4 text-muted-foreground" /> Change Password
+                  </button>
+                  <button
+                    onClick={() => { setUserMenuOpen(false); setHelpOpen(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                  >
+                    <HelpCircle className="w-4 h-4 text-muted-foreground" /> Help Center
+                  </button>
+                  <div className="my-1 border-t border-border" />
+                  <button
+                    onClick={() => { clearContactId(); navigate('/'); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted"
+                  >
+                    <LogOut className="w-4 h-4" /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-6">
-          <div className="relative h-28 bg-gradient-to-br from-primary via-primary to-accent" />
-          <div className="px-6 sm:px-8 pb-6 pt-16 relative">
-            <div className="absolute -top-12 left-6 sm:left-8">
-              <div className="w-24 h-24 rounded-2xl border-4 border-card bg-muted overflow-hidden flex items-center justify-center shrink-0 shadow-md">
+        {/* Welcome banner */}
+        <div
+          className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-cover bg-right"
+          style={{ backgroundImage: `url(${dashboardBanner})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-transparent pointer-events-none" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 p-6 sm:p-8 items-center">
+            <div className="flex items-center gap-5">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/95 overflow-hidden flex items-center justify-center shrink-0 border-4 border-white/60 shadow-md">
                 {photoPreview ? (
                   <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-10 h-10 text-muted-foreground" />
+                  <User className="w-10 h-10 text-primary/60" />
+                )}
+                <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-2 border-white">
+                  <Camera className="w-3.5 h-3.5" />
+                </span>
+              </div>
+              <div>
+                <p className="text-sm opacity-90">Welcome back,</p>
+                <h1 className="font-heading text-2xl sm:text-3xl font-bold">{fullName}</h1>
+                <p className="text-sm opacity-90 mt-1 max-w-md">
+                  You're doing great! Complete your profile to increase your chances of getting
+                  matched with the right opportunity.
+                </p>
+              </div>
+            </div>
+            {variant === 'reapply' && (
+              <div className="bg-white/10 backdrop-blur rounded-xl p-5 min-w-[220px]">
+                <p className="text-sm opacity-90 mb-1">Profile Completion</p>
+                <p className="font-heading text-4xl font-bold leading-none mb-3">{completionPct}%</p>
+                <div className="w-full h-2 rounded-full bg-white/25 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-400 transition-all"
+                    style={{ width: `${completionPct}%` }}
+                  />
+                </div>
+                <p className="text-xs opacity-90 mt-2">
+                  {completionPct === 100 ? 'All set — nice work!' : 'Great progress! Keep it up.'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stat cards */}
+        <div className={`grid grid-cols-1 ${variant === 'reapply' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-6`}>
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Documents</p>
+              <p className="font-heading text-xl font-bold text-foreground">
+                {(portfolioFileUrls.length
+                  + Object.values(complianceUrls).filter(Boolean).length
+                  + workSetupUrls.primary.length + workSetupUrls.secondary.length)} Uploaded
+              </p>
+              <button onClick={() => setManageDocsOpen(true)} className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline">
+                Manage Documents <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {variant === 'reapply' && (
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
+              <div className="w-11 h-11 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">Next Step</p>
+                <p className="font-heading text-base font-bold text-foreground truncate">
+                  {incompleteSections[0]?.label ?? 'All complete!'}
+                </p>
+                {incompleteSections.length > 0 ? (
+                  <button
+                    onClick={() => setActiveSection(incompleteSections[0].key)}
+                    className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline"
+                  >
+                    Start Now <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
                 )}
               </div>
             </div>
-            <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">{fullName}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {profile.city || 'City'}{profile.country ? `, ${profile.country}` : ''}
+          )}
+
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
+            <div className="w-11 h-11 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Last Updated</p>
+              <p className="font-heading text-base font-bold text-foreground">
+                {lastUpdated
+                  ? lastUpdated.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+                  : '—'}
               </p>
+              {lastUpdated && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {lastUpdated.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
-          <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
-            {SECTIONS.map((s) => (
+          <div className="space-y-4">
+            <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
+              {SECTIONS.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setActiveSection(s.key)}
+                  className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    activeSection === s.key
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </nav>
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
+              <p className="font-heading text-sm font-bold text-primary mb-1">Need Help?</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Visit our Help Center for guides and FAQs.
+              </p>
               <button
-                key={s.key}
-                onClick={() => setActiveSection(s.key)}
-                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeSection === s.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground hover:bg-muted'
-                }`}
+                onClick={() => setHelpOpen(true)}
+                className="btn-outline w-full text-sm inline-flex items-center justify-center gap-2"
               >
-                {s.label}
+                <HelpCircle className="w-4 h-4" /> Go to Help Center
               </button>
-            ))}
-          </nav>
+            </div>
+          </div>
+
 
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
