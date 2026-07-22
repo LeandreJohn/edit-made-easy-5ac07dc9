@@ -838,9 +838,18 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                     <button onClick={cancelEdit} disabled={saving} className="btn-outline text-sm inline-flex items-center gap-2">
                       <X className="w-4 h-4" /> Cancel
                     </button>
-                    <button onClick={saveEdit} disabled={saving} className="btn-primary text-sm inline-flex items-center gap-2">
+                    <button onClick={saveEdit} disabled={saving || !isDraftSectionValid()} className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                       <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
                     </button>
+                  </div>
+                )
+              )}
+            </div>
+            {editing && !isDraftSectionValid() && (
+              <p className="text-xs text-muted-foreground -mt-2 mb-4">
+                Complete the required fields to enable Save.
+              </p>
+            )}
                   </div>
                 )
               )}
