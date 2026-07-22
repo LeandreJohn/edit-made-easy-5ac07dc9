@@ -850,10 +850,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 Complete the required fields to enable Save.
               </p>
             )}
-                  </div>
-                )
-              )}
-            </div>
 
             {activeSection === 'personal' && (
               editing ? (
