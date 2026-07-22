@@ -147,6 +147,22 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [draftPhotoPreview, setDraftPhotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Header menus & modals
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [manageDocsOpen, setManageDocsOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [userMenuOpen]);
+
   // Reapply modal
   const [reapplyOpen, setReapplyOpen] = useState(false);
   const [reapplyCode, setReapplyCode] = useState('');
