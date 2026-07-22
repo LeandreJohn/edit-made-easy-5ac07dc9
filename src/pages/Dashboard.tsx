@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@/lib/router-compat';
-import { Pencil, X, Save, User, LogOut, Clock, Loader2 } from 'lucide-react';
+import {
+  Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
+  FileText, Calendar, ArrowRight, Camera,
+} from 'lucide-react';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import EducationStep from '@/components/steps/EducationStep';
@@ -29,10 +32,18 @@ import {
   updateValueProposition, updatePortfolio,
   reapply, todayMDT, extractReferralCode,
   submitAttendance, type AttendanceAvailability,
-  saveApplicantIdentity,
+  saveApplicantIdentity, clearContactId,
 } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import FilePreviewLink from '@/components/common/FilePreviewLink';
+import ChangePasswordModal from '@/components/common/ChangePasswordModal';
+import HelpCenterModal from '@/components/common/HelpCenterModal';
+import ManageDocumentsModal from '@/components/common/ManageDocumentsModal';
+import {
+  isPersonalInfoValid, isEducationValid, isProfessionalValid, isValuePropositionValid,
+  isWorkSetupValid, isComplianceValid, isToolsValid, isSkillsValid,
+} from '@/lib/validation/stepValidation';
+import dashboardBanner from '@/assets/dashboard-banner.png';
 
 
 import SearchableSelect from '@/components/common/SearchableSelect';
