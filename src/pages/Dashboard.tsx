@@ -494,7 +494,66 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     ? Math.floor((Date.now() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
     : null;
   const daysLeft = daysSince !== null ? Math.max(0, 60 - daysSince) : null;
-  const canReapply = daysSince === null || daysSince >= 60;
+  // Section completeness (excludes work experience, certifications, portfolio)
+  const sectionChecks = useMemo(() => {
+    // Build a synthetic PersonalInfo/etc for validators
+    const wsForCheck = {
+      primaryDevice: workSetup.primaryDevice,
+      hasNoiseCancellingHeadset: workSetup.headset,
+      hasHDWebcam: workSetup.webcam,
+      secondaryDevice: workSetup.secondaryDevice,
+      primaryInternetProvider: workSetup.primaryISP,
+      secondaryInternetProvider: workSetup.secondaryISP,
+      primaryISPSpeedtest: workSetup.primaryISPSpeedtest ?? '',
+      secondaryISPSpeedtest: workSetup.secondaryISPSpeedtest ?? '',
+      documents: [],
+      deviceScreenshots: workSetup.deviceScreenshots ?? [],
+      secondaryDeviceScreenshots: workSetup.secondaryDeviceScreenshots ?? [],
+      systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
+    };
+    const complianceForCheck = {
+      authorizeBackgroundCheck: compliance.authorized,
+      validId: compliance.validId ?? null,
+      nbiClearance: compliance.nbiClearance ?? null,
+      policeClearance: compliance.policeClearance ?? null,
+      proofOfSeparation: compliance.proofOfSeparation ?? null,
+      nbiValidity: compliance.nbiValidity,
+      policeValidity: compliance.policeValidity,
+    };
+    return {
+      personal: isPersonalInfoValid(profile),
+      education: isEducationValid(education),
+      professional: isProfessionalValid(professional),
+      tools: isToolsValid(tools),
+      skills: isSkillsValid(skills),
+      valueProp: isValuePropositionValid(profile.valueProposition),
+      workSetup: isWorkSetupValid(wsForCheck),
+      compliance: isComplianceValid(complianceForCheck),
+    };
+  }, [profile, education, professional, tools, skills, workSetup, compliance]);
+
+  const completedCount = Object.values(sectionChecks).filter(Boolean).length;
+  const totalCount = Object.keys(sectionChecks).length;
+  const completionPct = Math.round((completedCount / totalCount) * 100);
+
+  // Ordered list of incomplete sections (for the Next Step card)
+  const incompleteSections: { key: SectionKey; label: string }[] = ([
+    ['personal', 'Personal Information'],
+    ['education', 'Education'],
+    ['professional', 'Professional Background'],
+    ['tools', 'Tools & Platforms Used'],
+    ['skills', 'Skills & Core Competencies'],
+    ['valueProp', 'Value Proposition'],
+    ['workSetup', 'Work Setup'],
+    ['compliance', 'Compliance'],
+  ] as Array<[SectionKey, string]>)
+    .filter(([k]) => !sectionChecks[k as keyof typeof sectionChecks])
+    .map(([key, label]) => ({ key, label }));
+
+  const coreReapplyReady =
+    sectionChecks.personal && sectionChecks.education && sectionChecks.professional
+    && sectionChecks.valueProp && sectionChecks.workSetup;
+  const canReapply = (daysSince === null || daysSince >= 60) && coreReapplyReady;
 
   const handleReapplyClick = () => {
     if (!canReapply) return;
