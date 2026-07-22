@@ -1239,6 +1239,18 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         </DialogContent>
       </Dialog>
 
+      <ChangePasswordModal open={changePwOpen} onOpenChange={setChangePwOpen} contactId={contactId ?? ''} />
+      <HelpCenterModal open={helpOpen} onOpenChange={setHelpOpen} />
+      <ManageDocumentsModal
+        open={manageDocsOpen}
+        onOpenChange={setManageDocsOpen}
+        contactId={contactId ?? ''}
+        initialPortfolio={portfolioFileUrls}
+        initialWorkSetup={workSetupUrls}
+        initialCompliance={complianceUrls}
+        onUpdated={() => setLastUpdated(new Date())}
+      />
+
       <Footer />
     </div>
   );
