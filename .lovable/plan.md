@@ -1,79 +1,94 @@
-# Plan: Standalone `/assessment` page + Values button relabel
+# Plan: Welcome BG + Dashboard/Attendance Redesign
 
-## Goal
+## 1. Assets (bundled real PNGs, offline-safe)
 
-Add a public `/assessment` URL that lets a user (already reachable in another CRM step) run the IMX Values + DISC assessments without going through the full wizard. On submit, it POSTs Email / First name / Last name to `/us-assessment`, stores the returned `contact_id`, and then reuses the existing `AssessmentStep` component (Values → DISC) with a custom completion screen. Also relabel the wizard/Reapply assessment step's primary button so it reads **Next** during Values and **Submit** only during DISC.
+Copy the two uploaded PNGs into `src/assets/` so they're bundled by Vite (no `.asset.json`, works offline):
+- `src/assets/welcome-bg.png` ← `Welcome_BG.png`
+- `src/assets/dashboard-banner.png` ← `Dashboard_attendance_banner.png`
 
-## Changes
+## 2. Welcome card (`WelcomeStep.tsx`)
 
-### 1. New API helper — `src/lib/apiClient.ts`
-Add:
+Replace the current left-side visual with the new globe artwork:
+- Set the left panel background to `url(welcome-bg.png)` with `bg-cover bg-center` on a dark navy fallback.
+- Keep the white heading "Your gateway to world-class remote career opportunities" overlaid bottom-left, matching the reference.
+- Right side (logo, headings, email/password, Create My Profile / Forgot / Sign In) unchanged.
 
-```ts
-export interface UsAssessmentResponse { contact_id: string; /* pass-through */ }
-export async function createUsAssessmentContact(payload: {
-  email: string; firstname: string; lastname: string;
-}): Promise<UsAssessmentResponse>
-```
+## 3. Dashboard & Attendance shared shell (`Dashboard.tsx`)
 
-POSTs to `${API_BASE}${PREFIX}/us-assessment` (same base/prefix pattern as existing helpers). Returns the `contact_id` from the JSON body. Throws with a readable message on non-2xx (mirrors other helpers).
+### Header
+- Left: existing `cyberbacker-logo` (Profile Builder lockup).
+- Right: replace the standalone "Sign out" pill with **user chip** — avatar (photo if uploaded, else generic icon) + full name + chevron. Clicking opens a dropdown:
+  - `User` icon — My Profile (scrolls to Personal Info)
+  - `Lock` icon — **Change Password** (opens modal)
+  - `HelpCircle` icon — **Help Center** (opens FAQ modal)
+  - separator
+  - `LogOut` icon (red) — Sign out
+- Keep the **Reapply** button to the left of the chip on `/dashboard` only, gated (see §7).
 
-### 2. New page — `src/pages/AssessmentPage.tsx`
+### Welcome banner
+- Full-width blue card using `dashboard-banner.png` as the right-anchored background image (clipboard + plant art baked into the PNG).
+- Left content: avatar circle (photo or placeholder with a small camera badge), "Welcome back," then `{firstName} {lastName}`, then the quote *"You're doing great! Complete your profile to increase your chances of getting matched with the right opportunity."*
+- **Dashboard only:** right side shows Profile Completion — big `NN%`, progress bar, "Great progress! Keep it up." caption. **No** "Continue Profile" button.
+- **Attendance:** omit the Profile Completion block entirely; banner shows only the greeting/quote.
 
-Route added in `src/App.tsx`:
+### Profile Completion calculation (dashboard only)
+Count filled vs total across these step groups, **excluding Work Experience, Certifications, Portfolio**:
+- Personal Info required fields
+- Education required fields
+- Professional Background required fields
+- Tools (≥1 selected)
+- Skills (≥1 selected)
+- Value Proposition (non-empty)
+- Work Setup required fields (device + ISP as per wizard validation)
+- Compliance required fields
+Percentage = filled / total × 100, rounded. Progress bar uses existing primary color.
 
-```tsx
-<Route path="/assessment" element={<AssessmentPage />} />
-```
+### Stat cards row
+Remove the **Assessments** card entirely (both pages). Keep:
+- **Documents** card — "N Uploaded", link **Manage Documents** → opens modal (see §6).
+- **Next Step** card *(dashboard only, removed on attendance)* — see §5.
+- **Last Updated** card — timestamp of last profile save.
 
-Three internal phases:
+## 4. FAQ / Help Center modal + "Need Help?" sidebar block
 
-1. **`form`** — Card matching the app's existing card/muted-bg styling (see `CompletionStep` / wizard shell). Fields: Email (required, email regex), First name (required), Last name (required). Submit button uses `.btn-primary`. On submit:
-   - Call `createUsAssessmentContact({...})`.
-   - Save `{ contactId, email, firstName, lastName }` in local state and mirror to `localStorage` (`cb_us_assessment_identity`) so a refresh keeps the session.
-   - Move to `assessment` phase.
-   - Error → inline destructive alert, button re-enabled.
+Add a **Need Help?** card under the step sidebar (both pages) with copy from reference and a `Go to Help Center` button that opens the **FAQ modal**:
+- Modal contents: brief "How to use the App" walkthrough (steps overview, saving progress, reapply rules, assessment flow).
+- Two external link buttons:
+  - Cyberbacker Home → `https://cyberbackercareers.com/`
+  - Application FAQs → `https://cyberbackercareers.com/faq/`
+- Same modal is reused by the header dropdown's **Help Center** item.
 
-2. **`assessment`** — Renders the existing `AssessmentStep` with the ref API, passing `contactId`, `email`, `firstName`, `lastName`, and `onCompleted` (marks internal state → completion phase). Below the iframe, a single primary button reused from the existing pattern:
-   - Label: **Next** while phase is Values, **Submit** while phase is DISC.
-   - Disabled + cooldown handled via the same `checkAndAdvance()` return values (`'advance' | 'stay' | 'incomplete' | 'error'`) — `'incomplete'` triggers a 30-second countdown identical to Index/Dashboard.
-   - The step-header instruction block on this page reuses the exact copy already rendered inside `AssessmentStep` (the "Please complete the embedded assessment below…" panel) plus one added line: *"The assessment is embedded in this page — you don't need to close your browser if it asks you to. When you finish the Values assessment click **Next**, and when you finish DISC click **Submit**."*
+## 5. Next Step card (dashboard only)
 
-3. **`done`** — New completion card (visual language borrowed from `CompletionStep`: rounded card, arched primary header, animated check badge, Cyberbacker logo). Copy:
-   - Heading: *"Congratulations — assessments completed!"*
-   - Body: *"Your Values and DISC assessments have been submitted successfully. Our team will review your results and reach out with the next steps."*
-   - Single **OK** button → resets state (clears the localStorage identity, resets to `form` phase, stays on `/assessment`).
+Compute an ordered list of steps with missing required data (same rules as profile completion, plus Work Experience / Certifications / Portfolio if the user answered "Yes" but left entries blank). Card shows the **first missing step name**; a small list underneath enumerates the rest. **Start Now** navigates the sidebar to the first missing step and scrolls to it.
 
-No download buttons anywhere (matches existing rule: PDF downloads are admin-only).
+## 6. Manage Documents modal
 
-### 3. Values button label change (wizard + Reapply)
+Tabbed dialog (Portfolio / Work Setup / Compliance — **no Certifications tab**):
+- **Portfolio tab**: portfolio link + files dropzone. Save button → `POST /update-portfolio-file` with `contact_id`.
+- **Work Setup tab**: primary + secondary device screenshots, speedtest screenshots, system-spec doc uploads. Save → `POST /update-work-setup-files`.
+- **Compliance tab**: Valid ID, NBI, Police, Proof of Separation. Save → `POST /update-compliance-files`.
+- Each tab has its own Save button that only submits its tab's payload; existing files are pre-listed with `FilePreviewLink` and can be replaced.
 
-Files: `src/pages/Index.tsx` and `src/pages/Dashboard.tsx`.
+Add three helper functions in `src/lib/apiClient.ts`: `updatePortfolioFiles`, `updateWorkSetupFiles`, `updateComplianceFiles` (multipart POST including `contact_id`).
 
-Both currently render `WizardNavigation` for the assessment step. Pass `nextLabel` based on the ref's current phase:
+## 7. Reapply gating
 
-- While the AssessmentStep is in Values (or loading) → `nextLabel="Next"`.
-- While in DISC → `nextLabel="Submit"` (and `isLast` handling stays as-is).
+`canReapply` becomes: `daysSince ≥ 60` **AND** `isSubStepValid` passes for Personal Info, Education, Professional Background, Value Proposition, and Work Setup required fields. Button hidden (not just disabled) when the data gate fails; tooltip explains the 60-day cooldown when that's the blocker.
 
-Implementation: expose a lightweight `getPhase()` on `AssessmentStepHandle` (returns `'values' | 'disc' | 'completed' | 'loading' | 'error'`), then in the parent compute `nextLabel` from that phase (read via a `useState` tick updated in an `onPhaseChange` callback added to `AssessmentStep`). `AssessmentStep` fires `onPhaseChange(phase)` in the same `setPhase` sites it already has.
+## 8. Change Password modal
 
-The instruction block copy inside `AssessmentStep` gets the same added sentence about the embedded flow so it's identical across wizard, Reapply, and `/assessment`.
+New modal reachable from the header dropdown:
+- Fields: New Password, Confirm New Password (with show/hide, zod validation: min 8, must match).
+- Submit → `POST /change-password` with `{ contact_id, new_password }`. Toast on success, close modal.
+- Add `changePassword` helper to `apiClient.ts`.
 
-### 4. No changes to
-- Backend contract for `/us-assessment` (assumed already live per user).
-- `AssessmentResult`, `AdminDashboard`, other steps, or styling tokens.
-- Existing routes.
+## 9. Validation parity in Dashboard & Attendance edit forms
+
+Reuse `isSubStepValid` from `src/lib/validation/stepValidation.ts` to gate each step's **Save** button on both `/dashboard` and `/attendance`, mirroring the wizard's Next-button rules (Save disabled until required fields for that step are valid).
 
 ## Technical notes
-
-- `AssessmentStep` already caches Values/DISC codes and done-flags in `localStorage` keyed by `contactId`, so the `/assessment` flow naturally resumes on refresh once we've persisted the identity.
-- `contact_id` is already forwarded on every IMX payload from `AssessmentStep` — no changes needed there.
-- The completion screen's **OK** clears `cb_us_assessment_identity`, `cb_imx_values_code_<cid>`, `cb_imx_disc_code_<cid>`, and their `_done_` counterparts so a second user on the same browser starts fresh.
-
-## Files touched
-
-- `src/App.tsx` — add route.
-- `src/pages/AssessmentPage.tsx` — new.
-- `src/lib/apiClient.ts` — add `createUsAssessmentContact`.
-- `src/components/steps/ValuesAssessmentStep.tsx` — add `onPhaseChange` prop, `getPhase()` on the handle, appended instruction sentence.
-- `src/pages/Index.tsx`, `src/pages/Dashboard.tsx` — dynamic `nextLabel` based on phase.
+- No backend/schema changes beyond the three new file-update endpoints + `change-password` (frontend calls only; assumes backend exists).
+- All new images imported as ES modules from `src/assets/` — no CDN pointer, so they work offline.
+- Icons throughout the dropdown use `lucide-react` (`User`, `Lock`, `HelpCircle`, `LogOut`) for visual consistency.
+- Attendance page is the same component with `variant="attendance"`; conditionally hide Profile Completion block, Next Step card, and Reapply button when variant is attendance.

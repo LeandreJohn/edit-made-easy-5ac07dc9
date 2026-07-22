@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { login as apiLogin, signup as apiSignup, saveContactId, forgotPassword } from '@/lib/apiClient';
 import PasswordInput from '@/components/common/PasswordInput';
 import NdaModal from '@/components/common/NdaModal';
+import welcomeBg from '@/assets/welcome-bg.png';
 
 // Hardcoded credentials (TODO: replace with proper auth later)
 const ADMIN_EMAIL = 'admin@cyberbacker.com';
@@ -173,16 +174,13 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-[2fr_3fr]">
           {/* Left brand panel (40%) */}
-          <div className="relative hidden lg:flex flex-col justify-center bg-primary text-primary-foreground p-12 overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-10 bg-no-repeat bg-center bg-contain pointer-events-none"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><circle cx='100' cy='100' r='90' fill='none' stroke='white' stroke-width='1'/><ellipse cx='100' cy='100' rx='90' ry='40' fill='none' stroke='white' stroke-width='1'/><ellipse cx='100' cy='100' rx='40' ry='90' fill='none' stroke='white' stroke-width='1'/><ellipse cx='100' cy='100' rx='90' ry='70' fill='none' stroke='white' stroke-width='1'/></svg>\")",
-              }}
-            />
+          <div
+            className="relative hidden lg:flex flex-col justify-end bg-primary text-primary-foreground p-12 overflow-hidden bg-cover bg-center"
+            style={{ backgroundImage: `url(${welcomeBg})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent pointer-events-none" />
             <div className="relative">
-              <h2 className="font-heading text-3xl xl:text-4xl font-bold leading-tight mb-4">
+              <h2 className="font-heading text-3xl xl:text-4xl font-bold leading-tight mb-4 drop-shadow-md">
                 Your gateway to world-class remote career opportunities
               </h2>
             </div>

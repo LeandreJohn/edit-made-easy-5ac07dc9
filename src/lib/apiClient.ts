@@ -197,6 +197,67 @@ export function forgotPassword(email: string) {
   });
 }
 
+export function changePassword(contactId: string, newPassword: string) {
+  return request<{ success: boolean }>('/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ contact_id: contactId, new_password: newPassword }),
+  });
+}
+
+// ------------------------ FILE-ONLY UPDATES (Manage Documents modal) ------------------------
+
+export async function updatePortfolioFiles(contactId: string, portfolioLink: string, files: File[]) {
+  return request<{ success: boolean }>('/update-portfolio-file', {
+    method: 'POST',
+    body: JSON.stringify({
+      contact_id: contactId,
+      portfolio_link: portfolioLink,
+      file_names: fileNames(files),
+      files: await toJsonUploadFiles(files),
+    }),
+  });
+}
+
+export async function updateWorkSetupFiles(contactId: string, payload: {
+  primaryDeviceScreenshots?: File[];
+  secondaryDeviceScreenshots?: File[];
+  primaryIspSpeedtest?: File | null;
+  secondaryIspSpeedtest?: File | null;
+}) {
+  return request<{ success: boolean }>('/update-work-setup-files', {
+    method: 'POST',
+    body: JSON.stringify({
+      contact_id: contactId,
+      primary_device_screenshots: await toJsonUploadFiles(payload.primaryDeviceScreenshots ?? []),
+      secondary_device_screenshots: await toJsonUploadFiles(payload.secondaryDeviceScreenshots ?? []),
+      primary_isp_speedtest: payload.primaryIspSpeedtest ? await toJsonUploadFile(payload.primaryIspSpeedtest) : null,
+      secondary_isp_speedtest: payload.secondaryIspSpeedtest ? await toJsonUploadFile(payload.secondaryIspSpeedtest) : null,
+    }),
+  });
+}
+
+export async function updateComplianceFiles(contactId: string, payload: {
+  validId?: File | null;
+  nbiClearance?: File | null;
+  policeClearance?: File | null;
+  proofOfSeparation?: File | null;
+}) {
+  return request<{ success: boolean }>('/update-compliance-files', {
+    method: 'POST',
+    body: JSON.stringify({
+      contact_id: contactId,
+      valid_id: payload.validId ? await toJsonUploadFile(payload.validId) : null,
+      valid_id_file_name: payload.validId?.name ?? '',
+      nbi_clearance: payload.nbiClearance ? await toJsonUploadFile(payload.nbiClearance) : null,
+      nbi_clearance_file_name: payload.nbiClearance?.name ?? '',
+      police_clearance: payload.policeClearance ? await toJsonUploadFile(payload.policeClearance) : null,
+      police_clearance_file_name: payload.policeClearance?.name ?? '',
+      proof_of_separation: payload.proofOfSeparation ? await toJsonUploadFile(payload.proofOfSeparation) : null,
+      proof_of_separation_file_name: payload.proofOfSeparation?.name ?? '',
+    }),
+  });
+}
+
 // ------------------------ STEP UPDATES ------------------------
 
 export async function updatePersonalInfo(contactId: string, p: PersonalInfo, referrer = '') {

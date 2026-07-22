@@ -1,4 +1,7 @@
-import type { ApplicationData, PersonalInfo, Education, ProfessionalBackground, WorkSetup, ComplianceData } from '@/types/application';
+import type { ApplicationData, PersonalInfo, Education, ProfessionalBackground, WorkSetup, ComplianceData, SelectedSkill, SelectedTool } from '@/types/application';
+
+export function isToolsValid(tools: SelectedTool[]): boolean { return Array.isArray(tools) && tools.length > 0; }
+export function isSkillsValid(skills: SelectedSkill[]): boolean { return Array.isArray(skills) && skills.length > 0; }
 
 const nonEmpty = (v: unknown): boolean => typeof v === 'string' && v.trim().length > 0;
 
