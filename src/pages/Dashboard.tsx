@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
-  FileText, ArrowRight,
+  FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
+  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, type LucideIcon,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
