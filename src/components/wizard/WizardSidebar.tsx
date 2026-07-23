@@ -1,5 +1,13 @@
 import { STEPS } from '@/types/application';
-import { Check } from 'lucide-react';
+import {
+  Check, User, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
+  Monitor, ShieldCheck, ClipboardCheck, type LucideIcon,
+} from 'lucide-react';
+
+const STEP_ICONS: Record<string, LucideIcon> = {
+  User, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb, Monitor, ShieldCheck, ClipboardCheck,
+};
+
 import Logo from '@/components/Logo';
 
 interface WizardSidebarProps {
