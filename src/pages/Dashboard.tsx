@@ -781,8 +781,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
           {variant === 'reapply' && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
-              <div className="w-11 h-11 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 text-accent-foreground" />
+              <div className="w-11 h-11 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                <ArrowRight className="w-5 h-5 text-purple-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">Next Step</p>
