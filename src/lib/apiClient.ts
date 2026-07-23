@@ -239,7 +239,9 @@ export async function updateWorkSetupFiles(contactId: string, payload: {
 export async function updateComplianceFiles(contactId: string, payload: {
   validId?: File | null;
   nbiClearance?: File | null;
+  nbiValidity?: string;
   policeClearance?: File | null;
+  policeValidity?: string;
   proofOfSeparation?: File | null;
 }) {
   return request<{ success: boolean }>('/update-compliance-files', {
@@ -250,8 +252,10 @@ export async function updateComplianceFiles(contactId: string, payload: {
       valid_id_file_name: payload.validId?.name ?? '',
       nbi_clearance: payload.nbiClearance ? await toJsonUploadFile(payload.nbiClearance) : null,
       nbi_clearance_file_name: payload.nbiClearance?.name ?? '',
+      nbi_validity: payload.nbiValidity ?? '',
       police_clearance: payload.policeClearance ? await toJsonUploadFile(payload.policeClearance) : null,
       police_clearance_file_name: payload.policeClearance?.name ?? '',
+      police_validity: payload.policeValidity ?? '',
       proof_of_separation: payload.proofOfSeparation ? await toJsonUploadFile(payload.proofOfSeparation) : null,
       proof_of_separation_file_name: payload.proofOfSeparation?.name ?? '',
     }),
