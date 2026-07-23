@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
-  FileText, Calendar, ArrowRight, Camera,
+  FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
+  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, type LucideIcon,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
@@ -80,18 +81,18 @@ type SectionKey =
   | 'workSetup'
   | 'compliance';
 
-const SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: 'personal', label: 'Personal Information' },
-  { key: 'education', label: 'Education' },
-  { key: 'professional', label: 'Professional Background' },
-  { key: 'workExperience', label: 'Work Experience' },
-  { key: 'tools', label: 'Tools & Platforms Used' },
-  { key: 'skills', label: 'Skills & Core Competencies' },
-  { key: 'portfolio', label: 'Portfolio / Sample Works' },
-  { key: 'certifications', label: 'Certifications / Trainings' },
-  { key: 'valueProp', label: 'Value Proposition' },
-  { key: 'workSetup', label: 'Work Setup' },
-  { key: 'compliance', label: 'Compliance' },
+const SECTIONS: { key: SectionKey; label: string; icon: LucideIcon }[] = [
+  { key: 'personal', label: 'Personal Information', icon: User },
+  { key: 'education', label: 'Education', icon: GraduationCap },
+  { key: 'professional', label: 'Professional Background', icon: Briefcase },
+  { key: 'workExperience', label: 'Work Experience', icon: BadgeCheck },
+  { key: 'tools', label: 'Tools & Platforms Used', icon: Wrench },
+  { key: 'skills', label: 'Skills & Core Competencies', icon: Sparkles },
+  { key: 'portfolio', label: 'Portfolio / Sample Works', icon: FolderKanban },
+  { key: 'certifications', label: 'Certifications / Trainings', icon: Award },
+  { key: 'valueProp', label: 'Value Proposition', icon: Lightbulb },
+  { key: 'workSetup', label: 'Work Setup', icon: Monitor },
+  { key: 'compliance', label: 'Compliance', icon: ShieldCheck },
 ];
 
 // Parse MM/DD/YYYY (MDT) string into a Date.
@@ -720,8 +721,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {/* Welcome banner */}
         <div
-          className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-cover bg-right"
-          style={{ backgroundImage: `url(${dashboardBanner})` }}
+          className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-no-repeat"
+          style={{ backgroundImage: `url(${dashboardBanner})`, backgroundSize: '115% 115%', backgroundPosition: 'right center' }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-transparent pointer-events-none" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 p-6 sm:p-8 items-center">
@@ -732,9 +733,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 ) : (
                   <User className="w-10 h-10 text-primary/60" />
                 )}
-                <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-2 border-white">
-                  <Camera className="w-3.5 h-3.5" />
-                </span>
               </div>
               <div>
                 <p className="text-sm opacity-90">Welcome back,</p>
@@ -784,8 +782,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
           {variant === 'reapply' && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
-              <div className="w-11 h-11 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 text-accent-foreground" />
+              <div className="w-11 h-11 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                <ArrowRight className="w-5 h-5 text-purple-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">Next Step</p>
@@ -829,19 +827,23 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
           <div className="space-y-4">
             <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
-              {SECTIONS.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setActiveSection(s.key)}
-                  className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === s.key
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+              {SECTIONS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => setActiveSection(s.key)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                      activeSection === s.key
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0 opacity-80" />
+                    <span className="truncate">{s.label}</span>
+                  </button>
+                );
+              })}
             </nav>
             <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
               <p className="font-heading text-sm font-bold text-primary mb-1">Need Help?</p>
@@ -1246,11 +1248,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         onOpenChange={setManageDocsOpen}
         contactId={contactId ?? ''}
         existing={{
-          portfolioLink: profile.referralLink ? '' : '',
           portfolioFiles: portfolioFileUrls,
           workSetupPrimary: workSetupUrls.primary,
           workSetupSecondary: workSetupUrls.secondary,
-          compliance: complianceUrls,
+          compliance: { ...complianceUrls, nbiValidity: compliance.nbiValidity, policeValidity: compliance.policeValidity },
         }}
         onSaved={() => setLastUpdated(new Date())}
       />

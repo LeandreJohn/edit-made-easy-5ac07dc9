@@ -1,94 +1,101 @@
-# Plan: Welcome BG + Dashboard/Attendance Redesign
+## 1. Welcome page — background + heading position (`src/components/steps/WelcomeStep.tsx`)
 
-## 1. Assets (bundled real PNGs, offline-safe)
+- Change the left panel background from `bg-cover bg-center` to `bg-cover bg-no-repeat` with `background-size: 110% auto` (or `background-size: cover; background-position: center`) so the globe artwork fully bleeds and the powder-blue → white gradient border of the PNG stops showing.
+- Add a subtle `scale-105` on the background layer as a safety net for future viewport sizes.
+- Move the "Your gateway to world-class remote career opportunities" heading from bottom-left to vertically centered: change the outer flex from `justify-end` to `justify-center`, keep the text left-aligned.
 
-Copy the two uploaded PNGs into `src/assets/` so they're bundled by Vite (no `.asset.json`, works offline):
-- `src/assets/welcome-bg.png` ← `Welcome_BG.png`
-- `src/assets/dashboard-banner.png` ← `Dashboard_attendance_banner.png`
+## 2. Dashboard + Attendance shared header/banner (`src/pages/Dashboard.tsx`)
 
-## 2. Welcome card (`WelcomeStep.tsx`)
+### Profile avatar
 
-Replace the current left-side visual with the new globe artwork:
-- Set the left panel background to `url(welcome-bg.png)` with `bg-cover bg-center` on a dark navy fallback.
-- Keep the white heading "Your gateway to world-class remote career opportunities" overlaid bottom-left, matching the reference.
-- Right side (logo, headings, email/password, Create My Profile / Forgot / Sign In) unchanged.
+- Remove the camera badge (`<span>` wrapping the `Camera` icon at line ~735). Keep the circular avatar with photo/placeholder only.
+- Drop the now-unused `Camera` import.
 
-## 3. Dashboard & Attendance shared shell (`Dashboard.tsx`)
+### Banner background stretch
 
-### Header
-- Left: existing `cyberbacker-logo` (Profile Builder lockup).
-- Right: replace the standalone "Sign out" pill with **user chip** — avatar (photo if uploaded, else generic icon) + full name + chevron. Clicking opens a dropdown:
-  - `User` icon — My Profile (scrolls to Personal Info)
-  - `Lock` icon — **Change Password** (opens modal)
-  - `HelpCircle` icon — **Help Center** (opens FAQ modal)
-  - separator
-  - `LogOut` icon (red) — Sign out
-- Keep the **Reapply** button to the left of the chip on `/dashboard` only, gated (see §7).
+- Same fix as the welcome bg: swap `bg-cover bg-right` for a background style with `background-size: cover; background-position: right center` and scale up slightly so the left/right edges of `dashboard-banner.png` no longer show. Keep the primary-color gradient overlay.
 
-### Welcome banner
-- Full-width blue card using `dashboard-banner.png` as the right-anchored background image (clipboard + plant art baked into the PNG).
-- Left content: avatar circle (photo or placeholder with a small camera badge), "Welcome back," then `{firstName} {lastName}`, then the quote *"You're doing great! Complete your profile to increase your chances of getting matched with the right opportunity."*
-- **Dashboard only:** right side shows Profile Completion — big `NN%`, progress bar, "Great progress! Keep it up." caption. **No** "Continue Profile" button.
-- **Attendance:** omit the Profile Completion block entirely; banner shows only the greeting/quote.
+## 3. Manage Documents modal (`src/components/common/ManageDocumentsModal.tsx`)
 
-### Profile Completion calculation (dashboard only)
-Count filled vs total across these step groups, **excluding Work Experience, Certifications, Portfolio**:
-- Personal Info required fields
-- Education required fields
-- Professional Background required fields
-- Tools (≥1 selected)
-- Skills (≥1 selected)
-- Value Proposition (non-empty)
-- Work Setup required fields (device + ISP as per wizard validation)
-- Compliance required fields
-Percentage = filled / total × 100, rounded. Progress bar uses existing primary color.
+Restructure so every uploader is on its own row (no two-column grids) and existing uploads render inline with `FilePreviewLink` above the dropzone.
 
-### Stat cards row
-Remove the **Assessments** card entirely (both pages). Keep:
-- **Documents** card — "N Uploaded", link **Manage Documents** → opens modal (see §6).
-- **Next Step** card *(dashboard only, removed on attendance)* — see §5.
-- **Last Updated** card — timestamp of last profile save.
+### Portfolio tab
 
-## 4. FAQ / Help Center modal + "Need Help?" sidebar block
+- Remove the Portfolio Link field entirely (input + label + `LinkIcon`).
+- Keep only the file dropzone + existing-files list.
+- Save call: continue to use `updatePortfolioFiles(contactId, pFiles)` — drop the `pLink` argument from both the modal and the `apiClient.updatePortfolioFiles` signature so payload matches the wizard's Portfolio step (files only).
 
-Add a **Need Help?** card under the step sidebar (both pages) with copy from reference and a `Go to Help Center` button that opens the **FAQ modal**:
-- Modal contents: brief "How to use the App" walkthrough (steps overview, saving progress, reapply rules, assessment flow).
-- Two external link buttons:
-  - Cyberbacker Home → `https://cyberbackercareers.com/`
-  - Application FAQs → `https://cyberbackercareers.com/faq/`
-- Same modal is reused by the header dropdown's **Help Center** item.
+### Work Setup tab
 
-## 5. Next Step card (dashboard only)
+- Remove Primary ISP Speedtest + Secondary ISP Speedtest dropzones and their state (`wsPrimarySpeed`, `wsSecondarySpeed`).
+- Keep Primary Device Screenshots and Secondary Device Screenshots, each on its own row with existing screenshots rendered as `FilePreviewLink` chips above the dropzone.
+- `updateWorkSetupFiles` payload trimmed to `{ primaryDeviceScreenshots, secondaryDeviceScreenshots }`.
 
-Compute an ordered list of steps with missing required data (same rules as profile completion, plus Work Experience / Certifications / Portfolio if the user answered "Yes" but left entries blank). Card shows the **first missing step name**; a small list underneath enumerates the rest. **Start Now** navigates the sidebar to the first missing step and scrolls to it.
+### Compliance tab
 
-## 6. Manage Documents modal
+- Convert the 2-column grid to a single stacked column.
+- Add Valid Until date input under NBI Clearance (`nbiValidity`) and Police Clearance (`policeValidity`) — same MDY picker pattern used in `ComplianceStep.tsx`.
+- Each existing file (Valid ID, NBI, Police, COE) shown as `FilePreviewLink` above its dropzone when present.
+- Save call: extend `updateComplianceFiles` payload with `nbi_validity` and `police_validity` (already accepted by `updateCompliance` backend endpoint — mirror the field names).
 
-Tabbed dialog (Portfolio / Work Setup / Compliance — **no Certifications tab**):
-- **Portfolio tab**: portfolio link + files dropzone. Save button → `POST /update-portfolio-file` with `contact_id`.
-- **Work Setup tab**: primary + secondary device screenshots, speedtest screenshots, system-spec doc uploads. Save → `POST /update-work-setup-files`.
-- **Compliance tab**: Valid ID, NBI, Police, Proof of Separation. Save → `POST /update-compliance-files`.
-- Each tab has its own Save button that only submits its tab's payload; existing files are pre-listed with `FilePreviewLink` and can be replaced.
+### Payload parity
 
-Add three helper functions in `src/lib/apiClient.ts`: `updatePortfolioFiles`, `updateWorkSetupFiles`, `updateComplianceFiles` (multipart POST including `contact_id`).
+- Update `src/lib/apiClient.ts` helpers so each Manage Documents save posts the same shape as the corresponding wizard step (just omitting fields not exposed in the modal). No new endpoints.
 
-## 7. Reapply gating
+### Existing-data wiring
 
-`canReapply` becomes: `daysSince ≥ 60` **AND** `isSubStepValid` passes for Personal Info, Education, Professional Background, Value Proposition, and Work Setup required fields. Button hidden (not just disabled) when the data gate fails; tooltip explains the 60-day cooldown when that's the blocker.
+- Extend the `existing` prop passed from `Dashboard.tsx` with `nbiValidity` and `policeValidity` (read from the profile payload's `compliance.nbi_validity` / `compliance.police_validity`), and pre-fill the new date inputs.
 
-## 8. Change Password modal
+## 4. Wizard sidebar icons (`src/components/wizard/WizardSidebar.tsx` + `src/types/application.ts`)
 
-New modal reachable from the header dropdown:
-- Fields: New Password, Confirm New Password (with show/hide, zod validation: min 8, must match).
-- Submit → `POST /change-password` with `{ contact_id, new_password }`. Toast on success, close modal.
-- Add `changePassword` helper to `apiClient.ts`.
+- Add an `icon` field to each entry in `STEPS` using consistent `lucide-react` icons: `User` (Personal Info), `GraduationCap` (Education), `Briefcase` (Professional Bg), `History` (Work Experience), `Wrench` (Tools), `Sparkles` (Skills), `FolderOpen` (Portfolio), `Award` (Certifications), `MessageSquareQuote` (Value Prop), `Monitor` (Work Setup), `ShieldCheck` (Compliance), `ClipboardCheck` (Assessment), `CheckCircle2` (Completion). Icons stay the same size (`w-4 h-4`) and render to the left of the step label in both mobile and desktop layouts.
+- Uniform styling: icons inherit text color from the active/complete/inactive state classes already applied to the label.
+- The Icons also reflect in the dsahboard and in the attendance dashboard if the step is done in the wizard make sure the check still shows replacing the icon
 
-## 9. Validation parity in Dashboard & Attendance edit forms
+## 5. Next Step card icon color (`src/pages/Dashboard.tsx`)
 
-Reuse `isSubStepValid` from `src/lib/validation/stepValidation.ts` to gate each step's **Save** button on both `/dashboard` and `/attendance`, mirroring the wizard's Next-button rules (Save disabled until required fields for that step are valid).
+- Change the Next Step card's icon container from `bg-accent/10` + `text-accent-foreground` to a purple palette: `bg-purple-500/10` + `text-purple-600` (Calendar icon). Keeps hierarchy consistent with the other stat cards.
+
+## 6. Help Center / FAQ modal (`src/components/common/HelpCenterModal.tsx`)
+
+Rewrite the copy in a cleaner, more professional tone and split it into two contexts so the same modal serves both `/dashboard` and `/attendance`:
+
+- **Getting started** — clarify auto-save only applies to the **wizard**; dashboard/attendance edits require pressing **Save** on each section.
+- **Editing your profile** — unchanged intent, tightened wording.
+- **Managing documents** — unchanged intent, tightened wording.
+- **Reapplying (Dashboard only)** — unchanged intent.
+- **Assessments** — unchanged intent.
+- **Attendance dashboard** (new section) — explains:
+  - Log in at the start of your shift and log out at the end of the day.
+  - The three login-status options:
+    1. **Available for training only** — you're on shift for internal training sessions.
+    2. **Available for client matching only** — you're ready to be paired with a client but not attending training.
+    3. **Available for training and client matching** — you're open to both simultaneously.
+  - Pick the status that reflects today's availability so the recruitment team can match you correctly.
+
+Pass an optional `variant?: 'dashboard' | 'attendance'` prop from the two callers to reorder/emphasize sections; both include the two external link buttons (Cyberbacker Home, Application FAQs).
+
+## 7. Profile data mapping — dashboard + attendance (`src/pages/Dashboard.tsx`, `src/lib/apiClient.ts`)
+
+Align the profile loader with the sample payload structure:
+
+- **Personal info**: read `personal_info.middle_name`, `date_of_birth`, `country`, `Referred By` → surface in the Personal Info edit form (already has fields; wire the reads).
+- **Personal info location**: prefer the composed `personal_info.address` if `street`/`barangay`/`city` are absent.
+- **Profile picture**: use top-level `profile_picture` as the fallback for `photoPreview` when `personal_info.photo_url` is empty.
+- **Date applied / Last updated**: use top-level `date_applied` for Date Applied and `last_update_changes` for the Last Updated card (parse ISO timestamp).
+- **Work experience**: map `company` → `employer`, `position` → `title`, `employment_type` → new dashboard column (currently ignored), `description` → `responsibilities`, `start_date`/`end_date`/`currently_working` → existing fields.
+- **Tools**: map array of `{category, name, experience}` → `{tool: name, proficiency: experience}`; keep category for display grouping.
+- **Skills**: prefer `skills.structured[]` (`{skill, level, years}`) when present, fall back to `skills.items[]`. Populate `valueProposition` from `skills.value_proposition`.
+- **Portfolio**: files already mapped; ensure link uses `portfolio.link`.
+- **Certifications**: map `{title, issuer, date}` → `{title, organization: issuer, dateCompleted: date}`.
+- **Work setup**: additionally read `device_spec[]`, `device_spec_files[]`, `detected_cpu`, `detected_ram`, `detected_storage`, `detection_consent`, `detection_source` and surface uploaded spec files as `FilePreviewLink`s in the Work Setup section.
+- **Compliance**: read arrays `valid_id_files[]`, `nbi_clearance_files[]`, `police_clearance_files[]`, `COE[]` (list every file, not just the first) plus `nbi_validity`, `police_validity`, `valid_id` (label). Pass these to the Manage Documents modal via the extended `existing` prop.
+
+All mapping happens in the existing `useEffect` loader; no new endpoints.
 
 ## Technical notes
-- No backend/schema changes beyond the three new file-update endpoints + `change-password` (frontend calls only; assumes backend exists).
-- All new images imported as ES modules from `src/assets/` — no CDN pointer, so they work offline.
-- Icons throughout the dropdown use `lucide-react` (`User`, `Lock`, `HelpCircle`, `LogOut`) for visual consistency.
-- Attendance page is the same component with `variant="attendance"`; conditionally hide Profile Completion block, Next Step card, and Reapply button when variant is attendance.
+
+- No backend changes; existing endpoints (`/portfolio`, `/work-setup`, `/compliance`, `update-portfolio-file`, `update-work-setup-files`, `update-compliance-files`) already accept the trimmed payloads.
+- All new icons imported from `lucide-react`.
+- No behavior change to the wizard's Portfolio step (link stays in the wizard, removed only from Manage Documents modal per request).
+- Attendance page continues to hide the Profile Completion block, Next Step card, and Reapply button (unchanged from prior plan).

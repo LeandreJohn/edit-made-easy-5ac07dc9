@@ -175,12 +175,12 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
         <div className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-[2fr_3fr]">
           {/* Left brand panel (40%) */}
           <div
-            className="relative hidden lg:flex flex-col justify-end bg-primary text-primary-foreground p-12 overflow-hidden bg-cover bg-center"
-            style={{ backgroundImage: `url(${welcomeBg})` }}
+            className="relative hidden lg:flex flex-col items-center justify-center bg-primary text-primary-foreground p-12 overflow-hidden bg-no-repeat"
+            style={{ backgroundImage: `url(${welcomeBg})`, backgroundSize: '115% 115%', backgroundPosition: 'center' }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent pointer-events-none" />
-            <div className="relative">
-              <h2 className="font-heading text-3xl xl:text-4xl font-bold leading-tight mb-4 drop-shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary/15 to-transparent pointer-events-none" />
+            <div className="relative text-center">
+              <h2 className="font-heading text-3xl xl:text-4xl font-bold leading-tight drop-shadow-md">
                 Your gateway to world-class remote career opportunities
               </h2>
             </div>
