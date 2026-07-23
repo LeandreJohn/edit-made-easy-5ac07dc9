@@ -81,18 +81,18 @@ type SectionKey =
   | 'workSetup'
   | 'compliance';
 
-const SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: 'personal', label: 'Personal Information' },
-  { key: 'education', label: 'Education' },
-  { key: 'professional', label: 'Professional Background' },
-  { key: 'workExperience', label: 'Work Experience' },
-  { key: 'tools', label: 'Tools & Platforms Used' },
-  { key: 'skills', label: 'Skills & Core Competencies' },
-  { key: 'portfolio', label: 'Portfolio / Sample Works' },
-  { key: 'certifications', label: 'Certifications / Trainings' },
-  { key: 'valueProp', label: 'Value Proposition' },
-  { key: 'workSetup', label: 'Work Setup' },
-  { key: 'compliance', label: 'Compliance' },
+const SECTIONS: { key: SectionKey; label: string; icon: LucideIcon }[] = [
+  { key: 'personal', label: 'Personal Information', icon: User },
+  { key: 'education', label: 'Education', icon: GraduationCap },
+  { key: 'professional', label: 'Professional Background', icon: Briefcase },
+  { key: 'workExperience', label: 'Work Experience', icon: BadgeCheck },
+  { key: 'tools', label: 'Tools & Platforms Used', icon: Wrench },
+  { key: 'skills', label: 'Skills & Core Competencies', icon: Sparkles },
+  { key: 'portfolio', label: 'Portfolio / Sample Works', icon: FolderKanban },
+  { key: 'certifications', label: 'Certifications / Trainings', icon: Award },
+  { key: 'valueProp', label: 'Value Proposition', icon: Lightbulb },
+  { key: 'workSetup', label: 'Work Setup', icon: Monitor },
+  { key: 'compliance', label: 'Compliance', icon: ShieldCheck },
 ];
 
 // Parse MM/DD/YYYY (MDT) string into a Date.
