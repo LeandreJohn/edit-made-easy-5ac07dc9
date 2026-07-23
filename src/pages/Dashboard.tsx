@@ -1243,11 +1243,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         onOpenChange={setManageDocsOpen}
         contactId={contactId ?? ''}
         existing={{
-          portfolioLink: profile.referralLink ? '' : '',
           portfolioFiles: portfolioFileUrls,
           workSetupPrimary: workSetupUrls.primary,
           workSetupSecondary: workSetupUrls.secondary,
-          compliance: complianceUrls,
+          compliance: { ...complianceUrls, nbiValidity: compliance.nbiValidity, policeValidity: compliance.policeValidity },
         }}
         onSaved={() => setLastUpdated(new Date())}
       />
