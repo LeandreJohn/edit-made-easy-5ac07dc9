@@ -827,19 +827,23 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
           <div className="space-y-4">
             <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
-              {SECTIONS.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setActiveSection(s.key)}
-                  className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === s.key
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+              {SECTIONS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => setActiveSection(s.key)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                      activeSection === s.key
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0 opacity-80" />
+                    <span className="truncate">{s.label}</span>
+                  </button>
+                );
+              })}
             </nav>
             <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
               <p className="font-heading text-sm font-bold text-primary mb-1">Need Help?</p>
