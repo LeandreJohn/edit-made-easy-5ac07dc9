@@ -139,16 +139,17 @@ export interface ApplicationData {
 }
 
 export const STEPS = [
-  { number: 1, label: 'Personal Info', key: 'personal' },
-  { number: 2, label: 'Education', key: 'education' },
-  { number: 3, label: 'Professional Background', key: 'professional' },
-  { number: 4, label: 'Tools & Platforms Used', key: 'tools' },
-  { number: 5, label: 'Skills & Core Competencies', key: 'skills' },
-  { number: 6, label: 'Value Proposition', key: 'valueProp' },
-  { number: 7, label: 'Work Setup', key: 'workSetup' },
-  { number: 8, label: 'Compliance', key: 'compliance' },
-  { number: 9, label: 'Assessment', key: 'valuesAssessment' },
+  { number: 1, label: 'Personal Info', key: 'personal', icon: 'User' },
+  { number: 2, label: 'Education', key: 'education', icon: 'GraduationCap' },
+  { number: 3, label: 'Professional Background', key: 'professional', icon: 'Briefcase' },
+  { number: 4, label: 'Tools & Platforms Used', key: 'tools', icon: 'Wrench' },
+  { number: 5, label: 'Skills & Core Competencies', key: 'skills', icon: 'Sparkles' },
+  { number: 6, label: 'Value Proposition', key: 'valueProp', icon: 'Lightbulb' },
+  { number: 7, label: 'Work Setup', key: 'workSetup', icon: 'Monitor' },
+  { number: 8, label: 'Compliance', key: 'compliance', icon: 'ShieldCheck' },
+  { number: 9, label: 'Assessment', key: 'valuesAssessment', icon: 'ClipboardCheck' },
 ] as const;
+
 
 export const SKILL_CATEGORIES: SkillCategory[] = [
   {
