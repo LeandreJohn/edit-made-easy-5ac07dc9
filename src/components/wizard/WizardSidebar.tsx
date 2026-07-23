@@ -101,7 +101,7 @@ const WizardSidebar = ({ currentStep, completedSteps, onStepClick }: WizardSideb
                   <button
                     onClick={() => clickable && onStepClick?.(step.number)}
                     disabled={!clickable}
-                    className={`text-sm font-medium leading-tight text-left ${
+                    className={`flex items-center gap-2 text-sm font-medium leading-tight text-left ${
                       isActive
                         ? 'text-primary-foreground'
                         : isComplete
@@ -109,7 +109,11 @@ const WizardSidebar = ({ currentStep, completedSteps, onStepClick }: WizardSideb
                         : 'text-primary-foreground/60'
                     } ${clickable ? 'cursor-pointer hover:underline' : 'cursor-default'}`}
                   >
-                    {step.label}
+                    {(() => {
+                      const Icon = STEP_ICONS[step.icon];
+                      return Icon ? <Icon className="w-4 h-4 shrink-0 opacity-90" /> : null;
+                    })()}
+                    <span>{step.label}</span>
                   </button>
                 </div>
               </div>
@@ -122,3 +126,4 @@ const WizardSidebar = ({ currentStep, completedSteps, onStepClick }: WizardSideb
 };
 
 export default WizardSidebar;
+
