@@ -720,8 +720,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {/* Welcome banner */}
         <div
-          className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-cover bg-right"
-          style={{ backgroundImage: `url(${dashboardBanner})` }}
+          className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-no-repeat"
+          style={{ backgroundImage: `url(${dashboardBanner})`, backgroundSize: '115% 115%', backgroundPosition: 'right center' }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-transparent pointer-events-none" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 p-6 sm:p-8 items-center">
@@ -732,9 +732,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 ) : (
                   <User className="w-10 h-10 text-primary/60" />
                 )}
-                <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-2 border-white">
-                  <Camera className="w-3.5 h-3.5" />
-                </span>
               </div>
               <div>
                 <p className="text-sm opacity-90">Welcome back,</p>
