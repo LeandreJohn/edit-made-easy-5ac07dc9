@@ -42,10 +42,41 @@ const FIELDS_OF_STUDY = [
   'Other',
 ];
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+// Allow expected graduation up to 6 years out, and history back 60 years.
+const YEARS = Array.from({ length: 67 }, (_, i) => CURRENT_YEAR + 6 - i);
+
+/** Split a stored "MM/YYYY" (or legacy ISO date) value into month + year parts. */
+function splitGraduation(value: string): { month: string; year: string } {
+  if (!value) return { month: '', year: '' };
+  const mmYyyy = value.match(/^(\d{2})\/(\d{4})$/);
+  if (mmYyyy) return { month: mmYyyy[1], year: mmYyyy[2] };
+  const iso = value.match(/^(\d{4})-(\d{2})/);
+  if (iso) return { month: iso[2], year: iso[1] };
+  const yearOnly = value.match(/^(\d{4})$/);
+  if (yearOnly) return { month: '', year: yearOnly[1] };
+  return { month: '', year: '' };
+}
+
 const EducationStep = ({ data, onChange }: EducationStepProps) => {
   const update = (field: keyof Education, value: string) => {
     onChange({ ...data, [field]: value });
   };
+
+  const { month: gradMonth, year: gradYear } = splitGraduation(data.graduationDate);
+  const isUndergrad = /undergraduate|currently/i.test(data.highestLevel || '');
+
+  // Stored as "MM/YYYY"; a year on its own is kept so partial input isn't lost.
+  const setGraduation = (month: string, year: string) => {
+    if (!month && !year) return update('graduationDate', '');
+    update('graduationDate', month && year ? `${month}/${year}` : year || '');
+  };
+
 
   return (
     <div className="animate-fade-in space-y-6">
