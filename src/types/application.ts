@@ -11,11 +11,17 @@ export interface PersonalInfo {
   houseStreet: string;
   barangay: string;
   city: string;
+  /** State / Region — used for non-Philippine addresses. */
+  stateRegion?: string;
+  /** Postal / ZIP code — used for non-Philippine addresses. */
+  postalCode?: string;
   // Generic single-line address used when country !== 'Philippines'
   address: string;
   country: string;
   nationality: string;
   valueProposition: string;
+  /** Optional social profiles, stored as a JSON string: {"Facebook":"https://..."} */
+  socialLinks?: string;
   /** Head-hunting referral link (only collected when applying via /head-hunting). */
   referralLink?: string;
   photo: File | null;
@@ -25,12 +31,17 @@ export interface Education {
   highestLevel: string;
   schoolName: string;
   schoolLocation: string;
-  graduationDate: string; // MM/DD/YYYY
+  graduationDate: string; // MM/YYYY or YYYY
   degreeField: string;
+  /** Free-text specification shown when degreeField === 'Other'. */
+  degreeFieldOther?: string;
 }
+
 
 export interface ProfessionalBackground {
   preferredIndustry: string;
+  /** Free-text specification shown when preferredIndustry === 'Others'. */
+  preferredIndustryOther?: string;
   preferredRole: string; // comma-separated (max 3)
   availability: string;
   schedule: string;
@@ -47,6 +58,8 @@ export interface WorkExperience {
   currentlyWorking: boolean;
   responsibilities: string;
   toolsPlatforms: string;
+  /** Full-time / Part-time / Contract — surfaced by the backend payload. */
+  employmentType?: string;
 }
 
 export interface SkillCategory {
@@ -201,7 +214,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
       'Graphics | Canva Design',
       'Copywriting',
       'Content Scheduling',
-      'Basic Video Editing',
+      'Video Editing',
       'Email Marketing',
       'Engagement Management',
       'Brand Consistency Execution',

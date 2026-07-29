@@ -42,10 +42,41 @@ const FIELDS_OF_STUDY = [
   'Other',
 ];
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+// Allow expected graduation up to 6 years out, and history back 60 years.
+const YEARS = Array.from({ length: 67 }, (_, i) => CURRENT_YEAR + 6 - i);
+
+/** Split a stored "MM/YYYY" (or legacy ISO date) value into month + year parts. */
+function splitGraduation(value: string): { month: string; year: string } {
+  if (!value) return { month: '', year: '' };
+  const mmYyyy = value.match(/^(\d{2})\/(\d{4})$/);
+  if (mmYyyy) return { month: mmYyyy[1], year: mmYyyy[2] };
+  const iso = value.match(/^(\d{4})-(\d{2})/);
+  if (iso) return { month: iso[2], year: iso[1] };
+  const yearOnly = value.match(/^(\d{4})$/);
+  if (yearOnly) return { month: '', year: yearOnly[1] };
+  return { month: '', year: '' };
+}
+
 const EducationStep = ({ data, onChange }: EducationStepProps) => {
   const update = (field: keyof Education, value: string) => {
     onChange({ ...data, [field]: value });
   };
+
+  const { month: gradMonth, year: gradYear } = splitGraduation(data.graduationDate);
+  const isUndergrad = /undergraduate|currently/i.test(data.highestLevel || '');
+
+  // Stored as "MM/YYYY"; a year on its own is kept so partial input isn't lost.
+  const setGraduation = (month: string, year: string) => {
+    if (!month && !year) return update('graduationDate', '');
+    update('graduationDate', month && year ? `${month}/${year}` : year || '');
+  };
+
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -87,8 +118,38 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <RequiredLabel>Graduation Date (or expected Graduation Date)</RequiredLabel>
-          <input type="date" className="form-input" value={data.graduationDate} onChange={(e) => update('graduationDate', e.target.value)} />
+          {isUndergrad ? (
+            <label className="form-label">Graduation Date (or expected)</label>
+          ) : (
+            <RequiredLabel>Graduation Date (or expected Graduation Date)</RequiredLabel>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              className="form-select"
+              value={gradMonth}
+              onChange={(e) => setGraduation(e.target.value, gradYear)}
+              aria-label="Graduation month"
+            >
+              <option value="">Month</option>
+              {MONTHS.map((m, i) => (
+                <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+              ))}
+            </select>
+            <select
+              className="form-select"
+              value={gradYear}
+              onChange={(e) => setGraduation(gradMonth, e.target.value)}
+              aria-label="Graduation year"
+            >
+              <option value="">Year</option>
+              {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+            </select>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isUndergrad
+              ? 'Optional — leave blank if you have not graduated.'
+              : 'Month and year only.'}
+          </p>
         </div>
         {data.highestLevel !== 'High School Graduate' && (
           <div>
@@ -97,9 +158,18 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
               <option value="">Select field of study...</option>
               {FIELDS_OF_STUDY.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
+            {data.degreeField === 'Other' && (
+              <input
+                className="form-input mt-2"
+                placeholder="Please specify your degree / field of study"
+                value={data.degreeFieldOther ?? ''}
+                onChange={(e) => update('degreeFieldOther', e.target.value)}
+              />
+            )}
           </div>
         )}
       </div>
+
     </div>
   );
 };

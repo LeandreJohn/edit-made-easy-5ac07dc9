@@ -1,101 +1,85 @@
-## 1. Welcome page — background + heading position (`src/components/steps/WelcomeStep.tsx`)
+## 1. Dashboard / Attendance data mapping (`src/lib/apiClient.ts`, `src/pages/Dashboard.tsx`)
 
-- Change the left panel background from `bg-cover bg-center` to `bg-cover bg-no-repeat` with `background-size: 110% auto` (or `background-size: cover; background-position: center`) so the globe artwork fully bleeds and the powder-blue → white gradient border of the PNG stops showing.
-- Add a subtle `scale-105` on the background layer as a safety net for future viewport sizes.
-- Move the "Your gateway to world-class remote career opportunities" heading from bottom-left to vertically centered: change the outer flex from `justify-end` to `justify-center`, keep the text left-aligned.
+Rewrite `DashboardResponse` to match the real payload and fix every mis-mapped read.
 
-## 2. Dashboard + Attendance shared header/banner (`src/pages/Dashboard.tsx`)
+Current bugs found in the loader:
 
-### Profile avatar
+- Personal info ignores `middle_name`, `date_of_birth`, `country`, `address`, `Referred By`, `Social_Link`.
+- Profile photo reads `personal_info.photo_url` (does not exist) instead of top-level `profile_picture`.
+- Work setup reads `noise_cancelling_headset` / `hd_webcam` / `primary_internet` / `secondary_internet`; payload uses `has_noise_cancelling_headset`, `has_hd_webcam`, `primary_internet_provider`, `secondary_internet_provider`, plus `*_sharable_link`, `detected_cpu/ram/storage`, `detection_consent`, `detection_source`, `device_spec[]`, `device_spec_files[]`.
+- Work experience expects `employer`; payload has `company`/`position`/`employment_type`/`description`, and `current` (not `currently_working`).
+- Compliance reads `valid_id_url` / `nbi_clearance_url` etc.; payload has `valid_id_files[]`, `nbi_clearance_files[]`, `police_clearance_files[]`, `COE`.
+- Skills fall back only to `items`; also read `structured[]` when non-empty.
+- `last_update_changes` is not read at all (Last Updated card).
 
-- Remove the camera badge (`<span>` wrapping the `Camera` icon at line ~735). Keep the circular avatar with photo/placeholder only.
-- Drop the now-unused `Camera` import.
+Fixes: map all of the above, normalise ISO dates (`YYYY-MM-DD`) to the MM/DD/YYYY the UI uses, list every file in an array as a `FilePreviewLink`, and pass the extended data into `ManageDocumentsModal`.
 
-### Banner background stretch
+## 2. Profile completion persistence
 
-- Same fix as the welcome bg: swap `bg-cover bg-right` for a background style with `background-size: cover; background-position: right center` and scale up slightly so the left/right edges of `dashboard-banner.png` no longer show. Keep the primary-color gradient overlay.
+Completion is computed from the in-memory form state. Recompute it from the freshly-loaded backend payload (same field list: Personal Info, Education, Professional Background, Value Proposition, Work Setup required fields), and recompute after each successful save by re-fetching the dashboard rather than trusting local state, so a refresh shows the identical percentage.
 
-## 3. Manage Documents modal (`src/components/common/ManageDocumentsModal.tsx`)
+## 3. New Assessment card (Dashboard only)
 
-Restructure so every uploader is on its own row (no two-column grids) and existing uploads render inline with `FilePreviewLink` above the dropzone.
+Inserted between Next Step and Last Updated when `can_do_assessment` is `"Yes"` or `null` **and** the Reapply button is hidden.
 
-### Portfolio tab
+- Title "Take the Assessment", "Start Now →" link.
+- Opens a non-dismissible modal (no overlay/Esc close) with an X button; runs the same IMX Values → DISC flow as the wizard (new code generated on open, Next during Values, Submit on DISC).
+- Closes automatically once both results verify.
+- If `can_do_assessment === "No"`, the card renders with a disabled Start Now.
 
-- Remove the Portfolio Link field entirely (input + label + `LinkIcon`).
-- Keep only the file dropzone + existing-files list.
-- Save call: continue to use `updatePortfolioFiles(contactId, pFiles)` — drop the `pLink` argument from both the modal and the `apiClient.updatePortfolioFiles` signature so payload matches the wizard's Portfolio step (files only).
+## 4. Notification card (before Documents card)
 
-### Work Setup tab
+Driven by the `tag[]` array, mapped through a new `src/data/tagNotifications.ts` built from the uploaded sheet (NR - NBI Processing, NR - No NBI, NR - Police Processing, NR - No Police, NR - Blurred Document, NR - Cropped Document, NR - Poor Upload Quality, NR - Invalid ID, NR - Primary Device Specs Missing, NR - Primary Speedtest Invalid). Unmapped tags (e.g. `profile-builder`) are ignored; card is hidden when no tag matches. "Invalid ID" message renders its "click here" as a link to the accepted-ID list.
 
-- Remove Primary ISP Speedtest + Secondary ISP Speedtest dropzones and their state (`wsPrimarySpeed`, `wsSecondarySpeed`).
-- Keep Primary Device Screenshots and Secondary Device Screenshots, each on its own row with existing screenshots rendered as `FilePreviewLink` chips above the dropzone.
-- `updateWorkSetupFiles` payload trimmed to `{ primaryDeviceScreenshots, secondaryDeviceScreenshots }`.
+## 5. Personal Information — Social Media Profiles
 
-### Compliance tab
+New section in `PersonalInfoStep.tsx` and the Dashboard Personal Info editor: repeatable rows of `[platform select] [url input] [remove]`. Platforms: Facebook, LinkedIn, Instagram, X (Twitter), TikTok, YouTube, Portfolio Website, Other Website. Zod URL validation, blank allowed, inline messages. Serialised to a JSON string `{"Facebook":"...","Instagram":"..."}` sent as `social_links` on `PUT /personal-info`; parsed back from `personal_info.Social_Link` (tolerating plain-string legacy values) on Dashboard/Attendance. make sure that this new field is not a requried field
 
-- Convert the 2-column grid to a single stacked column.
-- Add Valid Until date input under NBI Clearance (`nbiValidity`) and Police Clearance (`policeValidity`) — same MDY picker pattern used in `ComplianceStep.tsx`.
-- Each existing file (Valid ID, NBI, Police, COE) shown as `FilePreviewLink` above its dropzone when present.
-- Save call: extend `updateComplianceFiles` payload with `nbi_validity` and `police_validity` (already accepted by `updateCompliance` backend endpoint — mirror the field names).
+## 6. International address
 
-### Payload parity
+Country dropdown defaults to Philippines. PH → House/Street, Barangay, City/Province (required). Non-PH → State/Region, City, Postal Code (required), composed into the single `address` field the backend already stores as "Alternate Address". Validation schemas in `wizardSchemas.ts` updated for both branches, and the same rules reused by the dashboard editor.
 
-- Update `src/lib/apiClient.ts` helpers so each Manage Documents save posts the same shape as the corresponding wizard step (just omitting fields not exposed in the modal). No new endpoints.
+## 7. Education
 
-### Existing-data wiring
+- Graduation date becomes Month + Year only (no day); year-only allowed.
+- Optional when highest level is Some College / Undergraduate.
+- Degree/Field of Study gains an "Other" option that reveals a required "Please specify your Degree or Field of Study" text field.
 
-- Extend the `existing` prop passed from `Dashboard.tsx` with `nbiValidity` and `policeValidity` (read from the profile payload's `compliance.nbi_validity` / `compliance.police_validity`), and pre-fill the new date inputs.
+## 8. Professional Background
 
-## 4. Wizard sidebar icons (`src/components/wizard/WizardSidebar.tsx` + `src/types/application.ts`)
+- Industry list gains "Others" → reveals required "Specify Industry".
+- Role list extended locally in `industryRoleMatrix.ts` with the missing backend roles (Property Management, AI Faci Support, and any other gaps), with an "unavailable" flag rendering greyed-out non-selectable entries rather than hiding them.
 
-- Add an `icon` field to each entry in `STEPS` using consistent `lucide-react` icons: `User` (Personal Info), `GraduationCap` (Education), `Briefcase` (Professional Bg), `History` (Work Experience), `Wrench` (Tools), `Sparkles` (Skills), `FolderOpen` (Portfolio), `Award` (Certifications), `MessageSquareQuote` (Value Prop), `Monitor` (Work Setup), `ShieldCheck` (Compliance), `ClipboardCheck` (Assessment), `CheckCircle2` (Completion). Icons stay the same size (`w-4 h-4`) and render to the left of the step label in both mobile and desktop layouts.
-- Uniform styling: icons inherit text color from the active/complete/inactive state classes already applied to the label.
-- The Icons also reflect in the dsahboard and in the attendance dashboard if the step is done in the wizard make sure the check still shows replacing the icon
+## 9. Skills / Certifications / Resume
 
-## 5. Next Step card icon color (`src/pages/Dashboard.tsx`)
+- Rename `Basic Video Editing` → `Video Editing` in `SKILL_CATEGORIES`.
+- Certifications uploader accepts PDF/JPG/JPEG/PNG with accepted types shown beneath.
+- Resume uploader: PDF/DOC/DOCX, accepted types + max size shown, posts to the existing resume-parse endpoint and auto-fills Name, Contact, Education, Employment, Skills. On failure shows "We couldn't automatically extract your information. Please complete the fields manually." and never blocks submission.
 
-- Change the Next Step card's icon container from `bg-accent/10` + `text-accent-foreground` to a purple palette: `bg-purple-500/10` + `text-purple-600` (Calendar icon). Keeps hierarchy consistent with the other stat cards.
+## 10. Work Setup equipment
 
-## 6. Help Center / FAQ modal (`src/components/common/HelpCenterModal.tsx`)
+Headset and Webcam become Yes/No radio groups (no free text), stored as booleans and sent as `"Yes"`/`"No"` exactly as the backend expects.
 
-Rewrite the copy in a cleaner, more professional tone and split it into two contexts so the same modal serves both `/dashboard` and `/attendance`:
+## 11. Reapply button
 
-- **Getting started** — clarify auto-save only applies to the **wizard**; dashboard/attendance edits require pressing **Save** on each section.
-- **Editing your profile** — unchanged intent, tightened wording.
-- **Managing documents** — unchanged intent, tightened wording.
-- **Reapplying (Dashboard only)** — unchanged intent.
-- **Assessments** — unchanged intent.
-- **Attendance dashboard** (new section) — explains:
-  - Log in at the start of your shift and log out at the end of the day.
-  - The three login-status options:
-    1. **Available for training only** — you're on shift for internal training sessions.
-    2. **Available for client matching only** — you're ready to be paired with a client but not attending training.
-    3. **Available for training and client matching** — you're open to both simultaneously.
-  - Pick the status that reflects today's availability so the recruitment team can match you correctly.
+Disabled (not hidden) until Personal Info, Education, Professional Background, Value Proposition and required Work Setup fields are complete, with tooltip "Complete all required sections before reapplying."
 
-Pass an optional `variant?: 'dashboard' | 'attendance'` prop from the two callers to reorder/emphasize sections; both include the two external link buttons (Cyberbacker Home, Application FAQs).
+## 12. Assessment iframe scrolling
 
-## 7. Profile data mapping — dashboard + attendance (`src/pages/Dashboard.tsx`, `src/lib/apiClient.ts`)
+The IMX iframe is fixed-height with internal scroll, which hides its own Next button. Switch to an auto-growing iframe: listen for `postMessage` height events and fall back to a tall min-height (e.g. `min(1600px, content)`) with `scrolling="no"`, so the page scrolls instead of the frame. Applied in both `ValuesAssessmentStep.tsx` and `AssessmentPage.tsx`.
 
-Align the profile loader with the sample payload structure:
+## 13. General UX
 
-- **Personal info**: read `personal_info.middle_name`, `date_of_birth`, `country`, `Referred By` → surface in the Personal Info edit form (already has fields; wire the reads).
-- **Personal info location**: prefer the composed `personal_info.address` if `street`/`barangay`/`city` are absent.
-- **Profile picture**: use top-level `profile_picture` as the fallback for `photoPreview` when `personal_info.photo_url` is empty.
-- **Date applied / Last updated**: use top-level `date_applied` for Date Applied and `last_update_changes` for the Last Updated card (parse ISO timestamp).
-- **Work experience**: map `company` → `employer`, `position` → `title`, `employment_type` → new dashboard column (currently ignored), `description` → `responsibilities`, `start_date`/`end_date`/`currently_working` → existing fields.
-- **Tools**: map array of `{category, name, experience}` → `{tool: name, proficiency: experience}`; keep category for display grouping.
-- **Skills**: prefer `skills.structured[]` (`{skill, level, years}`) when present, fall back to `skills.items[]`. Populate `valueProposition` from `skills.value_proposition`.
-- **Portfolio**: files already mapped; ensure link uses `portfolio.link`.
-- **Certifications**: map `{title, issuer, date}` → `{title, organization: issuer, dateCompleted: date}`.
-- **Work setup**: additionally read `device_spec[]`, `device_spec_files[]`, `detected_cpu`, `detected_ram`, `detected_storage`, `detection_consent`, `detection_source` and surface uploaded spec files as `FilePreviewLink`s in the Work Setup section.
-- **Compliance**: read arrays `valid_id_files[]`, `nbi_clearance_files[]`, `police_clearance_files[]`, `COE[]` (list every file, not just the first) plus `nbi_validity`, `police_validity`, `valid_id` (label). Pass these to the Manage Documents modal via the extended `existing` prop.
+Saving spinners on every Save button, a "Changes Saved" toast/inline confirmation, tightened validation copy, draft restore on refresh, and a mobile pass on the new cards and social-links rows.  
+  
+14. Create a copy of assessment URL the login there is POST /ph-assessment if it returned success true have the applicant take the assessment as normal then if it's status_code 403 or 404 popup a mesage stating 
 
-All mapping happens in the existing `useEffect` loader; no new endpoints.
+```python
+You are not eligible to access the Assessment
+```
 
 ## Technical notes
 
-- No backend changes; existing endpoints (`/portfolio`, `/work-setup`, `/compliance`, `update-portfolio-file`, `update-work-setup-files`, `update-compliance-files`) already accept the trimmed payloads.
-- All new icons imported from `lucide-react`.
-- No behavior change to the wizard's Portfolio step (link stays in the wizard, removed only from Manage Documents modal per request).
-- Attendance page continues to hide the Profile Completion block, Next Step card, and Reapply button (unchanged from prior plan).
+- No backend changes. `social_links` is sent as a JSON string on the existing `PUT /personal-info`.
+- Resume parsing will be wired to the existing endpoint — confirm the exact path/response shape if it is not `POST /parse-resume`, and I will adjust the one call site.
+- Date normalisation helper added to `src/lib/date.ts` for ISO ⇄ MDY conversion used across the loader.

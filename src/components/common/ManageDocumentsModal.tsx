@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -18,16 +18,28 @@ interface Props {
     workSetupPrimary: string[];
     workSetupSecondary: string[];
     compliance: {
-      validId?: string;
-      nbi?: string;
-      police?: string;
-      coe?: string;
+      validIdFiles?: string[];
+      nbiFiles?: string[];
+      policeFiles?: string[];
+      coeFiles?: string[];
       nbiValidity?: string;
       policeValidity?: string;
     };
   };
   onSaved?: () => void;
 }
+
+/** Renders every already-uploaded file for a document slot. */
+const ExistingFiles = ({ urls, label }: { urls?: string[]; label: string }) => {
+  if (!urls || urls.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {urls.map((u, i) => (
+        <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : `Existing ${label}`} />
+      ))}
+    </div>
+  );
+};
 
 const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved }: Props) => {
   const [tab, setTab] = useState<'portfolio' | 'workSetup' | 'compliance'>('portfolio');
@@ -49,6 +61,14 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
   const [policeValidity, setPoliceValidity] = useState(existing.compliance.policeValidity ?? '');
   const [coe, setCoe] = useState<File[]>([]);
   const [cSaving, setCSaving] = useState(false);
+
+  // Keep the validity dates in sync with freshly loaded profile data.
+  useEffect(() => {
+    if (!open) return;
+    setNbiValidity(existing.compliance.nbiValidity ?? '');
+    setPoliceValidity(existing.compliance.policeValidity ?? '');
+  }, [open, existing.compliance.nbiValidity, existing.compliance.policeValidity]);
+
 
   const requireCid = () => {
     if (!contactId) { toast.error('Not signed in.'); return false; }
@@ -167,13 +187,13 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
           <TabsContent value="compliance" className="space-y-6 pt-4">
             <div className="space-y-2">
               <label className="form-label">Valid ID</label>
-              {existing.compliance.validId && <FilePreviewLink url={existing.compliance.validId} label="Existing Valid ID" />}
+              <ExistingFiles urls={existing.compliance.validIdFiles} label="Valid ID" />
               <FileDropzone onFilesSelected={setValidId} label="valid id" maxFiles={1} />
             </div>
 
             <div className="space-y-2">
               <label className="form-label">NBI Clearance</label>
-              {existing.compliance.nbi && <FilePreviewLink url={existing.compliance.nbi} label="Existing NBI Clearance" />}
+              <ExistingFiles urls={existing.compliance.nbiFiles} label="NBI Clearance" />
               <FileDropzone onFilesSelected={setNbi} label="nbi clearance" maxFiles={1} />
               <div>
                 <label className="form-label mt-2">Valid Until</label>
@@ -183,7 +203,7 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
 
             <div className="space-y-2">
               <label className="form-label">Police Clearance</label>
-              {existing.compliance.police && <FilePreviewLink url={existing.compliance.police} label="Existing Police Clearance" />}
+              <ExistingFiles urls={existing.compliance.policeFiles} label="Police Clearance" />
               <FileDropzone onFilesSelected={setPolice} label="police clearance" maxFiles={1} />
               <div>
                 <label className="form-label mt-2">Valid Until</label>
@@ -193,9 +213,10 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
 
             <div className="space-y-2">
               <label className="form-label">Proof of Separation / COE</label>
-              {existing.compliance.coe && <FilePreviewLink url={existing.compliance.coe} label="Existing COE" />}
+              <ExistingFiles urls={existing.compliance.coeFiles} label="COE" />
               <FileDropzone onFilesSelected={setCoe} label="proof of separation" maxFiles={1} />
             </div>
+
 
             <div className="flex justify-end pt-2">
               <button onClick={saveCompliance} disabled={cSaving} className="btn-primary inline-flex items-center gap-2">
