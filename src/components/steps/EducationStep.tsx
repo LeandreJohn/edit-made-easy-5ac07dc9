@@ -87,8 +87,38 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <RequiredLabel>Graduation Date (or expected Graduation Date)</RequiredLabel>
-          <input type="date" className="form-input" value={data.graduationDate} onChange={(e) => update('graduationDate', e.target.value)} />
+          {isUndergrad ? (
+            <label className="form-label">Graduation Date (or expected)</label>
+          ) : (
+            <RequiredLabel>Graduation Date (or expected Graduation Date)</RequiredLabel>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              className="form-select"
+              value={gradMonth}
+              onChange={(e) => setGraduation(e.target.value, gradYear)}
+              aria-label="Graduation month"
+            >
+              <option value="">Month</option>
+              {MONTHS.map((m, i) => (
+                <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+              ))}
+            </select>
+            <select
+              className="form-select"
+              value={gradYear}
+              onChange={(e) => setGraduation(gradMonth, e.target.value)}
+              aria-label="Graduation year"
+            >
+              <option value="">Year</option>
+              {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+            </select>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isUndergrad
+              ? 'Optional — leave blank if you have not graduated.'
+              : 'Month and year only.'}
+          </p>
         </div>
         {data.highestLevel !== 'High School Graduate' && (
           <div>
@@ -97,9 +127,18 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
               <option value="">Select field of study...</option>
               {FIELDS_OF_STUDY.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
+            {data.degreeField === 'Other' && (
+              <input
+                className="form-input mt-2"
+                placeholder="Please specify your degree / field of study"
+                value={data.degreeFieldOther ?? ''}
+                onChange={(e) => update('degreeFieldOther', e.target.value)}
+              />
+            )}
           </div>
         )}
       </div>
+
     </div>
   );
 };

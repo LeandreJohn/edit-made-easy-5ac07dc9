@@ -20,24 +20,43 @@ export const personalInfoPHAddressSchema = z.object({
 }).passthrough();
 
 export const personalInfoOtherAddressSchema = z.object({
-  address: required('Address'),
+  address: required('Street address'),
+  city: required('City'),
 }).passthrough();
 
 export const educationSchema = z.object({
   highestLevel: required('Highest level of education'),
   schoolName: required('School name'),
   schoolLocation: required('School location'),
-  graduationDate: required('Graduation date'),
 }).passthrough().superRefine((val, ctx) => {
-  const isHS = (val as { highestLevel?: string }).highestLevel === 'High School Graduate';
-  if (!isHS && !(val as { degreeField?: string }).degreeField) {
+  const level = (val as { highestLevel?: string }).highestLevel ?? '';
+  const isHS = level === 'High School Graduate';
+  // Undergraduates have no graduation date yet — everyone else must provide one.
+  const isUndergrad = /undergraduate|currently/i.test(level);
+  if (!isUndergrad && !(val as { graduationDate?: string }).graduationDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Graduation date is required',
+      path: ['graduationDate'],
+    });
+  }
+  const degreeField = (val as { degreeField?: string }).degreeField;
+  if (!isHS && !degreeField) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Degree / Field of Study is required',
       path: ['degreeField'],
     });
   }
+  if (degreeField === 'Other' && !(val as { degreeFieldOther?: string }).degreeFieldOther?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please specify your degree / field of study',
+      path: ['degreeFieldOther'],
+    });
+  }
 });
+
 
 export const professionalBgSchema = z.object({
   preferredIndustry: required('Preferred industry'),

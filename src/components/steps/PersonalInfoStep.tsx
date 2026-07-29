@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SearchableSelect from '@/components/common/SearchableSelect';
 import PhoneInput from '@/components/common/PhoneInput';
+import SocialLinksInput from '@/components/common/SocialLinksInput';
 import EligibilityModal from '@/components/common/EligibilityModal';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 import { fetchPhCities, fetchPhBarangays, PsgcCity } from '@/lib/philippines';
@@ -453,16 +454,59 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
           </div>
         </div>
       ) : (
-        <div className="mb-6">
-          <RequiredLabel>Address</RequiredLabel>
-          <input
-            className="form-input"
-            value={data.address}
-            onChange={(e) => update('address', e.target.value)}
-            placeholder="Full address"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+          <div className="sm:col-span-2">
+            <RequiredLabel>Street Address</RequiredLabel>
+            <input
+              className="form-input"
+              value={data.address}
+              onChange={(e) => update('address', e.target.value)}
+              placeholder="House / building number and street"
+            />
+          </div>
+          <div>
+            <RequiredLabel>City</RequiredLabel>
+            <input
+              className="form-input"
+              value={data.city}
+              onChange={(e) => update('city', e.target.value)}
+              placeholder="Enter city"
+            />
+          </div>
+          <div>
+            <label className="form-label">State / Region / Province</label>
+            <input
+              className="form-input"
+              value={data.stateRegion ?? ''}
+              onChange={(e) => update('stateRegion', e.target.value)}
+              placeholder="Enter state or region"
+            />
+          </div>
+          <div>
+            <label className="form-label">Postal / ZIP Code</label>
+            <input
+              className="form-input"
+              value={data.postalCode ?? ''}
+              onChange={(e) => update('postalCode', e.target.value)}
+              placeholder="Enter postal code"
+            />
+          </div>
         </div>
       )}
+
+      <div className="mb-4">
+        <Separator />
+        <h4 className="text-sm font-semibold text-foreground mt-4 mb-1">Social Media Profiles</h4>
+        <p className="text-xs text-muted-foreground">
+          Optional — share any profiles that showcase your professional presence.
+        </p>
+      </div>
+      <div className="mb-6">
+        <SocialLinksInput
+          value={data.socialLinks ?? ''}
+          onChange={(v) => update('socialLinks', v)}
+        />
+      </div>
 
       {isHeadhunting() && (
         <div className="mb-6">
@@ -478,6 +522,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
           </p>
         </div>
       )}
+
 
 
       <EligibilityModal

@@ -3,8 +3,10 @@ import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
   FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
-  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, type LucideIcon,
+  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck,
+  type LucideIcon,
 } from 'lucide-react';
+import { notificationsForTags } from '@/data/tagNotifications';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import EducationStep from '@/components/steps/EducationStep';
@@ -129,7 +131,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [dateApplied, setDateApplied] = useState<string>('');
   const [portfolioFileUrls, setPortfolioFileUrls] = useState<Array<{ name: string; url: string }>>([]);
-  const [complianceUrls, setComplianceUrls] = useState<{ validId?: string; nbi?: string; police?: string; coe?: string }>({});
+  const [complianceUrls, setComplianceUrls] = useState<{
+    validIdFiles: string[]; nbiFiles: string[]; policeFiles: string[]; coeFiles: string[];
+  }>({ validIdFiles: [], nbiFiles: [], policeFiles: [], coeFiles: [] });
+  const [validIdLabel, setValidIdLabel] = useState('');
+  const [canDoAssessment, setCanDoAssessment] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
   const [workSetupUrls, setWorkSetupUrls] = useState<{ primary: string[]; secondary: string[] }>({ primary: [], secondary: [] });
 
 
@@ -219,19 +226,30 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     (async () => {
       try {
         const d = await getDashboard(contactId);
-        const pi = d.personal_info || {};
+        const pi = (d.personal_info || {}) as Record<string, unknown>;
+        const str = (v: unknown) => (v == null ? '' : String(v));
+        // Non-PH applicants only get a composed one-line address from the backend.
+        const composedAddress = str(pi.address);
         setProfile({
           ...emptyProfile,
-          firstName: pi.first_name || '',
-          lastName: pi.last_name || '',
-          suffix: pi.suffix || '',
-          phoneNumber: pi.phone || '',
-          languagesSpoken: pi.languages || '',
-          houseStreet: pi.street || '',
-          barangay: pi.barangay || '',
-          city: pi.city || '',
-          nationality: pi.nationality || '',
-          valueProposition: d.skills?.value_proposition || '',
+          firstName: str(pi.first_name),
+          middleName: str(pi.middle_name),
+          lastName: str(pi.last_name),
+          suffix: str(pi.suffix),
+          dateOfBirth: str(pi.date_of_birth),
+          phoneNumber: str(pi.phone),
+          languagesSpoken: str(pi.languages),
+          houseStreet: str(pi.street),
+          barangay: str(pi.barangay),
+          city: str(pi.city),
+          stateRegion: str(pi.state_region),
+          postalCode: str(pi.postal_code),
+          address: composedAddress,
+          country: str(pi.country),
+          nationality: str(pi.nationality),
+          socialLinks: str(pi.social_links ?? pi.Social_Link),
+          referralLink: str(pi['Referred By'] ?? pi.referral_link),
+          valueProposition: str(d.skills?.value_proposition),
         });
         const e = d.education || {};
         setEducation({
@@ -249,66 +267,87 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           schedule: pb.availability || '',
           hoursPerDay: pb.hours_per_day || '',
         });
-        const sk = (d.skills?.items || []) as Array<{ skill?: string; category?: string; proficiency?: string }>;
-        setSkills(sk.filter((s) => s.skill).map((s) => ({
-          skill: String(s.skill),
-          category: String(s.category || ''),
-          proficiency: (s.proficiency as SelectedSkill['proficiency']) || 'Proficient',
-        })));
-        const tl = (d.tools || []) as Array<{ tool?: string; proficiency?: string }>;
-        setTools(tl.filter((t) => t.tool).map((t) => ({
-          tool: String(t.tool),
-          proficiency: (t.proficiency as SelectedTool['proficiency']) || 'Proficient',
-        })));
+        // Skills: the backend sends a richer `structured` array when available.
+        const structured = (d.skills?.structured || []) as Array<Record<string, unknown>>;
+        const flat = (d.skills?.items || []) as Array<Record<string, unknown>>;
+        const skillSource = structured.length ? structured : flat;
+        setSkills(
+          skillSource
+            .map((s) => ({
+              skill: str(s.skill ?? s.name),
+              category: str(s.category),
+              proficiency: (str(s.level ?? s.proficiency) || 'Proficient') as SelectedSkill['proficiency'],
+            }))
+            .filter((s) => s.skill),
+        );
+        const tl = (d.tools || []) as Array<Record<string, unknown>>;
+        setTools(
+          tl
+            .map((t) => ({
+              tool: str(t.name ?? t.tool),
+              proficiency: (str(t.experience ?? t.proficiency) || 'Proficient') as SelectedTool['proficiency'],
+            }))
+            .filter((t) => t.tool),
+        );
         const we = (d.work_experience || []) as Array<Record<string, unknown>>;
         setWorkExperiences(we.map((w, i) => ({
-          id: String(w.id ?? `we-${i}`),
-          title: String(w.title ?? ''),
-          employer: String(w.employer ?? ''),
-          location: String(w.location ?? ''),
-          startDate: String(w.startDate ?? w.start_date ?? ''),
-          endDate: String(w.endDate ?? w.end_date ?? ''),
-          currentlyWorking: Boolean(w.currentlyWorking ?? w.currently_working ?? false),
-          responsibilities: String(w.responsibilities ?? ''),
-          toolsPlatforms: String(w.toolsPlatforms ?? w.tools_platforms ?? ''),
+          id: str(w.id) || `we-${i}`,
+          title: str(w.position ?? w.title),
+          employer: str(w.company ?? w.employer),
+          location: str(w.location),
+          startDate: str(w.start_date ?? w.startDate),
+          endDate: str(w.end_date ?? w.endDate),
+          currentlyWorking: Boolean(w.currently_working ?? w.currentlyWorking ?? false),
+          responsibilities: str(w.description ?? w.responsibilities),
+          toolsPlatforms: str(w.tools_platforms ?? w.toolsPlatforms),
+          employmentType: str(w.employment_type),
         })));
         const ce = (d.certifications || []) as Array<Record<string, unknown>>;
         setCertifications(ce.map((c, i) => ({
-          id: String(c.id ?? `ce-${i}`),
-          type: String(c.type ?? ''),
-          title: String(c.title ?? ''),
-          organization: String(c.organization ?? ''),
-          dateCompleted: String(c.dateCompleted ?? c.date_completed ?? ''),
-          expirationDate: String(c.expirationDate ?? c.expiration_date ?? ''),
-          credentialId: String(c.credentialId ?? c.credential_id ?? ''),
+          id: str(c.id) || `ce-${i}`,
+          type: str(c.type),
+          title: str(c.title),
+          organization: str(c.issuer ?? c.organization),
+          dateCompleted: str(c.date ?? c.dateCompleted ?? c.date_completed),
+          expirationDate: str(c.expirationDate ?? c.expiration_date),
+          credentialId: str(c.credentialId ?? c.credential_id),
           certificate: null,
         })));
-        const ws = d.work_setup || {};
+        const ws = (d.work_setup || {}) as Record<string, unknown>;
+        const yes = (v: unknown) => String(v ?? '').trim().toLowerCase() === 'yes';
         setWorkSetup({
           ...emptyWorkSetup,
-          primaryDevice: ws.primary_device || '',
-          secondaryDevice: ws.secondary_device || '',
-          headset: ws.noise_cancelling_headset === 'Yes',
-          webcam: ws.hd_webcam === 'Yes',
-          primaryISP: ws.primary_internet || '',
-          secondaryISP: ws.secondary_internet || '',
+          primaryDevice: str(ws.primary_device),
+          secondaryDevice: str(ws.secondary_device),
+          headset: yes(ws.has_noise_cancelling_headset ?? ws.noise_cancelling_headset),
+          webcam: yes(ws.has_hd_webcam ?? ws.hd_webcam),
+          primaryISP: str(ws.primary_internet_provider ?? ws.primary_internet),
+          secondaryISP: str(ws.secondary_internet_provider ?? ws.secondary_internet),
+          primaryISPSpeedtest: str(ws.primary_internet_provider_sharable_link),
+          secondaryISPSpeedtest: str(ws.secondary_internet_provider_sharable_link),
+          detectedSpecs: {
+            cpu: str(ws.detected_cpu),
+            ram: str(ws.detected_ram),
+            storage: str(ws.detected_storage),
+            source: (str(ws.detection_source) || '') as 'detected' | 'denied' | 'mobile' | '',
+          },
         });
-        const co = d.compliance || {};
+        const co = (d.compliance || {}) as Record<string, unknown>;
         setCompliance({
-          authorized: co.background_check === 'Yes',
+          authorized: yes(co.background_check),
           validId: null,
           nbiClearance: null,
           policeClearance: null,
           proofOfSeparation: null,
-          nbiValidity: co.nbi_validity || '',
-          policeValidity: co.police_validity || '',
+          nbiValidity: str(co.nbi_validity),
+          policeValidity: str(co.police_validity),
         });
         const pf = d.portfolio || {};
         setPortfolioLink(pf.link || '');
         const pfFiles = Array.isArray(pf.files) ? pf.files : [];
         setPortfolioFileNames(
           pfFiles.map((f) => {
-            if (typeof f === 'string') return f;
+            if (typeof f === 'string') return f.split('/').pop() || f;
             const obj = f as { name?: string; file_name?: string; url?: string };
             return obj.name || obj.file_name || obj.url || '';
           }).filter(Boolean),
@@ -321,39 +360,43 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             return url ? { name: obj.name || obj.file_name || url.split('/').pop() || url, url } : null;
           }).filter((x): x is { name: string; url: string } => !!x),
         );
-        // Best-effort: photo URL and file URLs live on the raw dashboard payload.
-        const anyD = d as unknown as { personal_info?: Record<string, unknown>; compliance?: Record<string, unknown>; work_setup?: Record<string, unknown> };
-        const piRaw = (anyD.personal_info || {}) as Record<string, unknown>;
-        const photoUrl = String(piRaw.photo_url || piRaw.photoUrl || piRaw.profile_photo_url || '');
+
+        // Profile photo lives at the top level of the payload.
+        const photoUrl = str(d.profile_picture) || str(pi.photo_url) || str(pi.photoUrl);
         if (photoUrl) setPhotoPreview(photoUrl);
-        const coRaw = (anyD.compliance || {}) as Record<string, unknown>;
-        setComplianceUrls({
-          validId: String(coRaw.valid_id_url || coRaw.validIdUrl || '') || undefined,
-          nbi: String(coRaw.nbi_clearance_url || coRaw.nbiClearanceUrl || '') || undefined,
-          police: String(coRaw.police_clearance_url || coRaw.policeClearanceUrl || '') || undefined,
-          coe: String(coRaw.proof_of_separation_url || coRaw.proofOfSeparationUrl || '') || undefined,
-        });
-        const wsRaw = (anyD.work_setup || {}) as Record<string, unknown>;
+
+        // Every file slot can hold multiple uploads.
         const extractUrls = (val: unknown): string[] => {
+          if (typeof val === 'string') return val.trim() ? [val.trim()] : [];
           if (!Array.isArray(val)) return [];
           return val
             .map((v) => (typeof v === 'string' ? v : (v as { url?: string })?.url || ''))
             .filter(Boolean);
         };
+        setComplianceUrls({
+          validIdFiles: extractUrls(co.valid_id_files),
+          nbiFiles: extractUrls(co.nbi_clearance_files),
+          policeFiles: extractUrls(co.police_clearance_files),
+          coeFiles: extractUrls(co.COE ?? co.coe_files),
+        });
+        setValidIdLabel(str(co.valid_id));
         setWorkSetupUrls({
-          primary: extractUrls(wsRaw.primary_device_screenshot_urls ?? wsRaw.primary_device_screenshots),
-          secondary: extractUrls(wsRaw.secondary_device_screenshot_urls ?? wsRaw.secondary_device_screenshots),
+          primary: extractUrls(ws.device_spec ?? ws.primary_device_screenshots),
+          secondary: extractUrls(ws.device_spec_files ?? ws.secondary_device_screenshots),
         });
 
         // Date Applied — prefer top-level field, fall back to legacy custom field.
-        const daRaw = (d as { date_applied?: string }).date_applied;
         const daCustom = (d.custom_fields_raw || []).find((f) => f.id === 'A0IfC6bqqoM4Kv98HTYb')?.value;
-        setDateApplied(daRaw || daCustom || '');
+        setDateApplied(d.date_applied || daCustom || '');
+        const lu = d.last_update_changes ? new Date(d.last_update_changes) : null;
+        setLastUpdated(lu && !isNaN(lu.getTime()) ? lu : null);
+        setCanDoAssessment(yes(d.can_do_assessment));
+        setTags(Array.isArray(d.tag) ? d.tag : []);
         // Cache identity so the Assessment step can launch IMX with real names.
         saveApplicantIdentity({
           email: d.email || '',
-          firstName: pi.first_name || '',
-          lastName: pi.last_name || '',
+          firstName: str(pi.first_name),
+          lastName: str(pi.last_name),
         });
       } catch (err) {
         console.warn('getDashboard failed', err);
@@ -361,6 +404,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const startEdit = () => {
     setDraftProfile(profile);
@@ -555,6 +599,17 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     sectionChecks.personal && sectionChecks.education && sectionChecks.professional
     && sectionChecks.valueProp && sectionChecks.workSetup;
   const canReapply = (daysSince === null || daysSince >= 60) && coreReapplyReady;
+
+  // Applicant-facing notices resolved from the backend `tag[]` array.
+  const notifications = useMemo(() => notificationsForTags(tags), [tags]);
+  // The assessment invite replaces the Reapply CTA — never show both.
+  const showAssessmentCard = canDoAssessment && !(variant === 'reapply' && canReapply);
+  const documentCount =
+    portfolioFileUrls.length
+    + complianceUrls.validIdFiles.length + complianceUrls.nbiFiles.length
+    + complianceUrls.policeFiles.length + complianceUrls.coeFiles.length
+    + workSetupUrls.primary.length + workSetupUrls.secondary.length;
+
 
   const isDraftSectionValid = (): boolean => {
     switch (activeSection) {
@@ -761,6 +816,69 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           </div>
         </div>
 
+        {/* Action required — driven by backend tags */}
+        {notifications.length > 0 && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl shadow-sm p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                <Bell className="w-4.5 h-4.5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-heading text-base font-bold text-amber-900">
+                  Action Required ({notifications.length})
+                </p>
+                <ul className="mt-2 space-y-2">
+                  {notifications.map((n) => (
+                    <li key={n.tag} className="text-sm text-amber-900/90 flex gap-2">
+                      <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
+                      <span>
+                        {n.linkLabel && n.linkUrl ? (
+                          <>
+                            {n.message.split(n.linkLabel)[0]}
+                            <a
+                              href={n.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold underline"
+                            >
+                              {n.linkLabel}
+                            </a>
+                            {n.message.split(n.linkLabel).slice(1).join(n.linkLabel)}
+                          </>
+                        ) : n.message}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => setManageDocsOpen(true)}
+                  className="inline-flex items-center gap-1 text-sm text-amber-900 font-semibold mt-3 hover:underline"
+                >
+                  Upload Documents <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Assessment invitation — only when the backend says the applicant is eligible */}
+        {showAssessmentCard && (
+          <div className="bg-card rounded-2xl border-2 border-primary/30 shadow-sm p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <ClipboardCheck className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading text-base font-bold text-foreground">Take the Assessment</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                You're eligible to take your assessment. It takes about 20 minutes to complete.
+              </p>
+            </div>
+            <button onClick={() => setAssessmentOpen(true)} className="btn-primary text-sm px-5 py-2 whitespace-nowrap">
+              Start Assessment
+            </button>
+          </div>
+        )}
+
         {/* Stat cards */}
         <div className={`grid grid-cols-1 ${variant === 'reapply' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-6`}>
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
@@ -770,15 +888,14 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground">Documents</p>
               <p className="font-heading text-xl font-bold text-foreground">
-                {(portfolioFileUrls.length
-                  + Object.values(complianceUrls).filter(Boolean).length
-                  + workSetupUrls.primary.length + workSetupUrls.secondary.length)} Uploaded
+                {documentCount} Uploaded
               </p>
               <button onClick={() => setManageDocsOpen(true)} className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline">
                 Manage Documents <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
+
 
           {variant === 'reapply' && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
@@ -1045,16 +1162,26 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 <ComplianceStep data={draftCompliance} onChange={setDraftCompliance} />
               ) : (
                 <div className="space-y-6">
-                  <ComplianceView data={compliance} />
-                  {(complianceUrls.validId || complianceUrls.nbi || complianceUrls.police || complianceUrls.coe) && (
-                    <div className="flex flex-wrap gap-2">
-                      {complianceUrls.validId && <FilePreviewLink url={complianceUrls.validId} label="Valid ID" />}
-                      {complianceUrls.nbi && <FilePreviewLink url={complianceUrls.nbi} label="NBI Clearance" />}
-                      {complianceUrls.police && <FilePreviewLink url={complianceUrls.police} label="Police Clearance" />}
-                      {complianceUrls.coe && <FilePreviewLink url={complianceUrls.coe} label="Proof of Separation / COE" />}
-                    </div>
-                  )}
+                  <ComplianceView data={compliance} validIdLabel={validIdLabel} />
+                  <div className="space-y-3">
+                    {([
+                      ['Valid ID', complianceUrls.validIdFiles],
+                      ['NBI Clearance', complianceUrls.nbiFiles],
+                      ['Police Clearance', complianceUrls.policeFiles],
+                      ['Proof of Separation / COE', complianceUrls.coeFiles],
+                    ] as const).filter(([, urls]) => urls.length > 0).map(([label, urls]) => (
+                      <div key={label}>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {urls.map((u, i) => (
+                            <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : label} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
               )
             )}
 
@@ -1291,14 +1418,16 @@ const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
 const isComplianceEmpty = (d: ComplianceFormData) =>
   !d.authorized && !d.nbiValidity && !d.policeValidity && !d.proofOfSeparation;
 
-const ComplianceView = ({ data }: { data: ComplianceFormData }) => {
-  if (isComplianceEmpty(data)) return <EmptySectionView label="compliance" />;
+const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; validIdLabel?: string }) => {
+  if (isComplianceEmpty(data) && !validIdLabel) return <EmptySectionView label="compliance" />;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
         <Field label="Background Check Authorized" value={data.authorized ? 'Yes' : 'No'} />
+        <Field label="Valid ID Type" value={validIdLabel ?? ''} />
         <Field label="NBI Clearance Valid Until" value={data.nbiValidity} />
         <Field label="Police Clearance Valid Until" value={data.policeValidity} />
+
         <Field
           label="Proof of Separation / COE"
           value={data.proofOfSeparation?.name ? data.proofOfSeparation.name : ''}

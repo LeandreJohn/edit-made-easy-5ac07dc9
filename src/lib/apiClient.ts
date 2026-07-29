@@ -279,10 +279,13 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
       street: p.houseStreet,
       barangay: p.barangay,
       city: p.city,
+      state_region: p.stateRegion ?? '',
+      postal_code: p.postalCode ?? '',
       address: p.address,
       country: p.country,
       nationality: p.nationality,
       languages: p.languagesSpoken,
+      social_links: p.socialLinks ?? '',
       referrer,
       referral_link: p.referralLink ?? '',
       photo: p.photo ? await toJsonUploadFile(p.photo) : null,
@@ -580,36 +583,69 @@ export function getApplicant(contactId: string) {
   }>(`/applicants/${contactId}`, { method: 'GET' });
 }
 
+/** A file reference returned by the backend — either a bare URL or an object. */
+export type BackendFile = string | { url?: string; name?: string; file_name?: string };
+
 export interface DashboardResponse {
   id: string;
   email: string;
+  /** Top-level profile photo URL. */
+  profile_picture?: string | null;
+  /** ISO date (YYYY-MM-DD) when the applicant last applied. */
+  date_applied?: string;
+  /** ISO date/timestamp of the last profile change. */
+  last_update_changes?: string | null;
+  /** "Yes" | "No" | null — gates the dashboard Assessment card. */
+  can_do_assessment?: string | null;
+  /** Backend contact tags — drive the Notifications card. */
+  tag?: string[];
   personal_info: {
-    first_name?: string; last_name?: string; phone?: string; suffix?: string;
-    street?: string; barangay?: string; city?: string;
-    nationality?: string; languages?: string;
+    first_name?: string; middle_name?: string; last_name?: string; suffix?: string | null;
+    date_of_birth?: string | null; phone?: string;
+    street?: string | null; barangay?: string | null; city?: string | null;
+    country?: string | null; nationality?: string; languages?: string;
+    address?: string | null;
+    'Referred By'?: string | null;
+    Social_Link?: string | null;
+    [k: string]: unknown;
   };
   education: { education_level?: string; school_name?: string; school_location?: string; graduation_date?: string; degree?: string };
-  professional_background: { preferred_industry?: string; preferred_role?: string; preferred_bio?: string; availability?: string; hours_per_day?: string };
+  professional_background: { preferred_industry?: string; preferred_role?: string; preferred_bio?: string | null; availability?: string; hours_per_day?: string };
   work_experience: Array<Record<string, unknown>>;
   tools: Array<Record<string, unknown>>;
-  skills: { items: Array<Record<string, unknown>>; value_proposition?: string };
-  portfolio: { link?: string; files?: unknown[] };
+  skills: {
+    items?: Array<Record<string, unknown>>;
+    structured?: Array<Record<string, unknown>>;
+    value_proposition?: string;
+  };
+  portfolio: { link?: string; files?: BackendFile[] };
   certifications: Array<Record<string, unknown>>;
   work_setup: {
     primary_device?: string; secondary_device?: string;
-    noise_cancelling_headset?: string; hd_webcam?: string;
-    primary_internet?: string; secondary_internet?: string; device_spec?: string;
+    has_noise_cancelling_headset?: string; has_hd_webcam?: string;
+    primary_internet_provider?: string; secondary_internet_provider?: string;
+    primary_internet_provider_sharable_link?: string;
+    secondary_internet_provider_sharable_link?: string;
+    device_spec?: BackendFile[];
+    device_spec_files?: BackendFile[];
+    detected_cpu?: string; detected_ram?: string; detected_storage?: string;
+    detection_consent?: string; detection_source?: string;
+    [k: string]: unknown;
   };
   compliance: {
-    background_check?: string; valid_id?: string;
-    nbi_clearance?: string; nbi_validity?: string;
-    police_clearance?: string; police_validity?: string;
-    proof_of_separation?: string;
+    background_check?: string;
+    valid_id?: string;
+    valid_id_files?: BackendFile[];
+    nbi_clearance_files?: BackendFile[];
+    nbi_validity?: string;
+    police_clearance_files?: BackendFile[];
+    police_validity?: string;
+    COE?: string | BackendFile[];
+    [k: string]: unknown;
   };
   custom_fields_raw?: Array<{ id: string; value: string }>;
-  /** MM/DD/YYYY when the candidate last applied; drives the 60-day reapply window. */
-  date_applied?: string;
 }
+
 
 export function getDashboard(contactId: string) {
   return request<DashboardResponse>(`/dashboard/${contactId}`, { method: 'GET' });
@@ -945,15 +981,23 @@ export interface UsAssessmentResponse {
   [key: string]: unknown;
 }
 
-export async function createUsAssessmentContact(payload: {
-  email: string;
-  firstname: string;
-  lastname: string;
-}): Promise<UsAssessmentResponse> {
+export class ApiStatusError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiStatusError';
+    this.status = status;
+  }
+}
+
+async function createAssessmentContact(
+  path: string,
+  payload: { email: string; firstname: string; lastname: string },
+): Promise<UsAssessmentResponse> {
   if (!API_BASE) {
     throw new Error('VITE_API_BASE_URL is not configured. Edit your .env file.');
   }
-  const res = await fetch(`${API_BASE}${PREFIX}/us-assessment`, {
+  const res = await fetch(`${API_BASE}${PREFIX}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -961,14 +1005,35 @@ export async function createUsAssessmentContact(payload: {
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try { const j = await res.json(); detail = j?.detail ?? detail; } catch { /* ignore */ }
-    throw new Error(detail);
+    throw new ApiStatusError(detail, res.status);
   }
   const data = (await res.json()) as UsAssessmentResponse;
+  if (data?.success === false) {
+    throw new ApiStatusError('You are not eligible to access the Assessment', 403);
+  }
   if (!data?.contact_id) {
     throw new Error('Server did not return a contact_id.');
   }
   return data;
 }
+
+export function createUsAssessmentContact(payload: {
+  email: string;
+  firstname: string;
+  lastname: string;
+}): Promise<UsAssessmentResponse> {
+  return createAssessmentContact('/us-assessment', payload);
+}
+
+/** PH assessment gate — 403/404 means the applicant is not eligible. */
+export function createPhAssessmentContact(payload: {
+  email: string;
+  firstname: string;
+  lastname: string;
+}): Promise<UsAssessmentResponse> {
+  return createAssessmentContact('/ph-assessment', payload);
+}
+
 
 
 
