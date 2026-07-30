@@ -329,7 +329,8 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
           <iframe
             src={valuesUrl}
             title="Values Assessment"
-            className="w-full h-[70vh] min-h-[520px] border-0"
+            className="w-full h-[1600px] min-h-[1200px] border-0"
+            scrolling="no"
             allow="fullscreen; clipboard-write"
           />
         </div>
@@ -340,7 +341,8 @@ const AssessmentStep = forwardRef<AssessmentStepHandle, AssessmentStepProps>(({
           <iframe
             src={discUrl}
             title="DISC Assessment"
-            className="w-full h-[70vh] min-h-[520px] border-0"
+            className="w-full h-[1600px] min-h-[1200px] border-0"
+            scrolling="no"
             allow="fullscreen; clipboard-write"
           />
         </div>

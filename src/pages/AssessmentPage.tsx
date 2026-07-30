@@ -3,12 +3,15 @@ import { Loader2, Send, Heart, Check, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AssessmentStep, {
   AssessmentStepHandle,
   AssessmentPhase,
 } from '@/components/steps/ValuesAssessmentStep';
 import {
   createUsAssessmentContact,
+  createPhAssessmentContact,
+  ApiStatusError,
   saveApplicantIdentity,
   loadApplicantIdentity,
 } from '@/lib/apiClient';
@@ -52,7 +55,13 @@ const clearStored = (contactId?: string) => {
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-const AssessmentPage = () => {
+interface AssessmentPageProps {
+  /** 'us' hits POST /us-assessment, 'ph' hits POST /ph-assessment (eligibility gated). */
+  variant?: 'us' | 'ph';
+}
+
+const AssessmentPage = ({ variant = 'us' }: AssessmentPageProps) => {
+  const [ineligible, setIneligible] = useState(false);
   const [stage, setStage] = useState<Stage>('form');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -94,7 +103,8 @@ const AssessmentPage = () => {
     }
     setSubmitting(true);
     try {
-      const res = await createUsAssessmentContact({
+      const create = variant === 'ph' ? createPhAssessmentContact : createUsAssessmentContact;
+      const res = await create({
         email: email.trim(),
         firstname: firstName.trim(),
         lastname: lastName.trim(),
@@ -114,7 +124,11 @@ const AssessmentPage = () => {
       setContactId(identity.contactId);
       setStage('assessment');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to start assessment.');
+      if (err instanceof ApiStatusError && (err.status === 403 || err.status === 404)) {
+        setIneligible(true);
+      } else {
+        setFormError(err instanceof Error ? err.message : 'Failed to start assessment.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -231,6 +245,16 @@ const AssessmentPage = () => {
             </div>
           </div>
         </div>
+        <Dialog open={ineligible} onOpenChange={setIneligible}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Assessment unavailable</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              You are not eligible to access the Assessment
+            </p>
+          </DialogContent>
+        </Dialog>
         <Footer />
       </div>
     );
