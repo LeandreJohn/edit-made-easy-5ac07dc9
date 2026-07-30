@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
 export const SOCIAL_PLATFORMS = [
@@ -73,9 +73,23 @@ interface Props {
  * Never required — blank values are allowed and simply omitted from the payload.
  */
 const SocialLinksInput = ({ value, onChange }: Props) => {
-  const rows = useMemo(() => parseSocialLinks(value), [value]);
+  const [rows, setRows] = useState<SocialLinkRow[]>(() => parseSocialLinks(value));
+  const lastEmitted = useRef<string>(serializeSocialLinks(parseSocialLinks(value)));
 
-  const commit = (next: SocialLinkRow[]) => onChange(serializeSocialLinks(next));
+  // Only resync from the prop when it differs from what we last emitted
+  // (external resets), so half-typed blank rows aren't wiped on re-render.
+  useEffect(() => {
+    if (value === lastEmitted.current) return;
+    lastEmitted.current = value;
+    setRows(parseSocialLinks(value));
+  }, [value]);
+
+  const commit = (next: SocialLinkRow[]) => {
+    setRows(next);
+    const serialized = serializeSocialLinks(next);
+    lastEmitted.current = serialized;
+    onChange(serialized);
+  };
 
   const setRow = (i: number, patch: Partial<SocialLinkRow>) => {
     const next = rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r));
