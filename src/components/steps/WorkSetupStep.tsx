@@ -270,14 +270,28 @@ const WorkSetupStep = forwardRef<WorkSetupStepHandle, WorkSetupStepProps>(({ dat
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={value.headset} onChange={(e) => update('headset', e.target.checked)} className="w-4 h-4 text-primary border-border rounded" />
-              <span className="text-sm text-foreground">Do you have a noise-cancelling headset?</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={value.webcam} onChange={(e) => update('webcam', e.target.checked)} className="w-4 h-4 text-primary border-border rounded" />
-              <span className="text-sm text-foreground">Do you have an HD webcam?</span>
-            </label>
+            {([
+              { key: 'headset' as const, label: 'Do you have a noise-cancelling headset?' },
+              { key: 'webcam' as const, label: 'Do you have an HD webcam?' },
+            ]).map(({ key, label }) => (
+              <div key={key}>
+                <label className="form-label">{label}</label>
+                <div className="flex gap-4 mt-2">
+                  {[{ t: 'Yes', v: true }, { t: 'No', v: false }].map(({ t, v }) => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={key}
+                        checked={value[key] === v}
+                        onChange={() => update(key, v)}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm text-foreground">{t}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div>

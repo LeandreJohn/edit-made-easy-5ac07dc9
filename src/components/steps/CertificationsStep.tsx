@@ -172,8 +172,13 @@ const CertificationsStep = ({ data, onChange, onSkip }: CertificationsStepProps)
               onFilesSelected={(files) => updateCertFile(index, files)}
               label={`cert-${cert.id}`}
               multiple={false}
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              imagesOnly={false}
               initialFiles={cert.certificate ? [cert.certificate] : []}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Accepted file types: PDF, JPG, JPEG, PNG
+            </p>
           </div>
         </div>
       ))}

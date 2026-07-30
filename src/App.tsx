@@ -33,6 +33,7 @@ const App = () => (
           <Route path="/source/:name" element={<Source />} />
           <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
           <Route path="/assessment" element={<AssessmentPage />} />
+          <Route path="/ph-assessment" element={<AssessmentPage variant="ph" />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
