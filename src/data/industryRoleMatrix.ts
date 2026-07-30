@@ -43,6 +43,7 @@ const INDUSTRIES = [
 
 export const INDUSTRY_ROLE_MATRIX: Record<string, RoleName[]> = {
   ...Object.fromEntries(INDUSTRIES.map((i) => [i, DEFAULT_ROLES])),
+  Others: DEFAULT_ROLES,
   Leasing: [...DEFAULT_ROLES, ...LEASING_EXTRA],
   'Real Estate': [...DEFAULT_ROLES, ...REAL_ESTATE_EXTRA],
 };

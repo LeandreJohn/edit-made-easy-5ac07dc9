@@ -64,6 +64,14 @@ export const professionalBgSchema = z.object({
   schedule: required('Availability'),
   hoursPerDay: required('Hours per day'),
 }).passthrough().superRefine((val, ctx) => {
+  const v = val as { preferredIndustry?: string; preferredIndustryOther?: string };
+  if (v.preferredIndustry === 'Others' && !String(v.preferredIndustryOther || '').trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please specify your industry',
+      path: ['preferredIndustryOther'],
+    });
+  }
   const roles = String((val as { preferredRole?: string }).preferredRole || '')
     .split(',')
     .map((s) => s.trim())

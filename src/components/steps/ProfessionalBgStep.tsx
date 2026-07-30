@@ -43,7 +43,12 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
   const handleIndustryChange = (v: string) => {
     const nextAvailable = getRolesForIndustry(v);
     const filteredRoles = selectedRoles.filter((r) => nextAvailable.includes(r as RoleName));
-    onChange({ ...data, preferredIndustry: v, preferredRole: filteredRoles.join(', ') });
+    onChange({
+      ...data,
+      preferredIndustry: v,
+      preferredRole: filteredRoles.join(', '),
+      preferredIndustryOther: v === 'Others' ? (data.preferredIndustryOther ?? '') : '',
+    });
   };
 
   const toggleRole = (role: string) => {
@@ -80,6 +85,18 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
           options={[...INDUSTRY_OPTIONS]}
           placeholder="Select an industry..."
         />
+        {data.preferredIndustry === 'Others' && (
+          <div className="mt-3">
+            <RequiredLabel>Specify Industry</RequiredLabel>
+            <input
+              type="text"
+              className="form-input"
+              value={data.preferredIndustryOther ?? ''}
+              onChange={(e) => onChange({ ...data, preferredIndustryOther: e.target.value })}
+              placeholder="Enter your industry"
+            />
+          </div>
+        )}
       </div>
 
       <div>
