@@ -49,4 +49,5 @@ export const INDUSTRY_OPTIONS = [
   'Technology & Services',
   'Utilities and Home Services',
   'Waste Management Services',
+  'Others',
 ] as const;
