@@ -545,12 +545,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       .filter(Boolean)
       .join(' ') || 'Your Name';
 
-  // Reapply countdown
-  const appliedDate = parseMDTDate(dateApplied);
-  const daysSince = appliedDate
-    ? Math.floor((Date.now() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
+  // Reapply eligibility is driven by `last_stage_date_changed`:
+  // blank/null -> the applicant has never been staged, so they can "Apply Now";
+  // 60+ days old -> they can "Reapply"; otherwise we show a countdown.
+  const stageDate = parseMDTDate(lastStageDateChanged);
+  const daysSince = stageDate
+    ? Math.floor((Date.now() - stageDate.getTime()) / (1000 * 60 * 60 * 24))
     : null;
   const daysLeft = daysSince !== null ? Math.max(0, 60 - daysSince) : null;
+  const reapplyLabel = stageDate ? 'Reapply' : 'Apply Now';
+
   // Section completeness (excludes work experience, certifications, portfolio)
   const sectionChecks = useMemo(() => {
     // Build a synthetic PersonalInfo/etc for validators
