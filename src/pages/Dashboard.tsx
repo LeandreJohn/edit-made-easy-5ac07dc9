@@ -964,21 +964,28 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
               {SECTIONS.map((s) => {
                 const Icon = s.icon;
+                const locked = isSectionLocked(s.key);
                 return (
                   <button
                     key={s.key}
-                    onClick={() => setActiveSection(s.key)}
+                    onClick={() => { if (!locked) setActiveSection(s.key); }}
+                    disabled={locked}
+                    title={locked ? 'Complete the previous required section first' : undefined}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                       activeSection === s.key
                         ? 'bg-primary text-primary-foreground'
-                        : 'text-foreground hover:bg-muted'
+                        : locked
+                          ? 'text-muted-foreground opacity-60 cursor-not-allowed'
+                          : 'text-foreground hover:bg-muted'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0 opacity-80" />
                     <span className="truncate">{s.label}</span>
+                    {locked && <Lock className="w-3.5 h-3.5 ml-auto shrink-0" />}
                   </button>
                 );
               })}
+
             </nav>
             <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
               <p className="font-heading text-sm font-bold text-primary mb-1">Need Help?</p>
