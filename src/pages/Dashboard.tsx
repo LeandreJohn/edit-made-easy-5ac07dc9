@@ -248,7 +248,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           country: str(pi.country),
           nationality: str(pi.nationality),
           socialLinks: str(pi.social_links ?? pi.Social_Link),
-          referralLink: str(pi['Referred By'] ?? pi.referral_link),
+          referredBy: str(pi['Referred By'] ?? pi.referred_by ?? pi.ref),
+          referralLink: str(pi.referral_link),
+
           valueProposition: str(d.skills?.value_proposition),
         });
         const e = d.education || {};
