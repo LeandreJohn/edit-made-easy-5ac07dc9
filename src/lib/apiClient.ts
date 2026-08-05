@@ -604,6 +604,9 @@ export interface DashboardResponse {
   can_do_assessment?: string | null;
   /** Backend contact tags — drive the Notifications card. */
   tag?: string[];
+  /** ISO date of the last pipeline-stage change — drives Apply/Reapply eligibility. */
+  last_stage_date_changed?: string | null;
+
   personal_info: {
     first_name?: string; middle_name?: string; last_name?: string; suffix?: string | null;
     date_of_birth?: string | null; phone?: string;
