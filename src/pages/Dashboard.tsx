@@ -612,6 +612,18 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     .filter(([k]) => !sectionChecks[k as keyof typeof sectionChecks])
     .map(([key, label]) => ({ key, label }));
 
+  // Sequential gating (mirrors the wizard): a required section stays locked until
+  // every earlier required section is complete. Optional sections are never locked.
+  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'compliance'];
+  const isSectionLocked = (key: SectionKey): boolean => {
+    const idx = GATED_ORDER.indexOf(key);
+    if (idx <= 0) return false;
+    return GATED_ORDER.slice(0, idx).some(
+      (k) => !sectionChecks[k as keyof typeof sectionChecks],
+    );
+  };
+
+
   const coreReapplyReady =
     sectionChecks.personal && sectionChecks.education && sectionChecks.professional
     && sectionChecks.valueProp && sectionChecks.workSetup;
