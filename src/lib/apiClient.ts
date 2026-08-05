@@ -636,6 +636,9 @@ export interface DashboardResponse {
     secondary_internet_provider_sharable_link?: string;
     device_spec?: BackendFile[];
     device_spec_files?: BackendFile[];
+    primary_device_spec_files?: BackendFile[];
+    secondary_device_spec_files?: BackendFile[];
+
     detected_cpu?: string; detected_ram?: string; detected_storage?: string;
     detection_consent?: string; detection_source?: string;
     [k: string]: unknown;
