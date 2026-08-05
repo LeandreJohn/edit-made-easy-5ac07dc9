@@ -292,7 +292,10 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
       languages: p.languagesSpoken,
       social_links: p.socialLinks ?? '',
       referrer,
+      ref: p.referredBy ?? referrer ?? '',
+      'Referred By': p.referredBy ?? referrer ?? '',
       referral_link: p.referralLink ?? '',
+
       photo: p.photo ? await toJsonUploadFile(p.photo) : null,
     }),
   });
