@@ -395,6 +395,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         // Date Applied — prefer top-level field, fall back to legacy custom field.
         const daCustom = (d.custom_fields_raw || []).find((f) => f.id === 'A0IfC6bqqoM4Kv98HTYb')?.value;
         setDateApplied(d.date_applied || daCustom || '');
+        setLastStageDateChanged(d.last_stage_date_changed ? String(d.last_stage_date_changed) : '');
+
         const lu = d.last_update_changes ? new Date(d.last_update_changes) : null;
         setLastUpdated(lu && !isNaN(lu.getTime()) ? lu : null);
         setCanDoAssessment(yes(d.can_do_assessment));
