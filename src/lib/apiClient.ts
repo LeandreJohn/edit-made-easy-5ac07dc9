@@ -182,13 +182,18 @@ export function login(email: string, password: string) {
 
 /** Create a new contact. Throws if the email already exists. */
 export function signup(email: string, password: string, referredBy = '') {
+  const ref = referredBy ? extractReferralCode(referredBy) : '';
   const payload: Record<string, string> = { email, password };
-  if (referredBy) payload.referred_by = referredBy;
+  if (ref) {
+    payload.ref = ref;
+    payload.referred_by = ref;
+  }
   return request<AuthResponse>('/signup', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
+
 
 export function forgotPassword(email: string) {
   return request<{ success: boolean; message?: string }>('/forgot_password', {
