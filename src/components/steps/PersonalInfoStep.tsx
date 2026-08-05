@@ -393,7 +393,22 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
             placeholder="Select nationality..."
           />
         </div>
+        {data.referredBy && (
+          <div>
+            <label className="form-label">Referred By</label>
+            <input
+              className="form-input bg-muted cursor-not-allowed"
+              value={data.referredBy}
+              disabled
+              readOnly
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Captured from your referral link — this cannot be changed.
+            </p>
+          </div>
+        )}
       </div>
+
 
       <div className="mb-4">
         <Separator />

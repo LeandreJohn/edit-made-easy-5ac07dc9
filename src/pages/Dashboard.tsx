@@ -50,6 +50,7 @@ import dashboardBanner from '@/assets/dashboard-banner.png';
 
 
 import SearchableSelect from '@/components/common/SearchableSelect';
+import { parseSocialLinks } from '@/components/common/SocialLinksInput';
 import PhoneInput from '@/components/common/PhoneInput';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 
@@ -130,6 +131,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [portfolioFileNames, setPortfolioFileNames] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [dateApplied, setDateApplied] = useState<string>('');
+  /** Backend `last_stage_date_changed` — drives Apply Now vs Reapply. */
+  const [lastStageDateChanged, setLastStageDateChanged] = useState<string>('');
+
   const [portfolioFileUrls, setPortfolioFileUrls] = useState<Array<{ name: string; url: string }>>([]);
   const [complianceUrls, setComplianceUrls] = useState<{
     validIdFiles: string[]; nbiFiles: string[]; policeFiles: string[]; coeFiles: string[];
@@ -248,7 +252,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           country: str(pi.country),
           nationality: str(pi.nationality),
           socialLinks: str(pi.social_links ?? pi.Social_Link),
-          referralLink: str(pi['Referred By'] ?? pi.referral_link),
+          referredBy: str(pi['Referred By'] ?? pi.referred_by ?? pi.ref),
+          referralLink: str(pi.referral_link),
+
           valueProposition: str(d.skills?.value_proposition),
         });
         const e = d.education || {};
@@ -381,13 +387,20 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         });
         setValidIdLabel(str(co.valid_id));
         setWorkSetupUrls({
-          primary: extractUrls(ws.device_spec ?? ws.primary_device_screenshots),
-          secondary: extractUrls(ws.device_spec_files ?? ws.secondary_device_screenshots),
+          primary: extractUrls(
+            ws.primary_device_spec_files ?? ws.device_spec ?? ws.primary_device_screenshots,
+          ),
+          secondary: extractUrls(
+            ws.secondary_device_spec_files ?? ws.device_spec_files ?? ws.secondary_device_screenshots,
+          ),
         });
+
 
         // Date Applied — prefer top-level field, fall back to legacy custom field.
         const daCustom = (d.custom_fields_raw || []).find((f) => f.id === 'A0IfC6bqqoM4Kv98HTYb')?.value;
         setDateApplied(d.date_applied || daCustom || '');
+        setLastStageDateChanged(d.last_stage_date_changed ? String(d.last_stage_date_changed) : '');
+
         const lu = d.last_update_changes ? new Date(d.last_update_changes) : null;
         setLastUpdated(lu && !isNaN(lu.getTime()) ? lu : null);
         setCanDoAssessment(yes(d.can_do_assessment));
@@ -533,12 +546,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       .filter(Boolean)
       .join(' ') || 'Your Name';
 
-  // Reapply countdown
-  const appliedDate = parseMDTDate(dateApplied);
-  const daysSince = appliedDate
-    ? Math.floor((Date.now() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
+  // Reapply eligibility is driven by `last_stage_date_changed`:
+  // blank/null -> the applicant has never been staged, so they can "Apply Now";
+  // 60+ days old -> they can "Reapply"; otherwise we show a countdown.
+  const stageDate = parseMDTDate(lastStageDateChanged);
+  const daysSince = stageDate
+    ? Math.floor((Date.now() - stageDate.getTime()) / (1000 * 60 * 60 * 24))
     : null;
   const daysLeft = daysSince !== null ? Math.max(0, 60 - daysSince) : null;
+  const reapplyLabel = stageDate ? 'Reapply' : 'Apply Now';
+
   // Section completeness (excludes work experience, certifications, portfolio)
   const sectionChecks = useMemo(() => {
     // Build a synthetic PersonalInfo/etc for validators
@@ -594,6 +611,18 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   ] as Array<[SectionKey, string]>)
     .filter(([k]) => !sectionChecks[k as keyof typeof sectionChecks])
     .map(([key, label]) => ({ key, label }));
+
+  // Sequential gating (mirrors the wizard): a required section stays locked until
+  // every earlier required section is complete. Optional sections are never locked.
+  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'compliance'];
+  const isSectionLocked = (key: SectionKey): boolean => {
+    const idx = GATED_ORDER.indexOf(key);
+    if (idx <= 0) return false;
+    return GATED_ORDER.slice(0, idx).some(
+      (k) => !sectionChecks[k as keyof typeof sectionChecks],
+    );
+  };
+
 
   const coreReapplyReady =
     sectionChecks.personal && sectionChecks.education && sectionChecks.professional
@@ -695,10 +724,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             {variant === 'reapply' && canReapply && (
               <button
                 onClick={handleReapplyClick}
-                title="Reapply"
+                title={reapplyLabel}
                 className="btn-primary text-sm px-5 py-2"
               >
-                Reapply
+                {reapplyLabel}
               </button>
             )}
             {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
@@ -707,6 +736,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
               </span>
             )}
+
             {variant === 'attendance' && (
               <>
                 <button
@@ -946,21 +976,28 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <nav className="bg-card rounded-2xl border border-border shadow-sm p-2 h-fit">
               {SECTIONS.map((s) => {
                 const Icon = s.icon;
+                const locked = isSectionLocked(s.key);
                 return (
                   <button
                     key={s.key}
-                    onClick={() => setActiveSection(s.key)}
+                    onClick={() => { if (!locked) setActiveSection(s.key); }}
+                    disabled={locked}
+                    title={locked ? 'Complete the previous required section first' : undefined}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                       activeSection === s.key
                         ? 'bg-primary text-primary-foreground'
-                        : 'text-foreground hover:bg-muted'
+                        : locked
+                          ? 'text-muted-foreground opacity-60 cursor-not-allowed'
+                          : 'text-foreground hover:bg-muted'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0 opacity-80" />
                     <span className="truncate">{s.label}</span>
+                    {locked && <Lock className="w-3.5 h-3.5 ml-auto shrink-0" />}
                   </button>
                 );
               })}
+
             </nav>
             <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
               <p className="font-heading text-sm font-bold text-primary mb-1">Need Help?</p>
@@ -1277,7 +1314,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               }}
               className="btn-primary"
             >
-              Continue to Reapply
+              Continue to {reapplyLabel}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -1331,7 +1368,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reapply</DialogTitle>
+            <DialogTitle>{reapplyLabel}</DialogTitle>
             <DialogDescription>
               Will you be applying using a referral code? You can paste a referral link
               (with <code>?ref=</code>) or just the code itself. Leave blank if none.
@@ -1446,24 +1483,66 @@ const Field = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const PersonalView = ({ profile }: { profile: PersonalInfo }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-      <Field label="First Name" value={profile.firstName} />
-      <Field label="Middle Name" value={profile.middleName} />
-      <Field label="Last Name" value={profile.lastName} />
-      <Field label="Suffix" value={profile.suffix} />
-      <Field label="Date of Birth" value={profile.dateOfBirth} />
-      <Field label="Phone Number" value={profile.phoneNumber} />
-      <Field label="Languages Spoken" value={profile.languagesSpoken} />
-      <Field label="House No. / Street" value={profile.houseStreet} />
-      <Field label="Barangay" value={profile.barangay} />
-      <Field label="City / Province" value={profile.city} />
-      <Field label="Country" value={profile.country} />
-      <Field label="Nationality" value={profile.nationality} />
+const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
+  const isPH = (profile.country || '').trim().toLowerCase() === 'philippines';
+  const socials = parseSocialLinks(profile.socialLinks);
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+        <Field label="First Name" value={profile.firstName} />
+        <Field label="Middle Name" value={profile.middleName} />
+        <Field label="Last Name" value={profile.lastName} />
+        <Field label="Suffix" value={profile.suffix} />
+        <Field label="Date of Birth" value={profile.dateOfBirth} />
+        <Field label="Phone Number" value={profile.phoneNumber} />
+        <Field label="Languages Spoken" value={profile.languagesSpoken} />
+        <Field label="Country" value={profile.country} />
+        <Field label="Nationality" value={profile.nationality} />
+        {isPH ? (
+          <>
+            <Field label="House No. / Street" value={profile.houseStreet} />
+            <Field label="Barangay" value={profile.barangay} />
+            <Field label="City / Municipality" value={profile.city} />
+          </>
+        ) : (
+          <>
+            <Field label="Street Address" value={profile.address || profile.houseStreet} />
+            <Field label="City" value={profile.city} />
+            <Field label="State / Region / Province" value={profile.stateRegion ?? ''} />
+            <Field label="Postal / ZIP Code" value={profile.postalCode ?? ''} />
+          </>
+        )}
+        <Field label="Referred By" value={profile.referredBy ?? ''} />
+      </div>
+
+      <div>
+        <h3 className="font-heading text-base font-semibold text-foreground mb-2">
+          Social Media Profiles
+        </h3>
+        {socials.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No social profiles added.</p>
+        ) : (
+          <ul className="space-y-1">
+            {socials.map((s) => (
+              <li key={`${s.platform}-${s.url}`} className="text-sm">
+                <span className="text-muted-foreground">{s.platform}: </span>
+                <a
+                  href={s.url.startsWith('http') ? s.url : `https://${s.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline break-all"
+                >
+                  {s.url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const EducationView = ({ data }: { data: Education }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">

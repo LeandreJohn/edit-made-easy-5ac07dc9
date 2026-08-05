@@ -15,15 +15,32 @@ export interface PhoneInputProps {
   className?: string;
 }
 
-function splitPhone(value: string): { dial: string; number: string } {
+/** All known dial codes, longest first, so "+639..." matches "+63" and never "+6394". */
+const DIAL_CODES = Array.from(new Set(COUNTRIES.map((c) => c.dial))).sort(
+  (a, b) => b.length - a.length,
+);
+
+function splitPhone(value: string, countryName?: string): { dial: string; number: string } {
   const trimmed = (value || '').trim();
-  const m = trimmed.match(/^(\+\d{1,4})\s*(.*)$/);
-  if (m) return { dial: m[1], number: m[2] };
+  if (!trimmed.startsWith('+')) return { dial: '', number: trimmed };
+  // Explicit separator wins (e.g. "+63 9458707854").
+  const spaced = trimmed.match(/^(\+\d{1,4})\s+(.*)$/);
+  if (spaced) return { dial: spaced[1], number: spaced[2] };
+
+  const digits = trimmed.replace(/[^\d]/g, '');
+  // Prefer the currently selected country's dial code when it matches.
+  const selected = countryName ? findCountry(countryName)?.dial : '';
+  if (selected && digits.startsWith(selected.slice(1))) {
+    return { dial: selected, number: digits.slice(selected.length - 1) };
+  }
+  const match = DIAL_CODES.find((d) => digits.startsWith(d.slice(1)));
+  if (match) return { dial: match, number: digits.slice(match.length - 1) };
   return { dial: '', number: trimmed };
 }
 
 const PhoneInput = ({ value, onChange, countryName, onCountryChange, className = '' }: PhoneInputProps) => {
-  const { dial, number } = useMemo(() => splitPhone(value), [value]);
+  const { dial, number } = useMemo(() => splitPhone(value, countryName), [value, countryName]);
+
 
   const countryNames = useMemo(() => COUNTRIES.map((c) => c.name), []);
 

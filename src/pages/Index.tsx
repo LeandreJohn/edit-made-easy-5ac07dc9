@@ -164,16 +164,20 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   // Subscribe to slices we need to render (kept reactive).
   const values = useStore(form.store, (s) => s.values);
 
-  // Pre-fill referralLink from ?ref= when on head-hunting route.
+  // Pre-fill referralLink from ?ref= when on head-hunting route, and always
+  // capture the raw referral code into the read-only "Referred By" field.
   useEffect(() => {
-    if (defaultReferralLink && !values.personalInfo.referralLink) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (form.setFieldValue as any)('personalInfo', {
-        ...values.personalInfo,
-        referralLink: defaultReferralLink,
-      });
-    }
-  }, [defaultReferralLink]); // eslint-disable-line react-hooks/exhaustive-deps
+    const needsLink = defaultReferralLink && !values.personalInfo.referralLink;
+    const needsRef = referrer && !values.personalInfo.referredBy;
+    if (!needsLink && !needsRef) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (form.setFieldValue as any)('personalInfo', {
+      ...values.personalInfo,
+      ...(needsLink ? { referralLink: defaultReferralLink } : {}),
+      ...(needsRef ? { referredBy: referrer } : {}),
+    });
+  }, [defaultReferralLink, referrer]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Helper that updates a top-level field in the form store.
   const setField = <K extends keyof typeof values>(key: K, val: (typeof values)[K]) => {

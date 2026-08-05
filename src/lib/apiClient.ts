@@ -182,13 +182,18 @@ export function login(email: string, password: string) {
 
 /** Create a new contact. Throws if the email already exists. */
 export function signup(email: string, password: string, referredBy = '') {
+  const ref = referredBy ? extractReferralCode(referredBy) : '';
   const payload: Record<string, string> = { email, password };
-  if (referredBy) payload.referred_by = referredBy;
+  if (ref) {
+    payload.ref = ref;
+    payload.referred_by = ref;
+  }
   return request<AuthResponse>('/signup', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
+
 
 export function forgotPassword(email: string) {
   return request<{ success: boolean; message?: string }>('/forgot_password', {
@@ -287,7 +292,10 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
       languages: p.languagesSpoken,
       social_links: p.socialLinks ?? '',
       referrer,
+      ref: p.referredBy ?? referrer ?? '',
+      'Referred By': p.referredBy ?? referrer ?? '',
       referral_link: p.referralLink ?? '',
+
       photo: p.photo ? await toJsonUploadFile(p.photo) : null,
     }),
   });
@@ -599,6 +607,9 @@ export interface DashboardResponse {
   can_do_assessment?: string | null;
   /** Backend contact tags — drive the Notifications card. */
   tag?: string[];
+  /** ISO date of the last pipeline-stage change — drives Apply/Reapply eligibility. */
+  last_stage_date_changed?: string | null;
+
   personal_info: {
     first_name?: string; middle_name?: string; last_name?: string; suffix?: string | null;
     date_of_birth?: string | null; phone?: string;
@@ -628,6 +639,9 @@ export interface DashboardResponse {
     secondary_internet_provider_sharable_link?: string;
     device_spec?: BackendFile[];
     device_spec_files?: BackendFile[];
+    primary_device_spec_files?: BackendFile[];
+    secondary_device_spec_files?: BackendFile[];
+
     detected_cpu?: string; detected_ram?: string; detected_storage?: string;
     detection_consent?: string; detection_source?: string;
     [k: string]: unknown;
