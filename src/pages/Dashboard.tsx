@@ -711,10 +711,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             {variant === 'reapply' && canReapply && (
               <button
                 onClick={handleReapplyClick}
-                title="Reapply"
+                title={reapplyLabel}
                 className="btn-primary text-sm px-5 py-2"
               >
-                Reapply
+                {reapplyLabel}
               </button>
             )}
             {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
@@ -723,6 +723,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
               </span>
             )}
+
             {variant === 'attendance' && (
               <>
                 <button
