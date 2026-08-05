@@ -383,9 +383,14 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         });
         setValidIdLabel(str(co.valid_id));
         setWorkSetupUrls({
-          primary: extractUrls(ws.device_spec ?? ws.primary_device_screenshots),
-          secondary: extractUrls(ws.device_spec_files ?? ws.secondary_device_screenshots),
+          primary: extractUrls(
+            ws.primary_device_spec_files ?? ws.device_spec ?? ws.primary_device_screenshots,
+          ),
+          secondary: extractUrls(
+            ws.secondary_device_spec_files ?? ws.device_spec_files ?? ws.secondary_device_screenshots,
+          ),
         });
+
 
         // Date Applied — prefer top-level field, fall back to legacy custom field.
         const daCustom = (d.custom_fields_raw || []).find((f) => f.id === 'A0IfC6bqqoM4Kv98HTYb')?.value;
