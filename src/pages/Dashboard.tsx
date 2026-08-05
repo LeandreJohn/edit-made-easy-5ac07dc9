@@ -1348,7 +1348,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reapply</DialogTitle>
+            <DialogTitle>{reapplyLabel}</DialogTitle>
             <DialogDescription>
               Will you be applying using a referral code? You can paste a referral link
               (with <code>?ref=</code>) or just the code itself. Leave blank if none.
