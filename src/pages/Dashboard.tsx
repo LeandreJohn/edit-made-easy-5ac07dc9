@@ -130,6 +130,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [portfolioFileNames, setPortfolioFileNames] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [dateApplied, setDateApplied] = useState<string>('');
+  /** Backend `last_stage_date_changed` — drives Apply Now vs Reapply. */
+  const [lastStageDateChanged, setLastStageDateChanged] = useState<string>('');
+
   const [portfolioFileUrls, setPortfolioFileUrls] = useState<Array<{ name: string; url: string }>>([]);
   const [complianceUrls, setComplianceUrls] = useState<{
     validIdFiles: string[]; nbiFiles: string[]; policeFiles: string[]; coeFiles: string[];
