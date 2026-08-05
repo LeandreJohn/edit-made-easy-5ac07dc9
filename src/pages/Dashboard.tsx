@@ -1463,24 +1463,66 @@ const Field = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const PersonalView = ({ profile }: { profile: PersonalInfo }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-      <Field label="First Name" value={profile.firstName} />
-      <Field label="Middle Name" value={profile.middleName} />
-      <Field label="Last Name" value={profile.lastName} />
-      <Field label="Suffix" value={profile.suffix} />
-      <Field label="Date of Birth" value={profile.dateOfBirth} />
-      <Field label="Phone Number" value={profile.phoneNumber} />
-      <Field label="Languages Spoken" value={profile.languagesSpoken} />
-      <Field label="House No. / Street" value={profile.houseStreet} />
-      <Field label="Barangay" value={profile.barangay} />
-      <Field label="City / Province" value={profile.city} />
-      <Field label="Country" value={profile.country} />
-      <Field label="Nationality" value={profile.nationality} />
+const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
+  const isPH = (profile.country || '').trim().toLowerCase() === 'philippines';
+  const socials = parseSocialLinks(profile.socialLinks);
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+        <Field label="First Name" value={profile.firstName} />
+        <Field label="Middle Name" value={profile.middleName} />
+        <Field label="Last Name" value={profile.lastName} />
+        <Field label="Suffix" value={profile.suffix} />
+        <Field label="Date of Birth" value={profile.dateOfBirth} />
+        <Field label="Phone Number" value={profile.phoneNumber} />
+        <Field label="Languages Spoken" value={profile.languagesSpoken} />
+        <Field label="Country" value={profile.country} />
+        <Field label="Nationality" value={profile.nationality} />
+        {isPH ? (
+          <>
+            <Field label="House No. / Street" value={profile.houseStreet} />
+            <Field label="Barangay" value={profile.barangay} />
+            <Field label="City / Municipality" value={profile.city} />
+          </>
+        ) : (
+          <>
+            <Field label="Street Address" value={profile.address || profile.houseStreet} />
+            <Field label="City" value={profile.city} />
+            <Field label="State / Region / Province" value={profile.stateRegion} />
+            <Field label="Postal / ZIP Code" value={profile.postalCode} />
+          </>
+        )}
+        <Field label="Referred By" value={profile.referredBy} />
+      </div>
+
+      <div>
+        <h3 className="font-heading text-base font-semibold text-foreground mb-2">
+          Social Media Profiles
+        </h3>
+        {socials.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No social profiles added.</p>
+        ) : (
+          <ul className="space-y-1">
+            {socials.map((s) => (
+              <li key={`${s.platform}-${s.url}`} className="text-sm">
+                <span className="text-muted-foreground">{s.platform}: </span>
+                <a
+                  href={s.url.startsWith('http') ? s.url : `https://${s.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline break-all"
+                >
+                  {s.url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const EducationView = ({ data }: { data: Education }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
