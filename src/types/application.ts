@@ -24,6 +24,9 @@ export interface PersonalInfo {
   socialLinks?: string;
   /** Head-hunting referral link (only collected when applying via /head-hunting). */
   referralLink?: string;
+  /** Referral code captured from the ?ref= URL param — read-only for the applicant. */
+  referredBy?: string;
+
   photo: File | null;
 }
 
