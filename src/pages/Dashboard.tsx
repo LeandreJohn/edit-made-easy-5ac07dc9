@@ -1294,7 +1294,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               }}
               className="btn-primary"
             >
-              Continue to Reapply
+              Continue to {reapplyLabel}
             </button>
           </DialogFooter>
         </DialogContent>
