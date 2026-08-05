@@ -50,6 +50,7 @@ import dashboardBanner from '@/assets/dashboard-banner.png';
 
 
 import SearchableSelect from '@/components/common/SearchableSelect';
+import { parseSocialLinks } from '@/components/common/SocialLinksInput';
 import PhoneInput from '@/components/common/PhoneInput';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 
@@ -1488,11 +1489,11 @@ const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
           <>
             <Field label="Street Address" value={profile.address || profile.houseStreet} />
             <Field label="City" value={profile.city} />
-            <Field label="State / Region / Province" value={profile.stateRegion} />
-            <Field label="Postal / ZIP Code" value={profile.postalCode} />
+            <Field label="State / Region / Province" value={profile.stateRegion ?? ''} />
+            <Field label="Postal / ZIP Code" value={profile.postalCode ?? ''} />
           </>
         )}
-        <Field label="Referred By" value={profile.referredBy} />
+        <Field label="Referred By" value={profile.referredBy ?? ''} />
       </div>
 
       <div>
