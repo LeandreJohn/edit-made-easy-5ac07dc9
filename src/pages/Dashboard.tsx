@@ -558,7 +558,19 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   // Section completeness (excludes work experience, certifications, portfolio)
   const sectionChecks = useMemo(() => {
-    // Build a synthetic PersonalInfo/etc for validators
+    // Files already stored on the backend come back as URLs, not File objects.
+    // Treat an existing URL as a satisfied upload so completion is accurate.
+    const placeholder = (urls: string[]) =>
+      urls.map((u) => new File([], u.split('/').pop() || 'document'));
+    const deviceFiles = (workSetup.deviceScreenshots?.length ?? 0) > 0
+      ? workSetup.deviceScreenshots!
+      : placeholder(workSetupUrls.primary);
+    const secondaryDeviceFiles = (workSetup.secondaryDeviceScreenshots?.length ?? 0) > 0
+      ? workSetup.secondaryDeviceScreenshots!
+      : placeholder(workSetupUrls.secondary);
+    const firstOrUrl = (file: File | null | undefined, urls: string[]) =>
+      file ?? (urls.length > 0 ? placeholder(urls)[0] : null);
+
     const wsForCheck = {
       primaryDevice: workSetup.primaryDevice,
       hasNoiseCancellingHeadset: workSetup.headset,
@@ -569,16 +581,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       primaryISPSpeedtest: workSetup.primaryISPSpeedtest ?? '',
       secondaryISPSpeedtest: workSetup.secondaryISPSpeedtest ?? '',
       documents: [],
-      deviceScreenshots: workSetup.deviceScreenshots ?? [],
-      secondaryDeviceScreenshots: workSetup.secondaryDeviceScreenshots ?? [],
+      deviceScreenshots: deviceFiles,
+      secondaryDeviceScreenshots: secondaryDeviceFiles,
       systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
     };
     const complianceForCheck = {
       authorizeBackgroundCheck: compliance.authorized,
-      validId: compliance.validId ?? null,
-      nbiClearance: compliance.nbiClearance ?? null,
-      policeClearance: compliance.policeClearance ?? null,
-      proofOfSeparation: compliance.proofOfSeparation ?? null,
+      validId: firstOrUrl(compliance.validId, complianceUrls.validIdFiles),
+      nbiClearance: firstOrUrl(compliance.nbiClearance, complianceUrls.nbiFiles),
+      policeClearance: firstOrUrl(compliance.policeClearance, complianceUrls.policeFiles),
+      proofOfSeparation: firstOrUrl(compliance.proofOfSeparation, complianceUrls.coeFiles),
       nbiValidity: compliance.nbiValidity,
       policeValidity: compliance.policeValidity,
     };
@@ -592,7 +604,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       workSetup: isWorkSetupValid(wsForCheck),
       compliance: isComplianceValid(complianceForCheck),
     };
-  }, [profile, education, professional, tools, skills, workSetup, compliance]);
+  }, [profile, education, professional, tools, skills, workSetup, compliance, workSetupUrls, complianceUrls]);
+
 
   const completedCount = Object.values(sectionChecks).filter(Boolean).length;
   const totalCount = Object.keys(sectionChecks).length;
@@ -614,7 +627,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   // Sequential gating (mirrors the wizard): a required section stays locked until
   // every earlier required section is complete. Optional sections are never locked.
-  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'compliance'];
+  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'workSetup', 'compliance'];
   const isSectionLocked = (key: SectionKey): boolean => {
     const idx = GATED_ORDER.indexOf(key);
     if (idx <= 0) return false;
@@ -658,19 +671,23 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         primaryISPSpeedtest: draftWorkSetup.primaryISPSpeedtest ?? '',
         secondaryISPSpeedtest: draftWorkSetup.secondaryISPSpeedtest ?? '',
         documents: [],
-        deviceScreenshots: draftWorkSetup.deviceScreenshots ?? [],
+        deviceScreenshots: (draftWorkSetup.deviceScreenshots?.length ?? 0) > 0
+          ? draftWorkSetup.deviceScreenshots!
+          : workSetupUrls.primary.map((u) => new File([], u.split('/').pop() || 'device')),
         secondaryDeviceScreenshots: draftWorkSetup.secondaryDeviceScreenshots ?? [],
         systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
       });
       case 'compliance': return isComplianceValid({
         authorizeBackgroundCheck: draftCompliance.authorized,
-        validId: draftCompliance.validId ?? null,
+        validId: draftCompliance.validId
+          ?? (complianceUrls.validIdFiles.length > 0 ? new File([], 'valid-id') : null),
         nbiClearance: draftCompliance.nbiClearance ?? null,
         policeClearance: draftCompliance.policeClearance ?? null,
         proofOfSeparation: draftCompliance.proofOfSeparation ?? null,
         nbiValidity: draftCompliance.nbiValidity,
         policeValidity: draftCompliance.policeValidity,
       });
+
       default: return true;
     }
   };
@@ -1170,27 +1187,25 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               ) : (
                 <div className="space-y-6">
                   <WorkSetupView data={workSetup} />
-                  {(workSetupUrls.primary.length > 0 || workSetupUrls.secondary.length > 0) && (
-                    <div className="space-y-3">
-                      {workSetupUrls.primary.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Primary Device Screenshots</p>
+                  <div className="space-y-3">
+                    {([
+                      ['Primary Device Screenshots', workSetupUrls.primary],
+                      ['Secondary Device Screenshots', workSetupUrls.secondary],
+                    ] as const).map(([label, urls]) => (
+                      <div key={label}>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</p>
+                        {urls.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                        ) : (
                           <div className="flex flex-wrap gap-2">
-                            {workSetupUrls.primary.map((u, i) => <FilePreviewLink key={`p-${i}`} url={u} />)}
+                            {urls.map((u, i) => <FilePreviewLink key={`${label}-${i}`} url={u} />)}
                           </div>
-                        </div>
-                      )}
-                      {workSetupUrls.secondary.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Secondary Device Screenshots</p>
-                          <div className="flex flex-wrap gap-2">
-                            {workSetupUrls.secondary.map((u, i) => <FilePreviewLink key={`s-${i}`} url={u} />)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
               )
             )}
 
@@ -1206,16 +1221,21 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                       ['NBI Clearance', complianceUrls.nbiFiles],
                       ['Police Clearance', complianceUrls.policeFiles],
                       ['Proof of Separation / COE', complianceUrls.coeFiles],
-                    ] as const).filter(([, urls]) => urls.length > 0).map(([label, urls]) => (
+                    ] as const).map(([label, urls]) => (
                       <div key={label}>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {urls.map((u, i) => (
-                            <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : label} />
-                          ))}
-                        </div>
+                        {urls.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {urls.map((u, i) => (
+                              <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : label} />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+
                   </div>
                 </div>
 
@@ -1437,7 +1457,7 @@ const isWorkSetupEmpty = (d: WorkSetupData) =>
   !d.primaryDevice && !d.secondaryDevice && !d.primaryISP && !d.secondaryISP && !d.headset && !d.webcam;
 
 const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
-  if (isWorkSetupEmpty(data)) return <EmptySectionView label="work setup" />;
+  // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
@@ -1456,7 +1476,7 @@ const isComplianceEmpty = (d: ComplianceFormData) =>
   !d.authorized && !d.nbiValidity && !d.policeValidity && !d.proofOfSeparation;
 
 const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; validIdLabel?: string }) => {
-  if (isComplianceEmpty(data) && !validIdLabel) return <EmptySectionView label="compliance" />;
+  // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
