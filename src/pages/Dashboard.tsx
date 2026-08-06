@@ -1187,27 +1187,25 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               ) : (
                 <div className="space-y-6">
                   <WorkSetupView data={workSetup} />
-                  {(workSetupUrls.primary.length > 0 || workSetupUrls.secondary.length > 0) && (
-                    <div className="space-y-3">
-                      {workSetupUrls.primary.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Primary Device Screenshots</p>
+                  <div className="space-y-3">
+                    {([
+                      ['Primary Device Screenshots', workSetupUrls.primary],
+                      ['Secondary Device Screenshots', workSetupUrls.secondary],
+                    ] as const).map(([label, urls]) => (
+                      <div key={label}>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</p>
+                        {urls.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                        ) : (
                           <div className="flex flex-wrap gap-2">
-                            {workSetupUrls.primary.map((u, i) => <FilePreviewLink key={`p-${i}`} url={u} />)}
+                            {urls.map((u, i) => <FilePreviewLink key={`${label}-${i}`} url={u} />)}
                           </div>
-                        </div>
-                      )}
-                      {workSetupUrls.secondary.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Secondary Device Screenshots</p>
-                          <div className="flex flex-wrap gap-2">
-                            {workSetupUrls.secondary.map((u, i) => <FilePreviewLink key={`s-${i}`} url={u} />)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
               )
             )}
 
