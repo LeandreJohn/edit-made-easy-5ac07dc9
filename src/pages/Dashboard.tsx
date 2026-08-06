@@ -1457,7 +1457,7 @@ const isWorkSetupEmpty = (d: WorkSetupData) =>
   !d.primaryDevice && !d.secondaryDevice && !d.primaryISP && !d.secondaryISP && !d.headset && !d.webcam;
 
 const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
-  if (isWorkSetupEmpty(data)) return <EmptySectionView label="work setup" />;
+  // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
