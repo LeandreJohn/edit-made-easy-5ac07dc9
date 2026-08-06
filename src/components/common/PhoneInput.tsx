@@ -20,7 +20,7 @@ const DIAL_CODES = Array.from(new Set(COUNTRIES.map((c) => c.dial))).sort(
   (a, b) => b.length - a.length,
 );
 
-function splitPhone(value: string, countryName?: string): { dial: string; number: string } {
+export function splitPhone(value: string, countryName?: string): { dial: string; number: string } {
   const trimmed = (value || '').trim();
   if (!trimmed.startsWith('+')) return { dial: '', number: trimmed };
   // Explicit separator wins (e.g. "+63 9458707854").
@@ -37,6 +37,25 @@ function splitPhone(value: string, countryName?: string): { dial: string; number
   if (match) return { dial: match, number: digits.slice(match.length - 1) };
   return { dial: '', number: trimmed };
 }
+
+/** Recompose a dial code and subscriber number into the stored `+63 9171234567` form. */
+export function formatPhone(dial: string, number: string): string {
+  return `${dial || ''} ${number || ''}`.trim();
+}
+
+/**
+ * A phone value is valid when it has a known-looking dial code and a subscriber
+ * number of 6-15 digits. Empty values are treated as "not yet filled", not invalid.
+ */
+export function isPhoneValid(value: string, countryName?: string): boolean {
+  const raw = (value || '').trim();
+  if (!raw) return true;
+  const { dial, number } = splitPhone(raw, countryName);
+  const digits = (number || '').replace(/\D/g, '');
+  if (!dial || !/^\+\d{1,4}$/.test(dial)) return false;
+  return digits.length >= 6 && digits.length <= 15;
+}
+
 
 const PhoneInput = ({ value, onChange, countryName, onCountryChange, className = '' }: PhoneInputProps) => {
   const { dial, number } = useMemo(() => splitPhone(value, countryName), [value, countryName]);
