@@ -92,34 +92,49 @@ const PhoneInput = ({ value, onChange, countryName, onCountryChange, className =
     onChange(`${dial} ${cleaned}`.trim());
   };
 
+  const invalid = !isPhoneValid(value, countryName);
+  const errorClass = invalid
+    ? 'border-destructive ring-2 ring-destructive/40 focus:border-destructive focus:ring-destructive/40'
+    : '';
+
   return (
-    <div className={`grid grid-cols-[1.4fr_0.7fr_2fr] gap-2 ${className}`}>
-      <SearchableSelect
-        value={countryName || ''}
-        onChange={handleCountry}
-        options={countryNames}
-        placeholder="Country"
-        allowClear={false}
-      />
-      <input
-        type="text"
-        inputMode="tel"
-        value={dial}
-        onChange={(e) => handleDial(e.target.value)}
-        placeholder="+1"
-        className="form-input"
-        aria-label="Dialing code"
-      />
-      <input
-        type="tel"
-        value={number}
-        onChange={(e) => handleNumber(e.target.value)}
-        placeholder="Phone number"
-        className="form-input"
-        aria-label="Phone number"
-      />
+    <div className={className}>
+      <div className="grid grid-cols-[1.4fr_0.7fr_2fr] gap-2">
+        <SearchableSelect
+          value={countryName || ''}
+          onChange={handleCountry}
+          options={countryNames}
+          placeholder="Country"
+          allowClear={false}
+        />
+        <input
+          type="text"
+          inputMode="tel"
+          value={dial}
+          onChange={(e) => handleDial(e.target.value)}
+          placeholder="+1"
+          className={`form-input ${errorClass}`}
+          aria-label="Dialing code"
+          aria-invalid={invalid}
+        />
+        <input
+          type="tel"
+          value={number}
+          onChange={(e) => handleNumber(e.target.value)}
+          placeholder="Phone number"
+          className={`form-input ${errorClass}`}
+          aria-label="Phone number"
+          aria-invalid={invalid}
+        />
+      </div>
+      {invalid && (
+        <p className="mt-1 text-xs text-destructive">
+          Enter a valid phone number — a country dialing code (e.g. +63) followed by 6-15 digits.
+        </p>
+      )}
     </div>
   );
 };
+
 
 export default PhoneInput;
