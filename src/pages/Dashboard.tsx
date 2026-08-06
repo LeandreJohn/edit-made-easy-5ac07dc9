@@ -627,7 +627,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   // Sequential gating (mirrors the wizard): a required section stays locked until
   // every earlier required section is complete. Optional sections are never locked.
-  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'compliance'];
+  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'workSetup', 'compliance'];
   const isSectionLocked = (key: SectionKey): boolean => {
     const idx = GATED_ORDER.indexOf(key);
     if (idx <= 0) return false;
