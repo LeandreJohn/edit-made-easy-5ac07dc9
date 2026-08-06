@@ -1221,16 +1221,21 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                       ['NBI Clearance', complianceUrls.nbiFiles],
                       ['Police Clearance', complianceUrls.policeFiles],
                       ['Proof of Separation / COE', complianceUrls.coeFiles],
-                    ] as const).filter(([, urls]) => urls.length > 0).map(([label, urls]) => (
+                    ] as const).map(([label, urls]) => (
                       <div key={label}>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {urls.map((u, i) => (
-                            <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : label} />
-                          ))}
-                        </div>
+                        {urls.length === 0 ? (
+                          <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {urls.map((u, i) => (
+                              <FilePreviewLink key={i} url={u} label={urls.length > 1 ? `${label} ${i + 1}` : label} />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+
                   </div>
                 </div>
 
