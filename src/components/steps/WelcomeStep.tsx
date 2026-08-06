@@ -266,6 +266,43 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
         </div>
       </div>
 
+      <Dialog open={existsOpen} onOpenChange={setExistsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>This email already has a profile</DialogTitle>
+            <DialogDescription>
+              An account already exists for {email || 'this email'}. Sign in to continue building
+              your profile. If you forgot or don't know your password, reset it and we'll email you
+              recovery instructions.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => {
+                setExistsOpen(false);
+                setRecoveryEmail(email);
+                setForgotOpen(true);
+              }}
+            >
+              Forgot password?
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                setExistsOpen(false);
+                emailRef.current?.focus();
+              }}
+            >
+              Sign in instead
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
