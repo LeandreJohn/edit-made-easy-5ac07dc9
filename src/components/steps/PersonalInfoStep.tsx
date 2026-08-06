@@ -1,5 +1,5 @@
 import { PersonalInfo } from '@/types/application';
-import { Camera, Check, ChevronDown, X, Upload, Loader2 } from 'lucide-react';
+import { Camera, Check, ChevronDown, X, Upload, Loader2, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
