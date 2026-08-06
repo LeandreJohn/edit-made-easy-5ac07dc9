@@ -116,8 +116,17 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
       onStart(cameFromSignupRef.current);
       cameFromSignupRef.current = false;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Signup failed');
+      const msg = e instanceof Error ? e.message : 'Signup failed';
+      // The backend rejects duplicate emails — guide the user to sign in or reset.
+      if (/exist|already|registered|duplicate|taken/i.test(msg)) {
+        setReadyOpen(false);
+        setSignupOpen(false);
+        setExistsOpen(true);
+      } else {
+        toast.error(msg);
+      }
     } finally {
+
       setLoggingIn(false);
     }
   };
