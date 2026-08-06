@@ -60,4 +60,10 @@ export const TOOLTIPS: Record<string, TooltipEntry> = {
     description:
       'Upload a PDF or DOCX résumé and we will pre-fill matching fields automatically.',
   },
+  referredBy: {
+    title: 'Referred By',
+    description:
+      'This is the referral code from the link you used to sign up. It is locked so your referral credit stays accurate and cannot be changed.',
+  },
 };
+
