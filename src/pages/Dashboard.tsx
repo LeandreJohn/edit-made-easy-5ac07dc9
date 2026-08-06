@@ -558,7 +558,19 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   // Section completeness (excludes work experience, certifications, portfolio)
   const sectionChecks = useMemo(() => {
-    // Build a synthetic PersonalInfo/etc for validators
+    // Files already stored on the backend come back as URLs, not File objects.
+    // Treat an existing URL as a satisfied upload so completion is accurate.
+    const placeholder = (urls: string[]) =>
+      urls.map((u) => new File([], u.split('/').pop() || 'document'));
+    const deviceFiles = (workSetup.deviceScreenshots?.length ?? 0) > 0
+      ? workSetup.deviceScreenshots!
+      : placeholder(workSetupUrls.primary);
+    const secondaryDeviceFiles = (workSetup.secondaryDeviceScreenshots?.length ?? 0) > 0
+      ? workSetup.secondaryDeviceScreenshots!
+      : placeholder(workSetupUrls.secondary);
+    const firstOrUrl = (file: File | null | undefined, urls: string[]) =>
+      file ?? (urls.length > 0 ? placeholder(urls)[0] : null);
+
     const wsForCheck = {
       primaryDevice: workSetup.primaryDevice,
       hasNoiseCancellingHeadset: workSetup.headset,
@@ -569,16 +581,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       primaryISPSpeedtest: workSetup.primaryISPSpeedtest ?? '',
       secondaryISPSpeedtest: workSetup.secondaryISPSpeedtest ?? '',
       documents: [],
-      deviceScreenshots: workSetup.deviceScreenshots ?? [],
-      secondaryDeviceScreenshots: workSetup.secondaryDeviceScreenshots ?? [],
+      deviceScreenshots: deviceFiles,
+      secondaryDeviceScreenshots: secondaryDeviceFiles,
       systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
     };
     const complianceForCheck = {
       authorizeBackgroundCheck: compliance.authorized,
-      validId: compliance.validId ?? null,
-      nbiClearance: compliance.nbiClearance ?? null,
-      policeClearance: compliance.policeClearance ?? null,
-      proofOfSeparation: compliance.proofOfSeparation ?? null,
+      validId: firstOrUrl(compliance.validId, complianceUrls.validIdFiles),
+      nbiClearance: firstOrUrl(compliance.nbiClearance, complianceUrls.nbiFiles),
+      policeClearance: firstOrUrl(compliance.policeClearance, complianceUrls.policeFiles),
+      proofOfSeparation: firstOrUrl(compliance.proofOfSeparation, complianceUrls.coeFiles),
       nbiValidity: compliance.nbiValidity,
       policeValidity: compliance.policeValidity,
     };
@@ -592,7 +604,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       workSetup: isWorkSetupValid(wsForCheck),
       compliance: isComplianceValid(complianceForCheck),
     };
-  }, [profile, education, professional, tools, skills, workSetup, compliance]);
+  }, [profile, education, professional, tools, skills, workSetup, compliance, workSetupUrls, complianceUrls]);
+
 
   const completedCount = Object.values(sectionChecks).filter(Boolean).length;
   const totalCount = Object.keys(sectionChecks).length;
