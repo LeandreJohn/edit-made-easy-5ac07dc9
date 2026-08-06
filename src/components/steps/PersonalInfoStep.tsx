@@ -395,18 +395,24 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         </div>
         {data.referredBy && (
           <div>
-            <label className="form-label">Referred By</label>
+            <label className="form-label flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Referred By</span>
+              <FieldTooltip fieldKey="referredBy" />
+            </label>
             <input
-              className="form-input bg-muted cursor-not-allowed"
+              className="form-input bg-muted text-muted-foreground cursor-not-allowed opacity-90"
               value={data.referredBy}
               disabled
               readOnly
+              aria-readonly
             />
             <p className="mt-1 text-xs text-muted-foreground">
               Captured from your referral link — this cannot be changed.
             </p>
           </div>
         )}
+
       </div>
 
 
