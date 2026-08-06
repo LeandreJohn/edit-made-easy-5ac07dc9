@@ -1476,7 +1476,7 @@ const isComplianceEmpty = (d: ComplianceFormData) =>
   !d.authorized && !d.nbiValidity && !d.policeValidity && !d.proofOfSeparation;
 
 const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; validIdLabel?: string }) => {
-  if (isComplianceEmpty(data) && !validIdLabel) return <EmptySectionView label="compliance" />;
+  // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
