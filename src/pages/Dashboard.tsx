@@ -671,19 +671,23 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         primaryISPSpeedtest: draftWorkSetup.primaryISPSpeedtest ?? '',
         secondaryISPSpeedtest: draftWorkSetup.secondaryISPSpeedtest ?? '',
         documents: [],
-        deviceScreenshots: draftWorkSetup.deviceScreenshots ?? [],
+        deviceScreenshots: (draftWorkSetup.deviceScreenshots?.length ?? 0) > 0
+          ? draftWorkSetup.deviceScreenshots!
+          : workSetupUrls.primary.map((u) => new File([], u.split('/').pop() || 'device')),
         secondaryDeviceScreenshots: draftWorkSetup.secondaryDeviceScreenshots ?? [],
         systemSpecs: { cpu: '', ram: '', storage: '', source: '' as const },
       });
       case 'compliance': return isComplianceValid({
         authorizeBackgroundCheck: draftCompliance.authorized,
-        validId: draftCompliance.validId ?? null,
+        validId: draftCompliance.validId
+          ?? (complianceUrls.validIdFiles.length > 0 ? new File([], 'valid-id') : null),
         nbiClearance: draftCompliance.nbiClearance ?? null,
         policeClearance: draftCompliance.policeClearance ?? null,
         proofOfSeparation: draftCompliance.proofOfSeparation ?? null,
         nbiValidity: draftCompliance.nbiValidity,
         policeValidity: draftCompliance.policeValidity,
       });
+
       default: return true;
     }
   };
