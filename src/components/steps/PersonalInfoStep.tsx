@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SearchableSelect from '@/components/common/SearchableSelect';
+import FieldTooltip from '@/components/common/FieldTooltip';
+
 import PhoneInput from '@/components/common/PhoneInput';
 import SocialLinksInput from '@/components/common/SocialLinksInput';
 import EligibilityModal from '@/components/common/EligibilityModal';
