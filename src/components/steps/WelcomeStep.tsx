@@ -45,6 +45,8 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
   const [signupConfirm, setSignupConfirm] = useState('');
   const [signupSubmitting, setSignupSubmitting] = useState(false);
   const [ndaOpen, setNdaOpen] = useState(false);
+  const [existsOpen, setExistsOpen] = useState(false);
+
   const cameFromSignupRef = useRef(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
