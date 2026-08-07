@@ -51,11 +51,11 @@ const CURRENT_YEAR = new Date().getFullYear();
 // Allow expected graduation up to 6 years out, and history back 60 years.
 const YEARS = Array.from({ length: 67 }, (_, i) => CURRENT_YEAR + 6 - i);
 
-/** Split a stored "MM/YYYY" (or legacy ISO date) value into month + year parts. */
+/** Split a stored "MM/YYYY" (or partial "MM/" / "/YYYY", or legacy ISO) value into parts. */
 function splitGraduation(value: string): { month: string; year: string } {
   if (!value) return { month: '', year: '' };
-  const mmYyyy = value.match(/^(\d{2})\/(\d{4})$/);
-  if (mmYyyy) return { month: mmYyyy[1], year: mmYyyy[2] };
+  const mmYyyy = value.match(/^(\d{2})?\/(\d{4})?$/);
+  if (mmYyyy) return { month: mmYyyy[1] ?? '', year: mmYyyy[2] ?? '' };
   const iso = value.match(/^(\d{4})-(\d{2})/);
   if (iso) return { month: iso[2], year: iso[1] };
   const yearOnly = value.match(/^(\d{4})$/);
@@ -71,11 +71,14 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
   const { month: gradMonth, year: gradYear } = splitGraduation(data.graduationDate);
   const isUndergrad = /undergraduate|currently/i.test(data.highestLevel || '');
 
-  // Stored as "MM/YYYY"; a year on its own is kept so partial input isn't lost.
+  // Stored as "MM/YYYY"; partial input is kept as "MM/" or "/YYYY" so the two
+  // dropdowns can be filled in either order without losing the first pick.
   const setGraduation = (month: string, year: string) => {
     if (!month && !year) return update('graduationDate', '');
-    update('graduationDate', month && year ? `${month}/${year}` : year || '');
+    update('graduationDate', `${month}/${year}`);
   };
+
+  const gradIncomplete = (!!gradMonth && !gradYear) || (!gradMonth && !!gradYear);
 
 
   return (
@@ -145,11 +148,17 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
               {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
             </select>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isUndergrad
-              ? 'Optional — leave blank if you have not graduated.'
-              : 'Month and year only.'}
-          </p>
+          {gradIncomplete ? (
+            <p className="mt-1 text-xs text-destructive">
+              Select both a month and a year.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isUndergrad
+                ? 'Optional — leave blank if you have not graduated.'
+                : 'Month and year only.'}
+            </p>
+          )}
         </div>
         {data.highestLevel !== 'High School Graduate' && (
           <div>

@@ -8,7 +8,12 @@ export interface PhoneInputProps {
    * Storing a single string keeps backward compatibility with the existing payload.
    */
   value: string;
-  onChange: (value: string) => void;
+  /**
+   * Fires with the combined phone value and, when the change also implies a
+   * country, that country's name — so parents can apply both in ONE state
+   * update (two separate updates from the same snapshot overwrite each other).
+   */
+  onChange: (value: string, countryName?: string) => void;
   /** Optional country name, used to keep dropdown in sync with parent state. */
   countryName?: string;
   onCountryChange?: (countryName: string) => void;
@@ -74,17 +79,21 @@ const PhoneInput = ({ value, onChange, countryName, onCountryChange, className =
   }, [dial, countryName]);
 
   const handleCountry = (name: string) => {
-    onCountryChange?.(name);
     const c = findCountry(name);
-    if (c) {
-      onChange(`${c.dial} ${number}`.trim());
-    }
+    // Single callback carrying both fields — parents apply them in one update.
+    onChange(`${c ? c.dial : dial} ${number}`.trim(), name);
+    onCountryChange?.(name);
   };
 
   const handleDial = (next: string) => {
     const cleaned = next.replace(/[^\d+]/g, '');
     const withPlus = cleaned.startsWith('+') ? cleaned : cleaned ? `+${cleaned}` : '';
-    onChange(`${withPlus} ${number}`.trim());
+    // Keep the country in sync when a typed dial code unambiguously matches one.
+    const match = withPlus ? COUNTRIES.find((c) => c.dial === withPlus) : undefined;
+    const keepCountry = countryName && findCountry(countryName)?.dial === withPlus;
+    const nextCountry = keepCountry ? countryName : match?.name;
+    onChange(`${withPlus} ${number}`.trim(), nextCountry);
+    if (!keepCountry && match) onCountryChange?.(match.name);
   };
 
   const handleNumber = (next: string) => {

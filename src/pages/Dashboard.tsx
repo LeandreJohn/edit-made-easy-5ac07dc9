@@ -532,6 +532,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     setDraftProfile({ ...draftProfile, [field]: value });
   };
 
+
+
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

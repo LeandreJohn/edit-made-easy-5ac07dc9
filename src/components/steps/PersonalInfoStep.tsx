@@ -317,9 +317,8 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         <RequiredLabel>Phone Number</RequiredLabel>
         <PhoneInput
           value={data.phoneNumber}
-          onChange={(v) => update('phoneNumber', v)}
+          onChange={(v, c) => onChange({ ...data, phoneNumber: v, ...(c ? { phoneCountry: c } : {}) })}
           countryName={data.phoneCountry}
-          onCountryChange={(c) => onChange({ ...data, phoneCountry: c })}
         />
       </div>
 
