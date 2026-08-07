@@ -148,11 +148,17 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
               {YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
             </select>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isUndergrad
-              ? 'Optional — leave blank if you have not graduated.'
-              : 'Month and year only.'}
-          </p>
+          {gradIncomplete ? (
+            <p className="mt-1 text-xs text-destructive">
+              Select both a month and a year.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isUndergrad
+                ? 'Optional — leave blank if you have not graduated.'
+                : 'Month and year only.'}
+            </p>
+          )}
         </div>
         {data.highestLevel !== 'High School Graduate' && (
           <div>
