@@ -33,10 +33,18 @@ export const educationSchema = z.object({
   const isHS = level === 'High School Graduate';
   // Undergraduates have no graduation date yet — everyone else must provide one.
   const isUndergrad = /undergraduate|currently/i.test(level);
-  if (!isUndergrad && !(val as { graduationDate?: string }).graduationDate) {
+  const grad = String((val as { graduationDate?: string }).graduationDate ?? '').trim();
+  const gradComplete = /^(0[1-9]|1[0-2])\/\d{4}$/.test(grad);
+  if (!isUndergrad && !gradComplete) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Graduation date is required',
+      message: grad ? 'Select both a graduation month and year' : 'Graduation date is required',
+      path: ['graduationDate'],
+    });
+  } else if (isUndergrad && grad && !gradComplete) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Select both a graduation month and year',
       path: ['graduationDate'],
     });
   }
