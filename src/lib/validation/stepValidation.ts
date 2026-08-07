@@ -20,13 +20,24 @@ export function isPersonalInfoValid(p: PersonalInfo): boolean {
   return nonEmpty(p.address);
 }
 
+/** Graduation dates are stored as "MM/YYYY" — partials like "05/" are incomplete. */
+export function isGraduationComplete(value: string | undefined): boolean {
+  return /^(0[1-9]|1[0-2])\/\d{4}$/.test((value || '').trim());
+}
+
 export function isEducationValid(e: Education): boolean {
+  const isUndergrad = /undergraduate|currently/i.test(e.highestLevel || '');
+  const grad = (e.graduationDate || '').trim();
+  const gradOk = isUndergrad
+    ? grad === '' || isGraduationComplete(grad)
+    : isGraduationComplete(grad);
   const base = nonEmpty(e.highestLevel)
     && nonEmpty(e.schoolName)
     && nonEmpty(e.schoolLocation)
-    && nonEmpty(e.graduationDate);
+    && gradOk;
   if (!base) return false;
   if (e.highestLevel === 'High School Graduate') return true;
+  if (e.degreeField === 'Other') return nonEmpty(e.degreeFieldOther);
   return nonEmpty(e.degreeField);
 }
 
