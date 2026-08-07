@@ -532,6 +532,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     setDraftProfile({ ...draftProfile, [field]: value });
   };
 
+  /** Apply several profile fields at once (e.g. phone number + phone country). */
+  const updateProfileFields = (patch: Partial<PersonalInfo>) => {
+    setDraftProfile({ ...draftProfile, ...patch });
+  };
+
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
