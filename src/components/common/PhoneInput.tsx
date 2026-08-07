@@ -79,17 +79,21 @@ const PhoneInput = ({ value, onChange, countryName, onCountryChange, className =
   }, [dial, countryName]);
 
   const handleCountry = (name: string) => {
-    onCountryChange?.(name);
     const c = findCountry(name);
-    if (c) {
-      onChange(`${c.dial} ${number}`.trim());
-    }
+    // Single callback carrying both fields — parents apply them in one update.
+    onChange(`${c ? c.dial : dial} ${number}`.trim(), name);
+    onCountryChange?.(name);
   };
 
   const handleDial = (next: string) => {
     const cleaned = next.replace(/[^\d+]/g, '');
     const withPlus = cleaned.startsWith('+') ? cleaned : cleaned ? `+${cleaned}` : '';
-    onChange(`${withPlus} ${number}`.trim());
+    // Keep the country in sync when a typed dial code unambiguously matches one.
+    const match = withPlus ? COUNTRIES.find((c) => c.dial === withPlus) : undefined;
+    const keepCountry = countryName && findCountry(countryName)?.dial === withPlus;
+    const nextCountry = keepCountry ? countryName : match?.name;
+    onChange(`${withPlus} ${number}`.trim(), nextCountry);
+    if (!keepCountry && match) onCountryChange?.(match.name);
   };
 
   const handleNumber = (next: string) => {
