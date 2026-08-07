@@ -8,7 +8,12 @@ export interface PhoneInputProps {
    * Storing a single string keeps backward compatibility with the existing payload.
    */
   value: string;
-  onChange: (value: string) => void;
+  /**
+   * Fires with the combined phone value and, when the change also implies a
+   * country, that country's name — so parents can apply both in ONE state
+   * update (two separate updates from the same snapshot overwrite each other).
+   */
+  onChange: (value: string, countryName?: string) => void;
   /** Optional country name, used to keep dropdown in sync with parent state. */
   countryName?: string;
   onCountryChange?: (countryName: string) => void;
