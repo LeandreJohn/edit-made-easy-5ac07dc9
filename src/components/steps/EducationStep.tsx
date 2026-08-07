@@ -71,11 +71,14 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
   const { month: gradMonth, year: gradYear } = splitGraduation(data.graduationDate);
   const isUndergrad = /undergraduate|currently/i.test(data.highestLevel || '');
 
-  // Stored as "MM/YYYY"; a year on its own is kept so partial input isn't lost.
+  // Stored as "MM/YYYY"; partial input is kept as "MM/" or "/YYYY" so the two
+  // dropdowns can be filled in either order without losing the first pick.
   const setGraduation = (month: string, year: string) => {
     if (!month && !year) return update('graduationDate', '');
-    update('graduationDate', month && year ? `${month}/${year}` : year || '');
+    update('graduationDate', `${month}/${year}`);
   };
+
+  const gradIncomplete = (!!gradMonth && !gradYear) || (!gradMonth && !!gradYear);
 
 
   return (
