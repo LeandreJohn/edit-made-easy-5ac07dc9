@@ -30,7 +30,7 @@ import WizardSidebar from '@/components/wizard/WizardSidebar';
 import WizardNavigation from '@/components/wizard/WizardNavigation';
 import IntroVideoModal from '@/components/wizard/IntroVideoModal';
 import Footer from '@/components/Footer';
-import { useApplicationForm } from '@/hooks/useApplicationForm';
+import { useApplicationForm, defaultApplicationData } from '@/hooks/useApplicationForm';
 import { useStore } from '@tanstack/react-form';
 // submitApplication endpoint intentionally removed — each substep persists on Next.
 import {
@@ -43,6 +43,13 @@ import {
 } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { isSubStepValid } from '@/lib/validation/stepValidation';
+import {
+  saveWizardDraft,
+  loadWizardDraft,
+  clearWizardDraft,
+  draftHasContent,
+} from '@/lib/wizardDraft';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 
 import {
@@ -123,6 +130,9 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
   const [leaving, setLeaving] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [dirty, setDirty] = useState(false);
 
 
   // Persist wizard progress so a browser refresh resumes on the same step.
@@ -140,6 +150,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   useEffect(() => {
     if (completed) {
       try { sessionStorage.removeItem(WIZARD_STATE_KEY); } catch { /* ignore */ }
+      clearWizardDraft();
     }
   }, [completed]);
 
@@ -163,6 +174,50 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
 
   // Subscribe to slices we need to render (kept reactive).
   const values = useStore(form.store, (s) => s.values);
+
+  // --- Autosave -----------------------------------------------------------
+  // Restore a previously autosaved draft once, so a refresh or dropped
+  // connection never costs the applicant their answers.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const draft = loadWizardDraft();
+    if (!draft || !draftHasContent(draft.values)) return;
+    for (const [key, val] of Object.entries(draft.values)) {
+      if (key === 'password') continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (form.setFieldValue as any)(key, val);
+    }
+    setDraftRestored(true);
+    setLastSavedAt(new Date(draft.savedAt));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist form values (debounced) whenever they change.
+  const autosaveReady = useRef(false);
+  useEffect(() => {
+    if (completed) return;
+    if (!autosaveReady.current) { autosaveReady.current = true; return; }
+    setDirty(true);
+    const t = window.setTimeout(() => saveWizardDraft(values), 600);
+    return () => window.clearTimeout(t);
+  }, [values, completed]);
+
+  const startFresh = () => {
+    clearWizardDraft();
+    for (const [key, val] of Object.entries(defaultApplicationData)) {
+      if (key === 'email') continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (form.setFieldValue as any)(key, val);
+    }
+    setDraftRestored(false);
+    setDirty(false);
+    setCurrentSubStep(1);
+    setCompletedSidebarSteps([]);
+  };
+
+  // Warn before leaving with changes that haven't been persisted to the server.
+  useUnsavedChangesGuard(started && !completed && dirty);
 
   // Pre-fill referralLink from ?ref= when on head-hunting route, and always
   // capture the raw referral code into the read-only "Referred By" field.
@@ -271,6 +326,8 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
           try { await finishApplication(contactId, todayMDT()); }
           catch (e) { console.warn('finish failed', e); }
         }
+        setLastSavedAt(new Date());
+        setDirty(false);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to save');
         setSubmitting(false);
@@ -308,6 +365,8 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
     setLeaving(true);
     window.setTimeout(() => {
       try { sessionStorage.removeItem(WIZARD_STATE_KEY); } catch { /* ignore */ }
+      clearWizardDraft();
+      setDirty(false);
       setStarted(false);
       setCurrentSubStep(1);
       setCompletedSidebarSteps([]);
