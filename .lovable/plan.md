@@ -33,8 +33,8 @@ A prioritized list of front-end polish items. No code changes yet; pick the ones
 9. **File upload UX**
    Per-file progress bars, client-side size/type checks with a clear message before upload, thumbnail previews for images, and a remove/replace action on every uploaded item.
 
-10. **Dashboard section deep-links**
-    Reflect the active dashboard section in the URL (`/dashboard?section=education`) so refresh and browser Back behave correctly and links can be shared.
+10. **Dashboard section state without shareable URLs**
+    Keep the active dashboard section out of the URL — no shareable/copyable section links. Instead, remember the last section in session state so a refresh returns the user where they were, and make the in-app Back button move between sections. Any section a user lands on still requires their own authenticated session, so nothing useful can be passed to another person by copying the address bar.
 
 ## Tier 3 — Polish and accessibility
 
