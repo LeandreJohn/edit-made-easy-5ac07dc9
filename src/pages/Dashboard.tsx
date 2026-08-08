@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ErrorRetry from '@/components/common/ErrorRetry';
+import SectionSkeleton from '@/components/common/SectionSkeleton';
 import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
@@ -113,7 +115,17 @@ interface DashboardProps { variant?: DashboardVariant }
 
 const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<SectionKey>('personal');
+  const [activeSection, setActiveSection] = useState<SectionKey>(() => {
+    // Remembered in session state only — never in the URL, so dashboard
+    // sections can't be copied out of the address bar and shared.
+    try {
+      const saved = sessionStorage.getItem('cb_dashboard_section');
+      if (saved) return saved as SectionKey;
+    } catch { /* ignore */ }
+    return 'personal';
+  });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const contactId = loadContactId();
 
@@ -214,7 +226,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setEditing(false); }, [activeSection]);
+  useEffect(() => {
+    setEditing(false);
+    try { sessionStorage.setItem('cb_dashboard_section', activeSection); } catch { /* ignore */ }
+  }, [activeSection]);
 
   useEffect(() => {
     if (assessmentCooldown <= 0) return;
@@ -225,9 +240,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
 
   // Load dashboard data on mount.
-  useEffect(() => {
-    if (!contactId) return;
-    (async () => {
+  const loadData = useCallback(async () => {
+    if (!contactId) { setLoading(false); return; }
+    setLoading(true);
+    setLoadError(null);
+    {
       try {
         const d = await getDashboard(contactId);
         const pi = (d.personal_info || {}) as Record<string, unknown>;
@@ -413,10 +430,15 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         });
       } catch (err) {
         console.warn('getDashboard failed', err);
+        setLoadError(err instanceof Error ? err.message : 'Failed to load your dashboard.');
+      } finally {
+        setLoading(false);
       }
-    })();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [contactId]);
+
+  useEffect(() => { void loadData(); }, [loadData]);
 
 
   const startEdit = () => {
@@ -1061,6 +1083,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               </p>
             )}
 
+            {loading ? (
+              <SectionSkeleton />
+            ) : loadError ? (
+              <ErrorRetry
+                message="We couldn't load your profile"
+                detail={loadError}
+                onRetry={() => void loadData()}
+              />
+            ) : (
+              <>
             {activeSection === 'personal' && (
               editing ? (
                 <PersonalInfoStep data={draftProfile} onChange={setDraftProfile} />
@@ -1242,6 +1274,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 </div>
 
               )
+            )}
+              </>
             )}
 
           </div>
