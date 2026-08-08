@@ -412,6 +412,32 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
 
       <div ref={scrollContainerRef} className="flex-1 flex flex-col overflow-y-auto">
         <div className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10">
+          {draftRestored && (
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">We restored your progress.</span>{' '}
+                <span className="text-muted-foreground">
+                  Your answers from this device were saved automatically.
+                </span>
+              </p>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={startFresh}
+                  className="text-sm font-medium text-destructive hover:underline"
+                >
+                  Start fresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDraftRestored(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
           {currentSubStep === 1 && (
             <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
               <p className="text-sm font-semibold text-foreground">Let's build your professional profile.</p>
@@ -434,6 +460,18 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               <span className="text-xs text-muted-foreground font-medium">
                 {currentSubStep}/{TOTAL_SUBSTEPS}
               </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>
+                Step {currentSubStep} of {TOTAL_SUBSTEPS} — about{' '}
+                {Math.max(1, Math.round((TOTAL_SUBSTEPS - currentSubStep + 1) * 1.5))} min left
+              </span>
+              {lastSavedAt && (
+                <span aria-live="polite">
+                  {dirty ? 'Unsaved changes' : 'Saved'}{' '}
+                  {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
           </div>
 
