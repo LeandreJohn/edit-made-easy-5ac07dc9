@@ -47,7 +47,7 @@ const WizardNavigation = ({
   }
 
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-border mt-8">
+    <div className="sticky bottom-0 z-20 -mx-8 px-8 flex items-center justify-between gap-3 pt-4 pb-4 sm:pb-0 border-t border-border mt-8 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:mx-0 sm:px-0 sm:pt-6 sm:bg-transparent sm:backdrop-blur-none">
       <button
         onClick={onPrevious}
         disabled={isFirst}
