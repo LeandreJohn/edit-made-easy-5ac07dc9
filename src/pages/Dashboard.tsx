@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ErrorRetry from '@/components/common/ErrorRetry';
 import SectionSkeleton from '@/components/common/SectionSkeleton';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
@@ -439,6 +440,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   }, [contactId]);
 
   useEffect(() => { void loadData(); }, [loadData]);
+
+  // Warn before a reload wipes an in-progress section edit.
+  useUnsavedChangesGuard(editing);
 
 
   const startEdit = () => {
