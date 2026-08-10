@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { isGraduationComplete } from './stepValidation';
+
 
 const required = (label: string) =>
   z.string().trim().min(1, { message: `${label} is required` });
