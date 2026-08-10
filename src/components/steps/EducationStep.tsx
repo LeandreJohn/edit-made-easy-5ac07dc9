@@ -1,5 +1,7 @@
 import { Education } from '@/types/application';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
+import { normalizeGraduation } from '@/lib/validation/stepValidation';
+
 
 interface EducationStepProps {
   data: Education;
