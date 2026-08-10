@@ -53,15 +53,18 @@ const YEARS = Array.from({ length: 67 }, (_, i) => CURRENT_YEAR + 6 - i);
 
 /** Split a stored "MM/YYYY" (or partial "MM/" / "/YYYY", or legacy ISO) value into parts. */
 function splitGraduation(value: string): { month: string; year: string } {
-  if (!value) return { month: '', year: '' };
-  const mmYyyy = value.match(/^(\d{2})?\/(\d{4})?$/);
-  if (mmYyyy) return { month: mmYyyy[1] ?? '', year: mmYyyy[2] ?? '' };
-  const iso = value.match(/^(\d{4})-(\d{2})/);
-  if (iso) return { month: iso[2], year: iso[1] };
-  const yearOnly = value.match(/^(\d{4})$/);
+  const norm = normalizeGraduation(value);
+  if (norm) {
+    const [month, year] = norm.split('/');
+    return { month, year };
+  }
+  const partial = (value || '').match(/^(\d{2})?\/(\d{4})?$/);
+  if (partial) return { month: partial[1] ?? '', year: partial[2] ?? '' };
+  const yearOnly = (value || '').match(/^(\d{4})$/);
   if (yearOnly) return { month: '', year: yearOnly[1] };
   return { month: '', year: '' };
 }
+
 
 const EducationStep = ({ data, onChange }: EducationStepProps) => {
   const update = (field: keyof Education, value: string) => {
