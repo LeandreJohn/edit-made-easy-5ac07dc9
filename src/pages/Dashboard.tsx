@@ -1612,7 +1612,7 @@ const EducationView = ({ data }: { data: Education }) => (
     <Field label="Degree / Field" value={data.degreeField} />
     <Field label="School Name" value={data.schoolName} />
     <Field label="School Location" value={data.schoolLocation} />
-    <Field label="Graduation Date" value={data.graduationDate} />
+    <Field label="Graduation Date" value={formatGraduation(data.graduationDate)} />
   </div>
 );
 
