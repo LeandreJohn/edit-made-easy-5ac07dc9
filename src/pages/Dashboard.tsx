@@ -48,7 +48,9 @@ import ManageDocumentsModal from '@/components/common/ManageDocumentsModal';
 import {
   isPersonalInfoValid, isEducationValid, isProfessionalValid, isValuePropositionValid,
   isWorkSetupValid, isComplianceValid, isToolsValid, isSkillsValid,
+  normalizeGraduation, formatGraduation,
 } from '@/lib/validation/stepValidation';
+
 import dashboardBanner from '@/assets/dashboard-banner.png';
 
 
