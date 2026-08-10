@@ -1,6 +1,7 @@
 import { Upload, FileText, Image as ImageIcon, Eye, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 interface FileDropzoneProps {
   onFilesSelected?: (files: File[]) => void;
@@ -12,6 +13,8 @@ interface FileDropzoneProps {
   /** Files previously selected — used to hydrate the dropzone when the
    * user navigates back to a step so uploads aren't lost. */
   initialFiles?: File[];
+  /** Maximum size per file in MB (default 10). */
+  maxSizeMB?: number;
 }
 
 interface UploadedFile {
@@ -29,6 +32,7 @@ const FileDropzone = ({
   maxFiles = 10,
   imagesOnly = true,
   initialFiles,
+  maxSizeMB = 10,
 }: FileDropzoneProps) => {
   const [files, setFiles] = useState<UploadedFile[]>(() =>
     (initialFiles ?? []).map((file) => ({
@@ -39,6 +43,7 @@ const FileDropzone = ({
     })),
   );
   const [previewing, setPreviewing] = useState<UploadedFile | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<UploadedFile | null>(null);
   const hydratedKey = useRef<string>(
     (initialFiles ?? []).map((f) => `${f.name}:${f.size}`).join('|'),
   );
@@ -74,6 +79,16 @@ const FileDropzone = ({
       if (!incoming.length) return;
 
       let accepted = incoming;
+
+      const tooBig = accepted.filter((f) => f.size > maxSizeMB * 1024 * 1024);
+      if (tooBig.length) {
+        accepted = accepted.filter((f) => f.size <= maxSizeMB * 1024 * 1024);
+        toast.error(
+          `${tooBig.length === 1 ? `"${tooBig[0].name}" is` : `${tooBig.length} files are`} larger than ${maxSizeMB} MB and ${tooBig.length === 1 ? 'was' : 'were'} skipped.`,
+        );
+        if (!accepted.length) return;
+      }
+
       if (imagesOnly) {
         const rejected = accepted.filter((f) => !f.type.startsWith('image/'));
         accepted = accepted.filter((f) => f.type.startsWith('image/'));
@@ -102,7 +117,7 @@ const FileDropzone = ({
       setFiles(next);
       onFilesSelected?.(next.map((f) => f.file));
     },
-    [files, multiple, onFilesSelected, maxFiles, imagesOnly]
+    [files, multiple, onFilesSelected, maxFiles, imagesOnly, maxSizeMB]
   );
 
   const handleDrop = useCallback(
@@ -150,9 +165,9 @@ const FileDropzone = ({
         <p className="text-xs text-muted-foreground mb-1">
           {imagesOnly ? 'Images only — JPG, PNG, WEBP, GIF' : accept || 'Any file type'}
         </p>
-        {multiple && (
-          <p className="text-xs text-muted-foreground mb-3">Up to {maxFiles} files</p>
-        )}
+        <p className="text-xs text-muted-foreground mb-3">
+          {multiple ? `Up to ${maxFiles} files · ` : ''}Max {maxSizeMB} MB per file
+        </p>
         <p className="text-xs text-muted-foreground mb-3">— OR —</p>
         <label
           htmlFor={`dropzone-${label}`}
@@ -191,7 +206,7 @@ const FileDropzone = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => removeFile(f.id)}
+                  onClick={() => setPendingRemoval(f)}
                   className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
                   title="Remove"
                 >
@@ -202,6 +217,22 @@ const FileDropzone = ({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingRemoval}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+        title="Remove this file?"
+        description={
+          pendingRemoval
+            ? `"${pendingRemoval.file.name}" will be removed from your upload. You can add it again later.`
+            : ''
+        }
+        confirmLabel="Remove file"
+        onConfirm={() => {
+          if (pendingRemoval) removeFile(pendingRemoval.id);
+          setPendingRemoval(null);
+        }}
+      />
 
       {/* Preview modal */}
       {previewing && (
