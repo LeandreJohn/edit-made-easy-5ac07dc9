@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { isGraduationComplete } from './stepValidation';
+
 
 const required = (label: string) =>
   z.string().trim().min(1, { message: `${label} is required` });
@@ -34,7 +36,8 @@ export const educationSchema = z.object({
   // Undergraduates have no graduation date yet — everyone else must provide one.
   const isUndergrad = /undergraduate|currently/i.test(level);
   const grad = String((val as { graduationDate?: string }).graduationDate ?? '').trim();
-  const gradComplete = /^(0[1-9]|1[0-2])\/\d{4}$/.test(grad);
+  const gradComplete = isGraduationComplete(grad);
+
   if (!isUndergrad && !gradComplete) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

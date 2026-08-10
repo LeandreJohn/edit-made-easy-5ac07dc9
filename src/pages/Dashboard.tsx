@@ -48,7 +48,9 @@ import ManageDocumentsModal from '@/components/common/ManageDocumentsModal';
 import {
   isPersonalInfoValid, isEducationValid, isProfessionalValid, isValuePropositionValid,
   isWorkSetupValid, isComplianceValid, isToolsValid, isSkillsValid,
+  normalizeGraduation, formatGraduation,
 } from '@/lib/validation/stepValidation';
+
 import dashboardBanner from '@/assets/dashboard-banner.png';
 
 
@@ -280,7 +282,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           highestLevel: e.education_level || '',
           schoolName: e.school_name || '',
           schoolLocation: e.school_location || '',
-          graduationDate: e.graduation_date || '',
+          graduationDate: normalizeGraduation(e.graduation_date),
           degreeField: e.degree || '',
         });
         const pb = d.professional_background || {};
@@ -1610,7 +1612,7 @@ const EducationView = ({ data }: { data: Education }) => (
     <Field label="Degree / Field" value={data.degreeField} />
     <Field label="School Name" value={data.schoolName} />
     <Field label="School Location" value={data.schoolLocation} />
-    <Field label="Graduation Date" value={data.graduationDate} />
+    <Field label="Graduation Date" value={formatGraduation(data.graduationDate)} />
   </div>
 );
 

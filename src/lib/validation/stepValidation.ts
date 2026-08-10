@@ -20,10 +20,40 @@ export function isPersonalInfoValid(p: PersonalInfo): boolean {
   return nonEmpty(p.address);
 }
 
+/**
+ * Normalize any stored graduation value to "MM/YYYY".
+ * Accepts ISO ("2021-05-20", "2021-05"), "MM/YYYY", partials ("05/", "/2021").
+ * Returns "" when it cannot be parsed into a month+year pair.
+ */
+export function normalizeGraduation(value: string | undefined | null): string {
+  const v = (value || '').trim();
+  if (!v) return '';
+  const iso = v.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+  if (iso) return `${iso[2]}/${iso[1]}`;
+  const mmYyyy = v.match(/^(\d{1,2})\/(\d{4})$/);
+  if (mmYyyy) return `${mmYyyy[1].padStart(2, '0')}/${mmYyyy[2]}`;
+  return '';
+}
+
 /** Graduation dates are stored as "MM/YYYY" — partials like "05/" are incomplete. */
 export function isGraduationComplete(value: string | undefined): boolean {
-  return /^(0[1-9]|1[0-2])\/\d{4}$/.test((value || '').trim());
+  return /^(0[1-9]|1[0-2])\/\d{4}$/.test(normalizeGraduation(value));
 }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Human-readable graduation label, e.g. "May 2021". Empty when unparseable. */
+export function formatGraduation(value: string | undefined | null): string {
+  const norm = normalizeGraduation(value);
+  if (!norm) return '';
+  const [mm, yyyy] = norm.split('/');
+  const name = MONTH_NAMES[Number(mm) - 1];
+  return name ? `${name} ${yyyy}` : norm;
+}
+
 
 export function isEducationValid(e: Education): boolean {
   const isUndergrad = /undergraduate|currently/i.test(e.highestLevel || '');
