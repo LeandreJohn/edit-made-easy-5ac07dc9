@@ -280,7 +280,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           highestLevel: e.education_level || '',
           schoolName: e.school_name || '',
           schoolLocation: e.school_location || '',
-          graduationDate: e.graduation_date || '',
+          graduationDate: normalizeGraduation(e.graduation_date),
           degreeField: e.degree || '',
         });
         const pb = d.professional_background || {};
