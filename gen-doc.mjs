@@ -116,7 +116,7 @@ children.push(new Paragraph({ children: [new PageBreak()] }));
 children.push(H1('Part 1 — Product overview'));
 
 children.push(H2('1.1 What the app is'));
-children.push(P('The platform is a single-page web application that takes a candidate from first click to a fully assessed applicant profile. It has four surfaces:'));
+children.push(P('The platform is a single-page web application that takes a candidate from first click to a fully assessed applicant profile. It has five surfaces:'));
 children.push(
   bullet('Application wizard — a guided form where a candidate creates an account and then completes 12 substeps covering their full profile.'),
   bullet('Applicant dashboard — a returning applicant signs in to review, edit and complete their profile, upload or replace documents, and re-apply when eligible.'),
@@ -391,7 +391,6 @@ children.push(code('  bun install            install dependencies'));
 children.push(code('  bun run dev            start the dev server on :8080'));
 children.push(code('  bunx vitest run        run the test suite'));
 children.push(code('  bun run build          production build'));
-children.push(spacer());
 children.push(P('Set VITE_API_BASE_URL in .env before running — every API call throws a configuration error without it.'));
 
 // ---------------------------------------------------------------- DOC
