@@ -59,7 +59,7 @@ function table(headers, rows, widths) {
     columnWidths: widths,
     rows: [
       new TableRow({ tableHeader: true, children: headers.map((h, i) => mk(h, i, true)) }),
-      ...rows.map((r) => new TableRow({ children: r.map((c, i) => mk(c, i, false)) })),
+      ...rows.map((r) => new TableRow({ cantSplit: true, children: r.map((c, i) => mk(c, i, false)) })),
     ],
   });
 }
@@ -83,11 +83,34 @@ children.push(
 );
 
 // TOC
-children.push(
-  H1('Contents'),
-  new TableOfContents('Contents', { hyperlink: true, headingStyleRange: '1-2' }),
-  new Paragraph({ children: [new PageBreak()] }),
-);
+const TOC = [
+  ['Part 1 — Product overview', true],
+  ['1.1 What the app is', false],
+  ['1.2 Entry points', false],
+  ['1.3 The applicant journey', false],
+  ['1.4 Dashboard behaviour', false],
+  ['1.5 How candidate data is protected in the browser', false],
+  ['Part 2 — Technical reference', true],
+  ['2.1 Stack and structure', false],
+  ['2.2 Backend configuration and the request wrapper', false],
+  ['2.3 How files are sent', false],
+  ['2.4 Endpoint catalogue — authentication', false],
+  ['2.5 Endpoint catalogue — wizard substeps', false],
+  ['2.6 Endpoint catalogue — dashboard, documents and attendance', false],
+  ['2.7 Dashboard payload mapping', false],
+  ['2.8 Assessment (InnerMetrix) flow', false],
+  ['2.9 Data formats and normalisation', false],
+  ['2.10 Validation rules', false],
+  ['2.11 Browser storage', false],
+  ['2.12 Local development', false],
+];
+children.push(H1('Contents'));
+TOC.forEach(([t, top]) => children.push(new Paragraph({
+  spacing: { before: top ? 160 : 0, after: 60 },
+  indent: { left: top ? 0 : 280 },
+  children: [new TextRun({ text: t, size: top ? 22 : 20, bold: !!top, color: top ? BRAND : '222222' })],
+})));
+children.push(new Paragraph({ children: [new PageBreak()] }));
 
 // ============================== PART 1
 children.push(H1('Part 1 — Product overview'));
@@ -95,7 +118,7 @@ children.push(H1('Part 1 — Product overview'));
 children.push(H2('1.1 What the app is'));
 children.push(P('The platform is a single-page web application that takes a candidate from first click to a fully assessed applicant profile. It has four surfaces:'));
 children.push(
-  bullet('Application wizard — a 12-substep guided form where a candidate creates an account and fills in their full profile.'),
+  bullet('Application wizard — a guided form where a candidate creates an account and then completes 12 substeps covering their full profile.'),
   bullet('Applicant dashboard — a returning applicant signs in to review, edit and complete their profile, upload or replace documents, and re-apply when eligible.'),
   bullet('Attendance dashboard — the same profile surface plus a daily log in / log out control with an availability selection.'),
   bullet('Assessment pages — standalone pages where a person can take the InnerMetrix (IMX) Values and DISC assessments without going through the whole wizard.'),
@@ -238,14 +261,14 @@ children.push(table(
   ],
   [1900, 2200, 5980],
 ));
-children.push(P('All of these return { success: boolean }.'));
+children.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: 'All of these return { success: boolean }.', size: 20 })] }));
 children.push(spacer());
 
 children.push(H2('2.6 Endpoint catalogue — dashboard, documents and attendance'));
 children.push(table(
   ['Method + path', 'When it fires', 'Body / query', 'Response'],
   [
-    ['GET /dashboard/{contact_id}', 'Dashboard and attendance page load', 'Path parameter; an email address may be used instead of an id', 'Full profile payload (see 2.7)'],
+    ['GET /dashboard/{contact_id}', 'Dashboard and attendance page load', 'Path parameter; an email address may be used instead of an id', 'Full profile payload'],
     ['GET /profile/{contact_id}', 'Profile read helper', 'Path parameter', 'Raw contact record'],
     ['PUT /reapply', 'Apply Now / Reapply button', 'contact_id, referrer, date_applied', '{ success }'],
     ['POST /update-portfolio-file', 'Manage Documents — portfolio', 'contact_id, portfolio_link, file_names[], files[]', '{ success }'],
@@ -289,6 +312,7 @@ children.push(table(
   ],
   [3200, 6880],
 ));
+children.push(spacer());
 children.push(P('File fields may be a bare URL string or an object with url / name / file_name — both shapes are handled, and any file already stored as a URL counts toward the completion percentage.'));
 children.push(spacer());
 
@@ -312,6 +336,7 @@ children.push(table(
   ],
   [3000, 3200, 3880],
 ));
+children.push(spacer());
 children.push(P('The results endpoints have no explicit "completed" flag, so a response counts as complete when it carries completed: true, any non-empty scores / rawscores / dimensions / results / data bucket, or any numeric value. Status checks are throttled to one every 30 seconds and Continue is only enabled after a 5-minute minimum.'));
 children.push(new Paragraph({ children: [new PageBreak()] }));
 
@@ -366,6 +391,7 @@ children.push(code('  bun install            install dependencies'));
 children.push(code('  bun run dev            start the dev server on :8080'));
 children.push(code('  bunx vitest run        run the test suite'));
 children.push(code('  bun run build          production build'));
+children.push(spacer());
 children.push(P('Set VITE_API_BASE_URL in .env before running — every API call throws a configuration error without it.'));
 
 // ---------------------------------------------------------------- DOC
