@@ -1254,7 +1254,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 <ComplianceStep data={draftCompliance} onChange={setDraftCompliance} />
               ) : (
                 <div className="space-y-6">
-                  <ComplianceView data={compliance} validIdLabel={validIdLabel} />
+                  <ComplianceView data={compliance} />
                   <div className="space-y-3">
                     {([
                       ['Valid ID', complianceUrls.validIdFiles],
