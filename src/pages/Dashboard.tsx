@@ -1538,6 +1538,24 @@ const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; vali
   );
 };
 
+const LinkField = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+    {value ? (
+      <a
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary underline underline-offset-2 break-all hover:no-underline"
+      >
+        {value}
+      </a>
+    ) : (
+      <p className="text-sm text-muted-foreground italic">Not provided</p>
+    )}
+  </div>
+);
+
 const Field = ({ label, value }: { label: string; value: string }) => (
   <div>
     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
