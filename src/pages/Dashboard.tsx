@@ -1519,20 +1519,14 @@ const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
 const isComplianceEmpty = (d: ComplianceFormData) =>
   !d.authorized && !d.nbiValidity && !d.policeValidity && !d.proofOfSeparation;
 
-const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; validIdLabel?: string }) => {
+const ComplianceView = ({ data }: { data: ComplianceFormData }) => {
   // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
         <Field label="Background Check Authorized" value={data.authorized ? 'Yes' : 'No'} />
-        <Field label="Valid ID Type" value={validIdLabel ?? ''} />
         <Field label="NBI Clearance Valid Until" value={data.nbiValidity} />
         <Field label="Police Clearance Valid Until" value={data.policeValidity} />
-
-        <Field
-          label="Proof of Separation / COE"
-          value={data.proofOfSeparation?.name ? data.proofOfSeparation.name : ''}
-        />
       </div>
     </div>
   );
