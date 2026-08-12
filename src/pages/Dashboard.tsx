@@ -235,6 +235,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   useEffect(() => {
     setEditing(false);
+    authWarnedRef.current = false;
     try { sessionStorage.setItem('cb_dashboard_section', activeSection); } catch { /* ignore */ }
   }, [activeSection]);
 
