@@ -1509,6 +1509,8 @@ const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
         <Field label="HD Webcam" value={data.webcam ? 'Yes' : 'No'} />
         <Field label="Primary Internet Provider" value={data.primaryISP} />
         <Field label="Secondary Internet Provider" value={data.secondaryISP} />
+        <LinkField label="Primary ISP Speedtest Link" value={data.primaryISPSpeedtest ?? ''} />
+        <LinkField label="Secondary ISP Speedtest Link" value={data.secondaryISPSpeedtest ?? ''} />
       </div>
     </div>
   );
