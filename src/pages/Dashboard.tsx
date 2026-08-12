@@ -177,6 +177,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   // Header menus & modals
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  // Tracks whether the background-check warning has already been shown for this
+  // compliance edit — a second save attempt goes through unauthorized.
+  const authWarnedRef = useRef(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [manageDocsOpen, setManageDocsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
