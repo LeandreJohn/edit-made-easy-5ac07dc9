@@ -470,6 +470,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       toast.error('Not signed in.');
       return;
     }
+    // Warn once when saving compliance without the background check authorization.
+    if (activeSection === 'compliance' && !draftCompliance.authorized && !authWarnedRef.current) {
+      authWarnedRef.current = true;
+      setAuthPromptOpen(true);
+      return;
+    }
     setSaving(true);
     try {
       switch (activeSection) {
