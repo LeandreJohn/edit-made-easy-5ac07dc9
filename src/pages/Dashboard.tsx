@@ -6,7 +6,7 @@ import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
   FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
-  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck,
+  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck, Check,
   type LucideIcon,
 } from 'lucide-react';
 import { notificationsForTags } from '@/data/tagNotifications';
@@ -177,6 +177,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   // Header menus & modals
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  // Tracks whether the background-check warning has already been shown for this
+  // compliance edit — a second save attempt goes through unauthorized.
+  const authWarnedRef = useRef(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [manageDocsOpen, setManageDocsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -231,6 +235,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   useEffect(() => {
     setEditing(false);
+    authWarnedRef.current = false;
     try { sessionStorage.setItem('cb_dashboard_section', activeSection); } catch { /* ignore */ }
   }, [activeSection]);
 
@@ -468,6 +473,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const saveEdit = async () => {
     if (!contactId) {
       toast.error('Not signed in.');
+      return;
+    }
+    // Warn once when saving compliance without the background check authorization.
+    if (activeSection === 'compliance' && !draftCompliance.authorized && !authWarnedRef.current) {
+      authWarnedRef.current = true;
+      setAuthPromptOpen(true);
       return;
     }
     setSaving(true);
@@ -976,23 +987,36 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
           {variant === 'reapply' && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
-              <div className="w-11 h-11 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
-                <ArrowRight className="w-5 h-5 text-purple-600" />
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
+                  incompleteSections.length > 0 ? 'bg-purple-500/10' : 'bg-emerald-500/10'
+                }`}
+              >
+                {incompleteSections.length > 0 ? (
+                  <ArrowRight className="w-5 h-5 text-purple-600" />
+                ) : (
+                  <Check className="w-5 h-5 text-emerald-600" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Next Step</p>
-                <p className="font-heading text-base font-bold text-foreground truncate">
-                  {incompleteSections[0]?.label ?? 'All complete!'}
-                </p>
                 {incompleteSections.length > 0 ? (
-                  <button
-                    onClick={() => setActiveSection(incompleteSections[0].key)}
-                    className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline"
-                  >
-                    Start Now <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <>
+                    <p className="text-xs text-muted-foreground">Next Step</p>
+                    <p className="font-heading text-base font-bold text-foreground truncate">
+                      {incompleteSections[0].label}
+                    </p>
+                    <button
+                      onClick={() => setActiveSection(incompleteSections[0].key)}
+                      className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline"
+                    >
+                      Start Now <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
+                  <>
+                    <p className="font-heading text-base font-bold text-foreground truncate">Profile Complete</p>
+                    <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
+                  </>
                 )}
               </div>
             </div>
@@ -1182,16 +1206,26 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                   ) : (
                     <p className="text-sm text-muted-foreground">No portfolio link provided.</p>
                   )}
-                  {portfolioFileNames.length > 0 && (
-                    <div>
-                      <h3 className="font-heading text-base font-semibold text-foreground mb-2">Uploaded Files</h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {portfolioFileNames.map((n, i) => (
-                          <li key={`${n}-${i}`} className="text-sm text-foreground">{n}</li>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Uploaded Files</p>
+                    {portfolioFileUrls.length === 0 ? (
+                      portfolioFileNames.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1">
+                          {portfolioFileNames.map((n, i) => (
+                            <li key={`${n}-${i}`} className="text-sm text-foreground">{n}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                      )
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {portfolioFileUrls.map((f, i) => (
+                          <FilePreviewLink key={`${f.url}-${i}`} url={f.url} name={f.name} />
                         ))}
-                      </ul>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             )}
@@ -1254,7 +1288,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 <ComplianceStep data={draftCompliance} onChange={setDraftCompliance} />
               ) : (
                 <div className="space-y-6">
-                  <ComplianceView data={compliance} validIdLabel={validIdLabel} />
+                  <ComplianceView data={compliance} />
                   <div className="space-y-3">
                     {([
                       ['Valid ID', complianceUrls.validIdFiles],
@@ -1509,6 +1543,8 @@ const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
         <Field label="HD Webcam" value={data.webcam ? 'Yes' : 'No'} />
         <Field label="Primary Internet Provider" value={data.primaryISP} />
         <Field label="Secondary Internet Provider" value={data.secondaryISP} />
+        <LinkField label="Primary ISP Speedtest Link" value={data.primaryISPSpeedtest ?? ''} />
+        <LinkField label="Secondary ISP Speedtest Link" value={data.secondaryISPSpeedtest ?? ''} />
       </div>
     </div>
   );
@@ -1517,24 +1553,36 @@ const WorkSetupView = ({ data }: { data: WorkSetupData }) => {
 const isComplianceEmpty = (d: ComplianceFormData) =>
   !d.authorized && !d.nbiValidity && !d.policeValidity && !d.proofOfSeparation;
 
-const ComplianceView = ({ data, validIdLabel }: { data: ComplianceFormData; validIdLabel?: string }) => {
+const ComplianceView = ({ data }: { data: ComplianceFormData }) => {
   // Always render every field — missing values fall back to a "Not provided" placeholder.
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
         <Field label="Background Check Authorized" value={data.authorized ? 'Yes' : 'No'} />
-        <Field label="Valid ID Type" value={validIdLabel ?? ''} />
         <Field label="NBI Clearance Valid Until" value={data.nbiValidity} />
         <Field label="Police Clearance Valid Until" value={data.policeValidity} />
-
-        <Field
-          label="Proof of Separation / COE"
-          value={data.proofOfSeparation?.name ? data.proofOfSeparation.name : ''}
-        />
       </div>
     </div>
   );
 };
+
+const LinkField = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+    {value ? (
+      <a
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary underline underline-offset-2 break-all hover:no-underline"
+      >
+        {value}
+      </a>
+    ) : (
+      <p className="text-sm text-muted-foreground italic">Not provided</p>
+    )}
+  </div>
+);
 
 const Field = ({ label, value }: { label: string; value: string }) => (
   <div>

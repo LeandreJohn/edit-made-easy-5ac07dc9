@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import FileDropzone from '@/components/wizard/FileDropzone';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SampleDocumentModal from '@/components/common/SampleDocumentModal';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, ExternalLink } from 'lucide-react';
 import nbiSample from '@/assets/nbi-sample.png';
 import policeSample from '@/assets/police-sample.png';
 
@@ -96,7 +96,16 @@ const ComplianceStep = ({ data, onChange }: ComplianceStepProps) => {
         <p>Upload clear and valid (not expired) documents.</p>
         <ul className="list-disc pl-5 space-y-0.5">
           <li>
-            <a href="https://cyberbackercareers.com/accepted-ids/" target="_blank" rel="noreferrer" className="text-primary hover:underline">Valid ID</a>
+            Valid ID —{' '}
+            <a
+              href="https://cyberbackercareers.com/accepted-ids/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline underline-offset-2 font-medium inline-flex items-center gap-1 hover:no-underline"
+            >
+              Click on this link to see the list of accepted IDs
+              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            </a>
           </li>
           <li>NBI Clearance</li>
           <li>Police Clearance</li>
