@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import FileDropzone from '@/components/wizard/FileDropzone';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SampleDocumentModal from '@/components/common/SampleDocumentModal';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, ExternalLink } from 'lucide-react';
 import nbiSample from '@/assets/nbi-sample.png';
 import policeSample from '@/assets/police-sample.png';
 
