@@ -1182,16 +1182,26 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                   ) : (
                     <p className="text-sm text-muted-foreground">No portfolio link provided.</p>
                   )}
-                  {portfolioFileNames.length > 0 && (
-                    <div>
-                      <h3 className="font-heading text-base font-semibold text-foreground mb-2">Uploaded Files</h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {portfolioFileNames.map((n, i) => (
-                          <li key={`${n}-${i}`} className="text-sm text-foreground">{n}</li>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Uploaded Files</p>
+                    {portfolioFileUrls.length === 0 ? (
+                      portfolioFileNames.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1">
+                          {portfolioFileNames.map((n, i) => (
+                            <li key={`${n}-${i}`} className="text-sm text-foreground">{n}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">No files uploaded</p>
+                      )
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {portfolioFileUrls.map((f, i) => (
+                          <FilePreviewLink key={`${f.url}-${i}`} url={f.url} name={f.name} />
                         ))}
-                      </ul>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             )}
