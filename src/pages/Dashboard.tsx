@@ -976,23 +976,36 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
           {variant === 'reapply' && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
-              <div className="w-11 h-11 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
-                <ArrowRight className="w-5 h-5 text-purple-600" />
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
+                  incompleteSections.length > 0 ? 'bg-purple-500/10' : 'bg-emerald-500/10'
+                }`}
+              >
+                {incompleteSections.length > 0 ? (
+                  <ArrowRight className="w-5 h-5 text-purple-600" />
+                ) : (
+                  <Check className="w-5 h-5 text-emerald-600" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Next Step</p>
-                <p className="font-heading text-base font-bold text-foreground truncate">
-                  {incompleteSections[0]?.label ?? 'All complete!'}
-                </p>
                 {incompleteSections.length > 0 ? (
-                  <button
-                    onClick={() => setActiveSection(incompleteSections[0].key)}
-                    className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline"
-                  >
-                    Start Now <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <>
+                    <p className="text-xs text-muted-foreground">Next Step</p>
+                    <p className="font-heading text-base font-bold text-foreground truncate">
+                      {incompleteSections[0].label}
+                    </p>
+                    <button
+                      onClick={() => setActiveSection(incompleteSections[0].key)}
+                      className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline"
+                    >
+                      Start Now <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
+                  <>
+                    <p className="font-heading text-base font-bold text-foreground truncate">Profile Complete</p>
+                    <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
+                  </>
                 )}
               </div>
             </div>
