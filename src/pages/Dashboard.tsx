@@ -6,7 +6,7 @@ import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
   FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
-  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck,
+  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck, Check,
   type LucideIcon,
 } from 'lucide-react';
 import { notificationsForTags } from '@/data/tagNotifications';
