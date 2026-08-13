@@ -178,6 +178,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [accountEmail, setAccountEmail] = useState('');
   // Tracks whether the background-check warning has already been shown for this
   // compliance edit — a second save attempt goes through unauthorized.
   const authWarnedRef = useRef(false);
