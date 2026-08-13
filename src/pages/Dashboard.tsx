@@ -178,6 +178,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [accountEmail, setAccountEmail] = useState('');
   // Tracks whether the background-check warning has already been shown for this
   // compliance edit — a second save attempt goes through unauthorized.
   const authWarnedRef = useRef(false);
@@ -238,6 +239,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     authWarnedRef.current = false;
     try { sessionStorage.setItem('cb_dashboard_section', activeSection); } catch { /* ignore */ }
   }, [activeSection]);
+
+  useEffect(() => {
+    if (draftCompliance?.authorized) authWarnedRef.current = false;
+  }, [draftCompliance?.authorized]);
 
   useEffect(() => {
     if (assessmentCooldown <= 0) return;
@@ -430,6 +435,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         setLastUpdated(lu && !isNaN(lu.getTime()) ? lu : null);
         setCanDoAssessment(yes(d.can_do_assessment));
         setTags(Array.isArray(d.tag) ? d.tag : []);
+        setAccountEmail(d.email || '');
         // Cache identity so the Assessment step can launch IMX with real names.
         saveApplicantIdentity({
           email: d.email || '',
@@ -1501,7 +1507,36 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         </DialogContent>
       </Dialog>
 
-      <ChangePasswordModal open={changePwOpen} onOpenChange={setChangePwOpen} contactId={contactId ?? ''} />
+      <ChangePasswordModal
+        open={changePwOpen}
+        onOpenChange={setChangePwOpen}
+        contactId={contactId ?? ''}
+        email={accountEmail}
+      />
+
+      {/* Background check authorization reminder — shown once per compliance edit. */}
+      <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Background Check Authorization Required</DialogTitle>
+            <DialogDescription className="text-left space-y-3 pt-2">
+              <span className="block">
+                A background check is an important part of our compliance process and helps ensure that
+                profiles are properly verified and ready for potential client placement.
+              </span>
+              <span className="block">
+                You have not yet authorized Cyberbacker to conduct a background check. Please review the
+                authorization checkbox above before saving your compliance information.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button type="button" className="btn-primary" onClick={() => setAuthPromptOpen(false)}>
+              Review Authorization
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <HelpCenterModal open={helpOpen} onOpenChange={setHelpOpen} />
       <ManageDocumentsModal
         open={manageDocsOpen}
