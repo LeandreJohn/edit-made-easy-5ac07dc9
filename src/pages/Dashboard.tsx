@@ -241,6 +241,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   }, [activeSection]);
 
   useEffect(() => {
+    if (draftCompliance?.authorized) authWarnedRef.current = false;
+  }, [draftCompliance?.authorized]);
+
+  useEffect(() => {
     if (assessmentCooldown <= 0) return;
     const t = window.setInterval(() => setAssessmentCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
     return () => window.clearInterval(t);
