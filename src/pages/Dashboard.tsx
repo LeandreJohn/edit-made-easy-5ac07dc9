@@ -1503,7 +1503,36 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         </DialogContent>
       </Dialog>
 
-      <ChangePasswordModal open={changePwOpen} onOpenChange={setChangePwOpen} contactId={contactId ?? ''} />
+      <ChangePasswordModal
+        open={changePwOpen}
+        onOpenChange={setChangePwOpen}
+        contactId={contactId ?? ''}
+        email={accountEmail}
+      />
+
+      {/* Background check authorization reminder — shown once per compliance edit. */}
+      <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Background Check Authorization Required</DialogTitle>
+            <DialogDescription className="text-left space-y-3 pt-2">
+              <span className="block">
+                A background check is an important part of our compliance process and helps ensure that
+                profiles are properly verified and ready for potential client placement.
+              </span>
+              <span className="block">
+                You have not yet authorized Cyberbacker to conduct a background check. Please review the
+                authorization checkbox above before saving your compliance information.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button type="button" className="btn-primary" onClick={() => setAuthPromptOpen(false)}>
+              Review Authorization
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <HelpCenterModal open={helpOpen} onOpenChange={setHelpOpen} />
       <ManageDocumentsModal
         open={manageDocsOpen}
