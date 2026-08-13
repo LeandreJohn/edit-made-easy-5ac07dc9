@@ -35,7 +35,7 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
   // Inject acquisition flags into JSON bodies when their corresponding
   // session route is active (e.g. /head-hunting, /davao-hub).
   let body = init.body;
-  if ((isHeadhunting() || isDavaohub() || isSourcing()) && typeof body === 'string') {
+  if ((isHeadhunting() || isDavaohub() || isSourcing() || getHearFrom()) && typeof body === 'string') {
     try {
       const parsed = JSON.parse(body);
       const extra: Record<string, boolean | string> = {};
@@ -44,6 +44,11 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
       if (isSourcing()) {
         extra.source = true;
         extra.source_name = getSourceName();
+      }
+      // /sourcing/:hearfrom — tag the contact with where they heard about us.
+      if (getHearFrom()) {
+        extra.sourcing = true;
+        extra.hearfrom = getHearFrom();
       }
       body = JSON.stringify({ ...parsed, ...extra });
     } catch { /* leave body untouched */ }
