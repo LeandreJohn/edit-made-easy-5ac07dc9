@@ -40,3 +40,14 @@ export function setSourceName(name: string) {
 export function getSourceName(): string {
   return SOURCE_NAME;
 }
+
+let SOURCING_HEARFROM = '';
+
+/** Set the "heard from" value captured by the /sourcing/:hearfrom route. */
+export function setHearFrom(value: string) {
+  SOURCING_HEARFROM = value;
+}
+
+export function getHearFrom(): string {
+  return SOURCING_HEARFROM;
+}
