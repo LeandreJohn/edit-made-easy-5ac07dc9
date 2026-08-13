@@ -57,8 +57,12 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
     return () => window.clearTimeout(t);
   }, []);
 
-  // Capture referred_by from URL ?ref= query param.
-  const referredBy = searchParams.get('ref') || '';
+  // Capture referred_by from the URL ?ref= query param, falling back to the
+  // code captured earlier in this session (survives losing the query string).
+  const sessionRef = (() => {
+    try { return sessionStorage.getItem('cb_referrer') || ''; } catch { return ''; }
+  })();
+  const referredBy = searchParams.get('ref') || sessionRef;
 
   const openNdaThenReady = () => {
     setNdaOpen(true);
