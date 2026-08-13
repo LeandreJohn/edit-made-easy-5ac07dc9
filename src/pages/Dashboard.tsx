@@ -430,6 +430,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
         setLastUpdated(lu && !isNaN(lu.getTime()) ? lu : null);
         setCanDoAssessment(yes(d.can_do_assessment));
         setTags(Array.isArray(d.tag) ? d.tag : []);
+        setAccountEmail(d.email || '');
         // Cache identity so the Assessment step can launch IMX with real names.
         saveApplicantIdentity({
           email: d.email || '',
