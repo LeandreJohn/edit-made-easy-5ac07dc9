@@ -7,6 +7,7 @@ import {
   isDavaohub,
   isSourcing,
   getSourceName,
+  getHearFrom,
 } from '@/lib/headhunting';
 
 type Step = {
