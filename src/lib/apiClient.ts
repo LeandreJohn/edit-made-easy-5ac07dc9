@@ -16,7 +16,7 @@ import type {
   WorkSetup,
   ComplianceData,
 } from '@/types/application';
-import { isHeadhunting, isDavaohub, isSourcing, getSourceName } from '@/lib/headhunting';
+import { isHeadhunting, isDavaohub, isSourcing, getSourceName, getHearFrom } from '@/lib/headhunting';
 // Client-side Azure uploads are disabled. Files are sent in JSON-safe base64
 // objects so FastAPI can parse them without trying to UTF-8 decode raw bytes.
 
