@@ -14,7 +14,7 @@ interface IntroVideoModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const VIDEO_ID = 'EhsyLXdIY5U';
+const VIDEO_ID = 'fEPXBxGTyco';
 
 // Minimal typings for the YouTube IFrame API we use.
 type YTPlayer = { destroy: () => void };
