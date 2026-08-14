@@ -50,6 +50,14 @@ import {
   draftHasContent,
 } from '@/lib/wizardDraft';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 
 import {
@@ -133,6 +141,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   const [draftRestored, setDraftRestored] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
 
 
   // Persist wizard progress so a browser refresh resumes on the same step.
@@ -245,6 +254,8 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   const workSetupRef = useRef<WorkSetupStepHandle>(null);
   const assessmentRef = useRef<AssessmentStepHandle>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Background-check authorization reminder — shown once per compliance visit.
+  const authWarnedRef = useRef(false);
 
   useEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -272,6 +283,12 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   }, [values.email, values.personalInfo.firstName, values.personalInfo.lastName]);
 
   const handleNext = async () => {
+    // Compliance step — warn once when background check authorization is unticked.
+    if (currentSubStep === 11 && !values.compliance.authorizeBackgroundCheck && !authWarnedRef.current) {
+      authWarnedRef.current = true;
+      setAuthPromptOpen(true);
+      return;
+    }
     if (currentSubStep === 10 && workSetupRef.current && !workSetupRef.current.tryAdvance()) {
       return;
     }
@@ -665,6 +682,30 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
         </div>
         <Footer />
       </div>
+
+      {/* Background check authorization reminder */}
+      <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Background Check Authorization Required</DialogTitle>
+            <DialogDescription className="text-left space-y-3 pt-2">
+              <span className="block">
+                A background check is an important part of our compliance process and helps ensure that
+                profiles are properly verified and ready for potential client placement.
+              </span>
+              <span className="block">
+                You have not yet authorized Cyberbacker to conduct a background check. Please review the
+                authorization checkbox above before saving your compliance information.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button type="button" className="btn-primary" onClick={() => setAuthPromptOpen(false)}>
+              Review Authorization
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
