@@ -257,6 +257,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   // Background-check authorization reminder — shown once per compliance visit.
   const authWarnedRef = useRef(false);
 
+
   useEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
@@ -281,6 +282,14 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
       lastName: values.personalInfo.lastName,
     });
   }, [values.email, values.personalInfo.firstName, values.personalInfo.lastName]);
+
+  // Reset the background-check warning when the box is ticked or the user
+  // leaves the Compliance step.
+  useEffect(() => {
+    if (currentSubStep !== 11 || values.compliance.authorizeBackgroundCheck) {
+      authWarnedRef.current = false;
+    }
+  }, [currentSubStep, values.compliance.authorizeBackgroundCheck]);
 
   const handleNext = async () => {
     // Compliance step — warn once when background check authorization is unticked.
