@@ -10,6 +10,7 @@ import AssessmentResult from "./pages/AssessmentResult.tsx";
 import HeadHunting from "./pages/HeadHunting.tsx";
 import DavaoHub from "./pages/DavaoHub.tsx";
 import Source from "./pages/Source.tsx";
+import CareerSourcing from "./pages/CareerSourcing.tsx";
 import ComplianceDocsUpload from "./pages/ComplianceDocsUpload.tsx";
 import AssessmentPage from "./pages/AssessmentPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/head-hunting" element={<HeadHunting />} />
           <Route path="/davao-hub" element={<DavaoHub />} />
           <Route path="/source/:name" element={<Source />} />
+          <Route path="/career-sourcing/:hearfrom" element={<CareerSourcing />} />
           <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
           <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="/ph-assessment" element={<AssessmentPage variant="ph" />} />
