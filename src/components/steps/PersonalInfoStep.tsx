@@ -12,7 +12,7 @@ import EligibilityModal from '@/components/common/EligibilityModal';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 import { fetchPhCities, fetchPhBarangays, PsgcCity } from '@/lib/philippines';
 import { parseResume } from '@/lib/apiClient';
-import { isHeadhunting } from '@/lib/headhunting';
+import { isHeadhuntingStyle } from '@/lib/headhunting';
 import { toast } from 'sonner';
 
 const computeAge = (iso: string): number | null => {
@@ -530,7 +530,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         />
       </div>
 
-      {isHeadhunting() && (
+      {isHeadhuntingStyle() && (
         <div className="mb-6">
           <RequiredLabel>Referral Link</RequiredLabel>
           <input

@@ -44,13 +44,17 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
       if (isSourcing()) {
         extra.source = true;
         extra.source_name = getSourceName();
+        extra.headhunting = false;
       }
-      // /sourcing/:hearfrom — tag the contact with where they heard about us.
+      // /career-sourcing/:hearfrom — tag the contact with where they heard about us.
       if (getHearFrom()) {
-        extra.sourcing = true;
+        extra.career_sourcing = true;
         extra.hearfrom = getHearFrom();
+        extra.headhunting = false;
+        extra.source = false;
       }
       body = JSON.stringify({ ...parsed, ...extra });
+
     } catch { /* leave body untouched */ }
   }
   const res = await fetch(url(path), {
