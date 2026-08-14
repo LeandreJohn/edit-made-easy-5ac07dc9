@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from '@/lib/router-compat';
 import Index from './Index';
 import NotFound from './NotFound';
-import { setSourcing, setSourceName, setHeadhunting } from '@/lib/headhunting';
+import { setSourcing, setSourceName, setHeadhuntingUi } from '@/lib/headhunting';
 
 const Source = () => {
   const { name } = useParams<{ name: string }>();
@@ -11,18 +11,18 @@ const Source = () => {
 
   useEffect(() => {
     if (!name) return;
-    // Mirror the head-hunting flow so all isHeadhunting()-gated UI is active,
-    // while still tagging the contact as sourced with the dynamic :name.
-    setHeadhunting(true);
+    // Head-hunting styled UI only — the payload tags the contact as sourced.
+    setHeadhuntingUi(true);
     setSourcing(true);
     setSourceName(name);
     setRef(new URLSearchParams(window.location.search).get('ref') || '');
     setReady(true);
     return () => {
-      setHeadhunting(false);
+      setHeadhuntingUi(false);
       setSourcing(false);
       setSourceName('');
     };
+
   }, [name]);
 
   if (!name) return <NotFound />;
