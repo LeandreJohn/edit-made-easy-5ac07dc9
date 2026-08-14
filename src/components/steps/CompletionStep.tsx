@@ -48,7 +48,7 @@ const STEPS: Step[] = [
 
 const CompletionStep = () => {
   const homeHref = useMemo(() => {
-    if (getHearFrom()) return `/sourcing/${encodeURIComponent(getHearFrom())}`;
+    if (getHearFrom()) return `/career-sourcing/${encodeURIComponent(getHearFrom())}`;
     if (isSourcing() && getSourceName()) return `/source/${getSourceName()}`;
     if (isHeadhunting()) return '/head-hunting';
     if (isDavaohub()) return '/davao-hub';
