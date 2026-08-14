@@ -5,16 +5,32 @@
  * the contact accordingly.
  */
 let HEADHUNTING = false;
+/**
+ * UI-only variant of the head-hunting flag. Routes like /source/:name and
+ * /career-sourcing/:hearfrom reuse the head-hunting styled UI but must NOT
+ * send `headhunting: true` to the backend.
+ */
+let HEADHUNTING_UI = false;
 let DAVAOHUB = false;
 let SOURCING = false;
 let SOURCE_NAME = '';
 
 export function setHeadhunting(value: boolean) {
   HEADHUNTING = value;
+  HEADHUNTING_UI = value;
 }
 
 export function isHeadhunting(): boolean {
   return HEADHUNTING;
+}
+
+/** Enable the head-hunting styled UI without sending the payload flag. */
+export function setHeadhuntingUi(value: boolean) {
+  HEADHUNTING_UI = value;
+}
+
+export function isHeadhuntingStyle(): boolean {
+  return HEADHUNTING_UI;
 }
 
 export function setDavaohub(value: boolean) {
@@ -43,7 +59,7 @@ export function getSourceName(): string {
 
 let SOURCING_HEARFROM = '';
 
-/** Set the "heard from" value captured by the /sourcing/:hearfrom route. */
+/** Set the "heard from" value captured by the /career-sourcing/:hearfrom route. */
 export function setHearFrom(value: string) {
   SOURCING_HEARFROM = value;
 }
