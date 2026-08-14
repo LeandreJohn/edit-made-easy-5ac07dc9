@@ -19,6 +19,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SourcingHearfromRouteImport } from './routes/sourcing.$hearfrom'
 import { Route as SourceNameRouteImport } from './routes/source.$name'
+import { Route as CareerSourcingHearfromRouteImport } from './routes/career-sourcing.$hearfrom'
 
 const HeadHuntingRoute = HeadHuntingRouteImport.update({
   id: '/head-hunting',
@@ -70,6 +71,11 @@ const SourceNameRoute = SourceNameRouteImport.update({
   path: '/source/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareerSourcingHearfromRoute = CareerSourcingHearfromRouteImport.update({
+  id: '/career-sourcing/$hearfrom',
+  path: '/career-sourcing/$hearfrom',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
   '/head-hunting': typeof HeadHuntingRoute
+  '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
   '/source/$name': typeof SourceNameRoute
   '/sourcing/$hearfrom': typeof SourcingHearfromRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
   '/head-hunting': typeof HeadHuntingRoute
+  '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
   '/source/$name': typeof SourceNameRoute
   '/sourcing/$hearfrom': typeof SourcingHearfromRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
   '/head-hunting': typeof HeadHuntingRoute
+  '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
   '/source/$name': typeof SourceNameRoute
   '/sourcing/$hearfrom': typeof SourcingHearfromRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/davao-hub'
     | '/head-hunting'
+    | '/career-sourcing/$hearfrom'
     | '/source/$name'
     | '/sourcing/$hearfrom'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/davao-hub'
     | '/head-hunting'
+    | '/career-sourcing/$hearfrom'
     | '/source/$name'
     | '/sourcing/$hearfrom'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/davao-hub'
     | '/head-hunting'
+    | '/career-sourcing/$hearfrom'
     | '/source/$name'
     | '/sourcing/$hearfrom'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DavaoHubRoute: typeof DavaoHubRoute
   HeadHuntingRoute: typeof HeadHuntingRoute
+  CareerSourcingHearfromRoute: typeof CareerSourcingHearfromRoute
   SourceNameRoute: typeof SourceNameRoute
   SourcingHearfromRoute: typeof SourcingHearfromRoute
 }
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SourceNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/career-sourcing/$hearfrom': {
+      id: '/career-sourcing/$hearfrom'
+      path: '/career-sourcing/$hearfrom'
+      fullPath: '/career-sourcing/$hearfrom'
+      preLoaderRoute: typeof CareerSourcingHearfromRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DavaoHubRoute: DavaoHubRoute,
   HeadHuntingRoute: HeadHuntingRoute,
+  CareerSourcingHearfromRoute: CareerSourcingHearfromRoute,
   SourceNameRoute: SourceNameRoute,
   SourcingHearfromRoute: SourcingHearfromRoute,
 }
