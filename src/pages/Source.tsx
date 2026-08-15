@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from '@/lib/router-compat';
 import Index from './Index';
 import NotFound from './NotFound';
-import { setSourcing, setSourceName, setHeadhuntingUi } from '@/lib/headhunting';
+import { clearAcquisition, setSourcing, setSourceName, setHeadhuntingUi, setEntryRef } from '@/lib/headhunting';
 
 const Source = () => {
   const { name } = useParams<{ name: string }>();
@@ -12,17 +12,14 @@ const Source = () => {
   useEffect(() => {
     if (!name) return;
     // Head-hunting styled UI only — the payload tags the contact as sourced.
+    clearAcquisition();
     setHeadhuntingUi(true);
     setSourcing(true);
     setSourceName(name);
-    setRef(new URLSearchParams(window.location.search).get('ref') || '');
+    const r = new URLSearchParams(window.location.search).get('ref') || '';
+    setEntryRef(r);
+    setRef(r);
     setReady(true);
-    return () => {
-      setHeadhuntingUi(false);
-      setSourcing(false);
-      setSourceName('');
-    };
-
   }, [name]);
 
   if (!name) return <NotFound />;

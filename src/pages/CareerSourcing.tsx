@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from '@/lib/router-compat';
 import Index from './Index';
 import NotFound from './NotFound';
-import { setHeadhuntingUi, setHearFrom } from '@/lib/headhunting';
+import { clearAcquisition, setEntryRef, setHeadhuntingUi, setHearFrom } from '@/lib/headhunting';
 
 const CareerSourcing = () => {
   const { hearfrom } = useParams<{ hearfrom: string }>();
@@ -12,14 +12,13 @@ const CareerSourcing = () => {
   useEffect(() => {
     if (!hearfrom) return;
     // Head-hunting styled UI only — the payload carries career_sourcing/hearfrom.
+    clearAcquisition();
     setHeadhuntingUi(true);
     setHearFrom(hearfrom);
-    setRef(new URLSearchParams(window.location.search).get('ref') || '');
+    const r = new URLSearchParams(window.location.search).get('ref') || '';
+    setEntryRef(r);
+    setRef(r);
     setReady(true);
-    return () => {
-      setHeadhuntingUi(false);
-      setHearFrom('');
-    };
   }, [hearfrom]);
 
   if (!hearfrom) return <NotFound />;

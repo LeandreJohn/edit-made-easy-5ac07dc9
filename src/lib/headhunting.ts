@@ -1,69 +1,137 @@
 /**
- * Module-level flags indicating that the current session was started from a
- * specialised acquisition route. The API client injects the corresponding
- * snake_case flag into every outgoing JSON payload so the backend can tag
- * the contact accordingly.
+ * Acquisition-entry state.
+ *
+ * Records which entry URL the applicant arrived through (/head-hunting,
+ * /davao-hub, /source/:name, /career-sourcing/:hearfrom, or the plain home
+ * page). The API client injects the corresponding snake_case flags into every
+ * outgoing JSON payload so the backend can tag the contact accordingly.
+ *
+ * The state is mirrored into sessionStorage so it survives page reloads and
+ * navigation into the dashboard / attendance pages (used for the apply
+ * payload flags, the referral prefill and the sign-out redirect).
  */
-let HEADHUNTING = false;
-/**
- * UI-only variant of the head-hunting flag. Routes like /source/:name and
- * /career-sourcing/:hearfrom reuse the head-hunting styled UI but must NOT
- * send `headhunting: true` to the backend.
- */
-let HEADHUNTING_UI = false;
-let DAVAOHUB = false;
-let SOURCING = false;
-let SOURCE_NAME = '';
+
+interface AcquisitionState {
+  headhunting: boolean;
+  /** UI-only head-hunting styling (source / career-sourcing reuse the layout). */
+  headhuntingUi: boolean;
+  davaohub: boolean;
+  sourcing: boolean;
+  sourceName: string;
+  hearFrom: string;
+  /** `?ref=` value captured from the entry URL. */
+  ref: string;
+}
+
+const STORAGE_KEY = 'cb_acquisition';
+
+const EMPTY: AcquisitionState = {
+  headhunting: false,
+  headhuntingUi: false,
+  davaohub: false,
+  sourcing: false,
+  sourceName: '',
+  hearFrom: '',
+  ref: '',
+};
+
+function read(): AcquisitionState {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...EMPTY };
+    return { ...EMPTY, ...(JSON.parse(raw) as Partial<AcquisitionState>) };
+  } catch {
+    return { ...EMPTY };
+  }
+}
+
+let state: AcquisitionState = read();
+
+function persist() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+function patch(next: Partial<AcquisitionState>) {
+  state = { ...state, ...next };
+  persist();
+}
 
 export function setHeadhunting(value: boolean) {
-  HEADHUNTING = value;
-  HEADHUNTING_UI = value;
+  patch({ headhunting: value, headhuntingUi: value });
 }
 
 export function isHeadhunting(): boolean {
-  return HEADHUNTING;
+  return state.headhunting;
 }
 
 /** Enable the head-hunting styled UI without sending the payload flag. */
 export function setHeadhuntingUi(value: boolean) {
-  HEADHUNTING_UI = value;
+  patch({ headhuntingUi: value });
 }
 
 export function isHeadhuntingStyle(): boolean {
-  return HEADHUNTING_UI;
+  return state.headhuntingUi;
 }
 
 export function setDavaohub(value: boolean) {
-  DAVAOHUB = value;
+  patch({ davaohub: value });
 }
 
 export function isDavaohub(): boolean {
-  return DAVAOHUB;
+  return state.davaohub;
 }
 
 export function setSourcing(value: boolean) {
-  SOURCING = value;
+  patch({ sourcing: value });
 }
 
 export function isSourcing(): boolean {
-  return SOURCING;
+  return state.sourcing;
 }
 
 export function setSourceName(name: string) {
-  SOURCE_NAME = name;
+  patch({ sourceName: name });
 }
 
 export function getSourceName(): string {
-  return SOURCE_NAME;
+  return state.sourceName;
 }
-
-let SOURCING_HEARFROM = '';
 
 /** Set the "heard from" value captured by the /career-sourcing/:hearfrom route. */
 export function setHearFrom(value: string) {
-  SOURCING_HEARFROM = value;
+  patch({ hearFrom: value });
 }
 
 export function getHearFrom(): string {
-  return SOURCING_HEARFROM;
+  return state.hearFrom;
+}
+
+/** Referral code (`?ref=`) captured from the entry URL. */
+export function setEntryRef(value: string) {
+  if (value) patch({ ref: value });
+}
+
+export function getEntryRef(): string {
+  return state.ref;
+}
+
+/** Clear every acquisition flag (used when returning to the plain home page). */
+export function clearAcquisition() {
+  state = { ...EMPTY };
+  persist();
+}
+
+/**
+ * The path the applicant entered through — used to send them back after
+ * signing out of the dashboard / attendance page.
+ */
+export function getEntryPath(): string {
+  const query = state.ref ? `?ref=${encodeURIComponent(state.ref)}` : '';
+  if (state.hearFrom) return `/career-sourcing/${encodeURIComponent(state.hearFrom)}${query}`;
+  if (state.sourcing && state.sourceName) return `/source/${encodeURIComponent(state.sourceName)}${query}`;
+  if (state.davaohub) return `/davao-hub${query}`;
+  if (state.headhunting) return `/head-hunting${query}`;
+  return `/${query}`;
 }
