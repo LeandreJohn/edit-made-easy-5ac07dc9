@@ -6,7 +6,7 @@ import { useNavigate } from '@/lib/router-compat';
 import {
   Pencil, X, Save, User, LogOut, Clock, Loader2, ChevronDown, Lock, HelpCircle,
   FileText, ArrowRight, GraduationCap, Briefcase, Wrench, Sparkles, Lightbulb,
-  Monitor, ShieldCheck, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck, Check,
+  Monitor, ShieldCheck, PlayCircle, FolderKanban, Award, BadgeCheck, Bell, ClipboardCheck, Check,
   type LucideIcon,
 } from 'lucide-react';
 import { notificationsForTags } from '@/data/tagNotifications';
@@ -185,6 +185,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   // compliance edit — a second save attempt goes through unauthorized.
   const authWarnedRef = useRef(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
   const [manageDocsOpen, setManageDocsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -202,7 +203,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [reapplyCode, setReapplyCode] = useState('');
   const [reapplying, setReapplying] = useState(false);
   const [assessmentOpen, setAssessmentOpen] = useState(false);
-  const [assessmentDone, setAssessmentDone] = useState(false);
   const [assessmentCooldown, setAssessmentCooldown] = useState(0);
   const [assessmentChecking, setAssessmentChecking] = useState(false);
   const submittingAssessment = assessmentChecking;
@@ -660,6 +660,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const totalCount = Object.keys(sectionChecks).length;
   const completionPct = Math.round((completedCount / totalCount) * 100);
 
+  // Intro video — auto-plays once per session while the profile is incomplete.
+  useEffect(() => {
+    if (loading || completionPct >= 100) return;
+    try {
+      if (sessionStorage.getItem('cb_intro_seen') === '1') return;
+      sessionStorage.setItem('cb_intro_seen', '1');
+    } catch { /* ignore */ }
+    setIntroOpen(true);
+  }, [loading, completionPct]);
+
   // Ordered list of incomplete sections (for the Next Step card)
   const incompleteSections: { key: SectionKey; label: string }[] = ([
     ['personal', 'Personal Information'],
@@ -847,6 +857,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
                   >
                     <HelpCircle className="w-4 h-4 text-muted-foreground" /> Help Center
+                  </button>
+                  <button
+                    onClick={() => { setUserMenuOpen(false); setIntroOpen(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                  >
+                    <PlayCircle className="w-4 h-4 text-muted-foreground" /> Watch Intro Video
                   </button>
                   <div className="my-1 border-t border-border" />
                   <button
@@ -1352,7 +1368,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             firstName={profile.firstName}
             lastName={profile.lastName}
             onPhaseChange={setAssessmentPhase}
-            onCompleted={() => setAssessmentDone(true)}
+            onCompleted={() => { /* completion is confirmed via the Next/Submit check */ }}
           />
           <DialogFooter className="gap-2 sm:gap-2">
             <button
@@ -1371,7 +1387,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 try {
                   const result = await assessmentRef.current.checkAndAdvance();
                   if (result === 'advance') {
-                    setAssessmentDone(true);
                     setAssessmentOpen(false);
                     setAssessmentConfirmOpen(true);
                   } else if (result === 'stay') {
