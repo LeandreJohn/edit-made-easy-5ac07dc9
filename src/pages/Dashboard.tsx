@@ -43,6 +43,8 @@ import {
 import { toast } from 'sonner';
 import FilePreviewLink from '@/components/common/FilePreviewLink';
 import ChangePasswordModal from '@/components/common/ChangePasswordModal';
+import IntroVideoModal from '@/components/wizard/IntroVideoModal';
+import { getEntryPath, getEntryRef } from '@/lib/headhunting';
 import HelpCenterModal from '@/components/common/HelpCenterModal';
 import ManageDocumentsModal from '@/components/common/ManageDocumentsModal';
 import {
@@ -691,8 +693,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   // Applicant-facing notices resolved from the backend `tag[]` array.
   const notifications = useMemo(() => notificationsForTags(tags), [tags]);
-  // The assessment invite replaces the Reapply CTA — never show both.
-  const showAssessmentCard = canDoAssessment && !(variant === 'reapply' && canReapply);
+  const showAssessmentCard = canDoAssessment;
   const documentCount =
     portfolioFileUrls.length
     + complianceUrls.validIdFiles.length + complianceUrls.nbiFiles.length
@@ -741,9 +742,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   const handleReapplyClick = () => {
     if (!canReapply) return;
-    setReapplyCode('');
-    setAssessmentDone(false);
-    setAssessmentOpen(true);
+    // The assessment is available on its own card — applying no longer gates on it.
+    setReapplyCode(getEntryRef());
+    setReapplyOpen(true);
   };
 
 
@@ -753,12 +754,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const submitReapply = async () => {
     if (!contactId) {
       toast.error('Not signed in.');
-      return;
-    }
-    if (!assessmentDone) {
-      toast.error('Please complete the Values Assessment first.');
-      setReapplyOpen(false);
-      setAssessmentOpen(true);
       return;
     }
     setReapplying(true);
@@ -855,7 +850,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                   </button>
                   <div className="my-1 border-t border-border" />
                   <button
-                    onClick={() => { clearContactId(); navigate('/'); }}
+                    onClick={() => { clearContactId(); navigate(getEntryPath()); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted"
                   >
                     <LogOut className="w-4 h-4" /> Sign out
@@ -1022,6 +1017,20 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                   <>
                     <p className="font-heading text-base font-bold text-foreground truncate">Profile Complete</p>
                     <p className="text-xs text-muted-foreground mt-1">Every required step is filled in.</p>
+                    {variant === 'reapply' && canReapply && (
+                      <button
+                        onClick={handleReapplyClick}
+                        className="btn-primary text-sm px-4 py-1.5 mt-2"
+                      >
+                        {reapplyLabel}
+                      </button>
+                    )}
+                    {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground bg-muted px-2.5 py-1.5 rounded-md mt-2">
+                        <Clock className="w-3.5 h-3.5" />
+                        Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
+                      </span>
+                    )}
                   </>
                 )}
               </div>
@@ -1333,7 +1342,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           <DialogHeader>
             <DialogTitle>Assessment</DialogTitle>
             <DialogDescription>
-              Please complete the embedded Values and DISC assessments below to continue with your reapplication.
+              Please complete the embedded Values and DISC assessments below.
             </DialogDescription>
           </DialogHeader>
           <AssessmentStep
@@ -1396,8 +1405,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           <DialogHeader>
             <DialogTitle>Assessment submitted</DialogTitle>
             <DialogDescription>
-              Thank you. Your Values Assessment has been recorded. You can now
-              continue with your reapplication.
+              Thank you. Your assessment has been recorded.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
@@ -1410,13 +1418,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setAssessmentConfirmOpen(false);
-                setReapplyOpen(true);
-              }}
+              onClick={() => setAssessmentConfirmOpen(false)}
               className="btn-primary"
             >
-              Continue to {reapplyLabel}
+              Done
             </button>
           </DialogFooter>
         </DialogContent>
@@ -1483,8 +1488,15 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               placeholder="e.g. ABC123 or https://...?ref=ABC123"
               value={reapplyCode}
               onChange={(e) => setReapplyCode(e.target.value)}
-              className="form-input"
+              readOnly={!!getEntryRef()}
+              title={getEntryRef() ? 'Referral code captured from the link you used' : undefined}
+              className={`form-input ${getEntryRef() ? 'bg-muted cursor-not-allowed opacity-80' : ''}`}
             />
+            {!!getEntryRef() && (
+              <p className="text-xs text-muted-foreground">
+                Referral code captured from the link you signed in with.
+              </p>
+            )}
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <button
@@ -1506,6 +1518,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <IntroVideoModal open={introOpen} onOpenChange={setIntroOpen} />
 
       <ChangePasswordModal
         open={changePwOpen}
