@@ -45,6 +45,7 @@ import FilePreviewLink from '@/components/common/FilePreviewLink';
 import ChangePasswordModal from '@/components/common/ChangePasswordModal';
 import IntroVideoModal from '@/components/wizard/IntroVideoModal';
 import { getEntryPath, getEntryRef } from '@/lib/headhunting';
+import { trackApplicationLead } from '@/lib/tracking';
 import HelpCenterModal from '@/components/common/HelpCenterModal';
 import ManageDocumentsModal from '@/components/common/ManageDocumentsModal';
 import {
@@ -770,6 +771,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     try {
       const code = extractReferralCode(reapplyCode);
       await reapply(contactId, code, todayMDT());
+      trackApplicationLead();
       toast.success('Reapplication submitted');
       setReapplyOpen(false);
       setDateApplied(todayMDT());
