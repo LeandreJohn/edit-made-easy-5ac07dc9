@@ -286,18 +286,29 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   // Reset the background-check warning when the box is ticked or the user
   // leaves the Compliance step.
   useEffect(() => {
-    if (currentSubStep !== 11 || values.compliance.authorizeBackgroundCheck) {
+    if (values.compliance.authorizeBackgroundCheck) {
       authWarnedRef.current = false;
     }
   }, [currentSubStep, values.compliance.authorizeBackgroundCheck]);
 
+  /**
+   * Warn once (per compliance visit) when the applicant tries to leave the
+   * Compliance step without authorizing the background check. Returns true
+   * when the navigation was blocked.
+   */
+  const blockedByAuthWarning = (): boolean => {
+    if (values.compliance.authorizeBackgroundCheck) return false;
+    if (authWarnedRef.current) return false;
+    authWarnedRef.current = true;
+    setAuthPromptOpen(true);
+    return true;
+  };
+
   const handleNext = async () => {
     // Compliance step — warn once when background check authorization is unticked.
-    if (currentSubStep === 11 && !values.compliance.authorizeBackgroundCheck && !authWarnedRef.current) {
-      authWarnedRef.current = true;
-      setAuthPromptOpen(true);
-      return;
-    }
+    if (currentSubStep === 11 && blockedByAuthWarning()) return;
+    // Final submit — never send the application unauthorized without a warning.
+    if (currentSubStep === TOTAL_SUBSTEPS && blockedByAuthWarning()) return;
     if (currentSubStep === 10 && workSetupRef.current && !workSetupRef.current.tryAdvance()) {
       return;
     }
@@ -384,7 +395,10 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
 
   const handleStepClick = (sidebarStep: number) => {
     const targetSubStep = SIDEBAR_TO_FIRST_SUBSTEP[sidebarStep];
-    if (targetSubStep) setCurrentSubStep(targetSubStep);
+    if (!targetSubStep || targetSubStep === currentSubStep) return;
+    // Jumping away from Compliance triggers the same one-shot reminder.
+    if (currentSubStep === 11 && blockedByAuthWarning()) return;
+    setCurrentSubStep(targetSubStep);
   };
 
   const handleBackToWelcome = () => {
