@@ -532,7 +532,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
 
       {isHeadhuntingStyle() && (
         <div className="mb-6">
-          <RequiredLabel>Referral Link</RequiredLabel>
+          <label className="form-label">Referral Link</label>
           <input
             className="form-input"
             value={data.referralLink ?? ''}
