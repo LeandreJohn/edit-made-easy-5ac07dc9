@@ -256,10 +256,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
 
   // Load dashboard data on mount.
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (silent = false) => {
     if (!contactId) { setLoading(false); return; }
-    setLoading(true);
+    if (!silent) setLoading(true);
     setLoadError(null);
+
     {
       try {
         const d = await getDashboard(contactId);
