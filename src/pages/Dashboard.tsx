@@ -501,9 +501,49 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   const cancelEdit = () => setEditing(false);
 
+  /**
+   * Scroll to and focus the first empty required-looking control in the section
+   * so the applicant sees exactly what is missing instead of a disabled Save.
+   */
+  const focusFirstInvalidField = () => {
+    const root = sectionBodyRef.current;
+    if (!root) return;
+    const controls = Array.from(
+      root.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        'input, select, textarea',
+      ),
+    ).filter((el) => {
+      if (el.disabled || (el as HTMLInputElement).readOnly) return false;
+      const type = (el as HTMLInputElement).type;
+      if (type === 'hidden' || type === 'file' || type === 'checkbox' || type === 'radio') return false;
+      if (el.offsetParent === null) return false;
+      return !el.value?.trim();
+    });
+    const target = controls[0];
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.focus({ preventScroll: true });
+    target.setAttribute('aria-invalid', 'true');
+    target.classList.add('ring-2', 'ring-destructive', 'border-destructive');
+    const clear = () => {
+      target.classList.remove('ring-2', 'ring-destructive', 'border-destructive');
+      target.removeAttribute('aria-invalid');
+      target.removeEventListener('input', clear);
+      target.removeEventListener('change', clear);
+    };
+    target.addEventListener('input', clear);
+    target.addEventListener('change', clear);
+  };
+
   const saveEdit = async () => {
     if (!contactId) {
       toast.error('Not signed in.');
+      return;
+    }
+    // Missing required data — point the applicant at the offending field.
+    if (!isDraftSectionValid()) {
+      toast.error('Please complete the required fields before saving.');
+      focusFirstInvalidField();
       return;
     }
     // Warn once when saving compliance without the background check authorization.
@@ -512,6 +552,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       setAuthPromptOpen(true);
       return;
     }
+
     setSaving(true);
     try {
       switch (activeSection) {
