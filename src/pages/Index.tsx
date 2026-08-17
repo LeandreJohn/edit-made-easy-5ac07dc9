@@ -43,6 +43,8 @@ import {
 } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { isSubStepValid } from '@/lib/validation/stepValidation';
+import { formatTimeDenver } from '@/lib/date';
+
 import {
   saveWizardDraft,
   loadWizardDraft,
@@ -509,7 +511,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               {lastSavedAt && (
                 <span aria-live="polite">
                   {dirty ? 'Unsaved changes' : 'Saved'}{' '}
-                  {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatTimeDenver(lastSavedAt)}
                 </span>
               )}
             </div>

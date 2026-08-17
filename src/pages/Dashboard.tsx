@@ -53,6 +53,8 @@ import {
   isWorkSetupValid, isComplianceValid, isToolsValid, isSkillsValid,
   normalizeGraduation, formatGraduation,
 } from '@/lib/validation/stepValidation';
+import { formatDateDenver, formatTimeDenver } from '@/lib/date';
+
 
 import dashboardBanner from '@/assets/dashboard-banner.png';
 
@@ -211,6 +213,25 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [assessmentConfirmOpen, setAssessmentConfirmOpen] = useState(false);
   const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
 
+  /**
+   * True once the applicant finishes the assessment in *this* browser session.
+   * Apply/Reapply only appears afterwards, and the assessment can't be retaken
+   * until a fresh session.
+   */
+  const assessmentDoneKey = `cb_assessment_done_${contactId ?? 'anon'}`;
+  const [assessmentDone, setAssessmentDone] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(`cb_assessment_done_${loadContactId() ?? 'anon'}`) === '1'; }
+    catch { return false; }
+  });
+  const markAssessmentDone = () => {
+    try { sessionStorage.setItem(assessmentDoneKey, '1'); } catch { /* ignore */ }
+    setAssessmentDone(true);
+  };
+
+  /** Wrapper around the active section body so we can focus invalid fields. */
+  const sectionBodyRef = useRef<HTMLDivElement>(null);
+
+
 
   // Attendance (attendance dashboard variant)
   const [attendanceLoginOpen, setAttendanceLoginOpen] = useState(false);
@@ -256,10 +277,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
 
   // Load dashboard data on mount.
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (silent = false) => {
     if (!contactId) { setLoading(false); return; }
-    setLoading(true);
+    if (!silent) setLoading(true);
     setLoadError(null);
+
     {
       try {
         const d = await getDashboard(contactId);
@@ -479,9 +501,49 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   const cancelEdit = () => setEditing(false);
 
+  /**
+   * Scroll to and focus the first empty required-looking control in the section
+   * so the applicant sees exactly what is missing instead of a disabled Save.
+   */
+  const focusFirstInvalidField = () => {
+    const root = sectionBodyRef.current;
+    if (!root) return;
+    const controls = Array.from(
+      root.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        'input, select, textarea',
+      ),
+    ).filter((el) => {
+      if (el.disabled || (el as HTMLInputElement).readOnly) return false;
+      const type = (el as HTMLInputElement).type;
+      if (type === 'hidden' || type === 'file' || type === 'checkbox' || type === 'radio') return false;
+      if (el.offsetParent === null) return false;
+      return !el.value?.trim();
+    });
+    const target = controls[0];
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.focus({ preventScroll: true });
+    target.setAttribute('aria-invalid', 'true');
+    target.classList.add('ring-2', 'ring-destructive', 'border-destructive');
+    const clear = () => {
+      target.classList.remove('ring-2', 'ring-destructive', 'border-destructive');
+      target.removeAttribute('aria-invalid');
+      target.removeEventListener('input', clear);
+      target.removeEventListener('change', clear);
+    };
+    target.addEventListener('input', clear);
+    target.addEventListener('change', clear);
+  };
+
   const saveEdit = async () => {
     if (!contactId) {
       toast.error('Not signed in.');
+      return;
+    }
+    // Missing required data — point the applicant at the offending field.
+    if (!isDraftSectionValid()) {
+      toast.error('Please complete the required fields before saving.');
+      focusFirstInvalidField();
       return;
     }
     // Warn once when saving compliance without the background check authorization.
@@ -490,6 +552,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       setAuthPromptOpen(true);
       return;
     }
+
     setSaving(true);
     try {
       switch (activeSection) {
@@ -569,6 +632,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       }
       toast.success('Saved');
       setEditing(false);
+      // Re-read the profile so freshly uploaded files (and the completion
+      // percentage) show up immediately instead of only after a refresh.
+      void loadData(true);
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
     } finally {
@@ -700,11 +767,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const coreReapplyReady =
     sectionChecks.personal && sectionChecks.education && sectionChecks.professional
     && sectionChecks.valueProp && sectionChecks.workSetup;
-  const canReapply = (daysSince === null || daysSince >= 60) && coreReapplyReady;
+  const canReapply =
+    (daysSince === null || daysSince >= 60) && coreReapplyReady && assessmentDone;
 
   // Applicant-facing notices resolved from the backend `tag[]` array.
   const notifications = useMemo(() => notificationsForTags(tags), [tags]);
-  const showAssessmentCard = canDoAssessment;
+  // The assessment is only offered once the profile is fully complete, the
+  // backend says the applicant is eligible, and they haven't finished it yet
+  // in this session.
+  const showAssessmentCard = canDoAssessment && completionPct >= 100 && !assessmentDone;
+
   const documentCount =
     portfolioFileUrls.length
     + complianceUrls.validIdFiles.length + complianceUrls.nbiFiles.length
