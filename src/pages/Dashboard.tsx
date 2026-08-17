@@ -767,11 +767,16 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const coreReapplyReady =
     sectionChecks.personal && sectionChecks.education && sectionChecks.professional
     && sectionChecks.valueProp && sectionChecks.workSetup;
-  const canReapply = (daysSince === null || daysSince >= 60) && coreReapplyReady;
+  const canReapply =
+    (daysSince === null || daysSince >= 60) && coreReapplyReady && assessmentDone;
 
   // Applicant-facing notices resolved from the backend `tag[]` array.
   const notifications = useMemo(() => notificationsForTags(tags), [tags]);
-  const showAssessmentCard = canDoAssessment;
+  // The assessment is only offered once the profile is fully complete, the
+  // backend says the applicant is eligible, and they haven't finished it yet
+  // in this session.
+  const showAssessmentCard = canDoAssessment && completionPct >= 100 && !assessmentDone;
+
   const documentCount =
     portfolioFileUrls.length
     + complianceUrls.validIdFiles.length + complianceUrls.nbiFiles.length
