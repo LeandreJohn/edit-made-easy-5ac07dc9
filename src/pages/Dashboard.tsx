@@ -632,6 +632,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       }
       toast.success('Saved');
       setEditing(false);
+      // Re-read the profile so freshly uploaded files (and the completion
+      // percentage) show up immediately instead of only after a refresh.
+      void loadData(true);
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
     } finally {
