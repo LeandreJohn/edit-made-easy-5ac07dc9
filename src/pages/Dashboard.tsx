@@ -213,6 +213,25 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [assessmentConfirmOpen, setAssessmentConfirmOpen] = useState(false);
   const [assessmentPhase, setAssessmentPhase] = useState<AssessmentPhase>('loading');
 
+  /**
+   * True once the applicant finishes the assessment in *this* browser session.
+   * Apply/Reapply only appears afterwards, and the assessment can't be retaken
+   * until a fresh session.
+   */
+  const assessmentDoneKey = `cb_assessment_done_${contactId ?? 'anon'}`;
+  const [assessmentDone, setAssessmentDone] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(`cb_assessment_done_${loadContactId() ?? 'anon'}`) === '1'; }
+    catch { return false; }
+  });
+  const markAssessmentDone = () => {
+    try { sessionStorage.setItem(assessmentDoneKey, '1'); } catch { /* ignore */ }
+    setAssessmentDone(true);
+  };
+
+  /** Wrapper around the active section body so we can focus invalid fields. */
+  const sectionBodyRef = useRef<HTMLDivElement>(null);
+
+
 
   // Attendance (attendance dashboard variant)
   const [attendanceLoginOpen, setAttendanceLoginOpen] = useState(false);
