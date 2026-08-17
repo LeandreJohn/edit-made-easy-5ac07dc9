@@ -509,7 +509,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               {lastSavedAt && (
                 <span aria-live="polite">
                   {dirty ? 'Unsaved changes' : 'Saved'}{' '}
-                  {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatTimeDenver(lastSavedAt)}
                 </span>
               )}
             </div>
