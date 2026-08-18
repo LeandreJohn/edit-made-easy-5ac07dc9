@@ -1470,9 +1470,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 try {
                   const result = await assessmentRef.current.checkAndAdvance();
                   if (result === 'advance') {
+                    markAssessmentDone();
                     setAssessmentOpen(false);
                     setAssessmentConfirmOpen(true);
                   } else if (result === 'stay') {
+
                     toast.info('Values complete — please finish the DISC assessment.');
                   } else {
                     setAssessmentCooldown(30);
