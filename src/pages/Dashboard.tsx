@@ -1189,7 +1189,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           </div>
 
 
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
+          <div ref={sectionBodyRef} className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
               <h2 className="font-heading text-xl font-bold text-foreground">
                 {SECTIONS.find((s) => s.key === activeSection)?.label}
