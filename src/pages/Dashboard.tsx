@@ -1134,15 +1134,14 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground">Last Updated</p>
               <p className="font-heading text-base font-bold text-foreground">
-                {lastUpdated
-                  ? lastUpdated.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
-                  : '—'}
+                {lastUpdated ? formatDateDenver(lastUpdated) : '—'}
               </p>
               {lastUpdated && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {lastUpdated.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                  {formatTimeDenver(lastUpdated)}
                 </p>
               )}
+
             </div>
           </div>
         </div>
