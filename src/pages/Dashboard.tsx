@@ -775,7 +775,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   // The assessment is only offered once the profile is fully complete, the
   // backend says the applicant is eligible, and they haven't finished it yet
   // in this session.
-  const showAssessmentCard = canDoAssessment && completionPct >= 100 && !assessmentDone;
+  const showAssessmentCard = canDoAssessment && completionPct >= 100;
 
   const documentCount =
     portfolioFileUrls.length
@@ -1040,23 +1040,32 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           </div>
         )}
 
-        {/* Assessment invitation — only when the backend says the applicant is eligible */}
+        {/* Assessment invitation — eligible, profile 100% complete */}
         {showAssessmentCard && (
           <div className="bg-card rounded-2xl border-2 border-primary/30 shadow-sm p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <ClipboardCheck className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-heading text-base font-bold text-foreground">Take the Assessment</p>
+              <p className="font-heading text-base font-bold text-foreground">
+                {assessmentDone ? 'Assessment completed' : 'Take the Assessment'}
+              </p>
               <p className="text-sm text-muted-foreground mt-0.5">
-                You're eligible to take your assessment. It takes about 20 minutes to complete.
+                {assessmentDone
+                  ? 'Thanks — your responses are recorded. You can continue with your application.'
+                  : "You're eligible to take your assessment. It takes about 20 minutes to complete."}
               </p>
             </div>
-            <button onClick={() => setAssessmentOpen(true)} className="btn-primary text-sm px-5 py-2 whitespace-nowrap">
-              Start Assessment
+            <button
+              onClick={() => setAssessmentOpen(true)}
+              disabled={assessmentDone}
+              className="btn-primary text-sm px-5 py-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {assessmentDone ? 'Completed' : 'Start Assessment'}
             </button>
           </div>
         )}
+
 
         {/* Stat cards */}
         <div className={`grid grid-cols-1 ${variant === 'reapply' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-6`}>
@@ -1134,15 +1143,14 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground">Last Updated</p>
               <p className="font-heading text-base font-bold text-foreground">
-                {lastUpdated
-                  ? lastUpdated.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
-                  : '—'}
+                {lastUpdated ? formatDateDenver(lastUpdated) : '—'}
               </p>
               {lastUpdated && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {lastUpdated.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                  {formatTimeDenver(lastUpdated)}
                 </p>
               )}
+
             </div>
           </div>
         </div>
@@ -1190,7 +1198,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           </div>
 
 
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
+          <div ref={sectionBodyRef} className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
               <h2 className="font-heading text-xl font-bold text-foreground">
                 {SECTIONS.find((s) => s.key === activeSection)?.label}
@@ -1205,18 +1213,28 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                     <button onClick={cancelEdit} disabled={saving} className="btn-outline text-sm inline-flex items-center gap-2">
                       <X className="w-4 h-4" /> Cancel
                     </button>
-                    <button onClick={saveEdit} disabled={saving || !isDraftSectionValid()} className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <button onClick={saveEdit} disabled={saving} className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                       <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
                     </button>
+                    {activeSection === 'workSetup' && (draftWorkSetup.activeTab ?? 'device') === 'device' && (
+                      <button
+                        type="button"
+                        onClick={() => setDraftWorkSetup({ ...draftWorkSetup, activeTab: 'isp' })}
+                        className="text-sm inline-flex items-center gap-2 rounded-md px-4 py-2 font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 )
               )}
             </div>
             {editing && !isDraftSectionValid() && (
               <p className="text-xs text-muted-foreground -mt-2 mb-4">
-                Complete the required fields to enable Save.
+                Some required fields are still missing — Save will point you to them.
               </p>
             )}
+
 
             {loading ? (
               <SectionSkeleton />
@@ -1461,9 +1479,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                 try {
                   const result = await assessmentRef.current.checkAndAdvance();
                   if (result === 'advance') {
+                    markAssessmentDone();
                     setAssessmentOpen(false);
                     setAssessmentConfirmOpen(true);
                   } else if (result === 'stay') {
+
                     toast.info('Values complete — please finish the DISC assessment.');
                   } else {
                     setAssessmentCooldown(30);
