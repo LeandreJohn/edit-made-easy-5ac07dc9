@@ -1204,18 +1204,28 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                     <button onClick={cancelEdit} disabled={saving} className="btn-outline text-sm inline-flex items-center gap-2">
                       <X className="w-4 h-4" /> Cancel
                     </button>
-                    <button onClick={saveEdit} disabled={saving || !isDraftSectionValid()} className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <button onClick={saveEdit} disabled={saving} className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                       <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
                     </button>
+                    {activeSection === 'workSetup' && (draftWorkSetup.activeTab ?? 'device') === 'device' && (
+                      <button
+                        type="button"
+                        onClick={() => setDraftWorkSetup({ ...draftWorkSetup, activeTab: 'isp' })}
+                        className="text-sm inline-flex items-center gap-2 rounded-md px-4 py-2 font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 )
               )}
             </div>
             {editing && !isDraftSectionValid() && (
               <p className="text-xs text-muted-foreground -mt-2 mb-4">
-                Complete the required fields to enable Save.
+                Some required fields are still missing — Save will point you to them.
               </p>
             )}
+
 
             {loading ? (
               <SectionSkeleton />
