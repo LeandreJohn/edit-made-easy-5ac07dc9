@@ -775,7 +775,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   // The assessment is only offered once the profile is fully complete, the
   // backend says the applicant is eligible, and they haven't finished it yet
   // in this session.
-  const showAssessmentCard = canDoAssessment && completionPct >= 100 && !assessmentDone;
+  const showAssessmentCard = canDoAssessment && completionPct >= 100;
 
   const documentCount =
     portfolioFileUrls.length
