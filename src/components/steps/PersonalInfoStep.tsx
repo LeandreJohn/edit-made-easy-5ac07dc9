@@ -12,7 +12,7 @@ import EligibilityModal from '@/components/common/EligibilityModal';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 import { fetchPhCities, fetchPhBarangays, PsgcCity } from '@/lib/philippines';
 import { parseResume } from '@/lib/apiClient';
-import { isHeadhuntingStyle } from '@/lib/headhunting';
+
 import { toast } from 'sonner';
 
 const computeAge = (iso: string): number | null => {
@@ -530,20 +530,6 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         />
       </div>
 
-      {isHeadhuntingStyle() && (
-        <div className="mb-6">
-          <label className="form-label">Referral Link</label>
-          <input
-            className="form-input"
-            value={data.referralLink ?? ''}
-            onChange={(e) => update('referralLink', e.target.value)}
-            placeholder="https://..."
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Paste the referral link shared with you by the head-hunter.
-          </p>
-        </div>
-      )}
 
 
 
