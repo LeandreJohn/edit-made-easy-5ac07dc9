@@ -12,7 +12,7 @@ import EligibilityModal from '@/components/common/EligibilityModal';
 import { COUNTRY_NAMES, NATIONALITIES } from '@/lib/countries';
 import { fetchPhCities, fetchPhBarangays, PsgcCity } from '@/lib/philippines';
 import { parseResume } from '@/lib/apiClient';
-import { isHeadhuntingStyle } from '@/lib/headhunting';
+
 import { toast } from 'sonner';
 
 const computeAge = (iso: string): number | null => {
