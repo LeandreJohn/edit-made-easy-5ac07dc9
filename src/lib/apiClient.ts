@@ -313,7 +313,7 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
 export function reapply(contactId: string, referrer: string, dateApplied: string) {
   return request<{ success: boolean }>('/reapply', {
     method: 'PUT',
-    body: JSON.stringify({ contact_id: contactId, referrer, date_applied: dateApplied }),
+    body: JSON.stringify({ contact_id: contactId, referrer, date_applied: dateApplied, dashboard: true }),
   });
 }
 

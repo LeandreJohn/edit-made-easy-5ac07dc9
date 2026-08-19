@@ -530,20 +530,6 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         />
       </div>
 
-      {isHeadhuntingStyle() && (
-        <div className="mb-6">
-          <label className="form-label">Referral Link</label>
-          <input
-            className="form-input"
-            value={data.referralLink ?? ''}
-            onChange={(e) => update('referralLink', e.target.value)}
-            placeholder="https://..."
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Paste the referral link shared with you by the head-hunter.
-          </p>
-        </div>
-      )}
 
 
 
