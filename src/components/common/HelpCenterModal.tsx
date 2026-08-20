@@ -32,9 +32,10 @@ const HelpCenterModal = ({ open, onOpenChange }: Props) => (
         <section>
           <h3 className="font-heading font-semibold text-base mb-1">Managing documents</h3>
           <p className="text-muted-foreground">
-            Use <span className="font-medium text-foreground">Manage Documents</span> on the
-            Documents card to update your portfolio files, work-setup screenshots, and
-            compliance documents in one place.
+            Edit the <span className="font-medium text-foreground">Portfolio</span>,{' '}
+            <span className="font-medium text-foreground">Work Setup</span>, or{' '}
+            <span className="font-medium text-foreground">Compliance</span> sections to update
+            your files, screenshots, and compliance documents.
           </p>
         </section>
         <section>
