@@ -20,7 +20,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SourceNameRouteImport } from './routes/source.$name'
 import { Route as HeadHuntingRoleRouteImport } from './routes/head-hunting.$role'
 import { Route as CareerSourcingHearfromRouteImport } from './routes/career-sourcing.$hearfrom'
-import { Route as HeadHuntingRoleRouteImport } from './routes/head-hunting.$role'
 
 const HeadHuntingRoute = HeadHuntingRouteImport.update({
   id: '/head-hunting',
@@ -78,12 +77,6 @@ const CareerSourcingHearfromRoute = CareerSourcingHearfromRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 
-const HeadHuntingRoleRoute = HeadHuntingRoleRouteImport.update({
-  id: '/head-hunting/$role',
-  path: '/head-hunting/$role',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
@@ -94,7 +87,6 @@ export interface FileRoutesByFullPath {
   '/davao-hub': typeof DavaoHubRoute
   '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
-  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
@@ -109,7 +101,6 @@ export interface FileRoutesByTo {
   '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
   '/head-hunting/$role': typeof HeadHuntingRoleRoute
-  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
 export interface FileRoutesById {
@@ -123,7 +114,6 @@ export interface FileRoutesById {
   '/davao-hub': typeof DavaoHubRoute
   '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
-  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
@@ -140,7 +130,6 @@ export interface FileRouteTypes {
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
     | '/head-hunting/$role'
-    | '/head-hunting/$role'
     | '/source/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -153,7 +142,6 @@ export interface FileRouteTypes {
     | '/davao-hub'
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
-    | '/head-hunting/$role'
     | '/head-hunting/$role'
     | '/source/$name'
   id:
@@ -168,7 +156,6 @@ export interface FileRouteTypes {
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
     | '/head-hunting/$role'
-    | '/head-hunting/$role'
     | '/source/$name'
   fileRoutesById: FileRoutesById
 }
@@ -182,7 +169,6 @@ export interface RootRouteChildren {
   DavaoHubRoute: typeof DavaoHubRoute
   HeadHuntingRoute: typeof HeadHuntingRouteWithChildren
   CareerSourcingHearfromRoute: typeof CareerSourcingHearfromRoute
-  HeadHuntingRoleRoute: typeof HeadHuntingRoleRoute
   SourceNameRoute: typeof SourceNameRoute
 }
 
@@ -258,13 +244,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HeadHuntingRoleRouteImport
       parentRoute: typeof HeadHuntingRoute
     }
-    '/head-hunting/$role': {
-      id: '/head-hunting/$role'
-      path: '/head-hunting/$role'
-      fullPath: '/head-hunting/$role'
-      preLoaderRoute: typeof HeadHuntingRoleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/career-sourcing/$hearfrom': {
       id: '/career-sourcing/$hearfrom'
       path: '/career-sourcing/$hearfrom'
@@ -297,7 +276,6 @@ const rootRouteChildren: RootRouteChildren = {
   DavaoHubRoute: DavaoHubRoute,
   HeadHuntingRoute: HeadHuntingRouteWithChildren,
   CareerSourcingHearfromRoute: CareerSourcingHearfromRoute,
-  HeadHuntingRoleRoute: HeadHuntingRoleRoute,
   SourceNameRoute: SourceNameRoute,
 }
 export const routeTree = rootRouteImport
