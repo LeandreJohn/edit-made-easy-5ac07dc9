@@ -1078,9 +1078,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               <p className="font-heading text-xl font-bold text-foreground">
                 {documentCount} Uploaded
               </p>
-              <button onClick={() => setManageDocsOpen(true)} className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-1 hover:underline">
-                Manage Documents <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {/* Manage Documents link temporarily hidden (modal kept for future use) */}
             </div>
           </div>
 

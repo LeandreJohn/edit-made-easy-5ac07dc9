@@ -19,6 +19,8 @@ interface AcquisitionState {
   sourcing: boolean;
   sourceName: string;
   hearFrom: string;
+  /** Role captured from /head-hunting/:role. */
+  role: string;
   /** `?ref=` value captured from the entry URL. */
   ref: string;
 }
@@ -32,6 +34,7 @@ const EMPTY: AcquisitionState = {
   sourcing: false,
   sourceName: '',
   hearFrom: '',
+  role: '',
   ref: '',
 };
 
@@ -108,6 +111,15 @@ export function getHearFrom(): string {
   return state.hearFrom;
 }
 
+/** Set the role captured by the /head-hunting/:role route. */
+export function setRole(value: string) {
+  patch({ role: value });
+}
+
+export function getRole(): string {
+  return state.role;
+}
+
 /** Referral code (`?ref=`) captured from the entry URL. */
 export function setEntryRef(value: string) {
   if (value) patch({ ref: value });
@@ -132,6 +144,10 @@ export function getEntryPath(): string {
   if (state.hearFrom) return `/career-sourcing/${encodeURIComponent(state.hearFrom)}${query}`;
   if (state.sourcing && state.sourceName) return `/source/${encodeURIComponent(state.sourceName)}${query}`;
   if (state.davaohub) return `/davao-hub${query}`;
-  if (state.headhunting) return `/head-hunting${query}`;
+  if (state.headhunting) {
+    return state.role
+      ? `/head-hunting/${encodeURIComponent(state.role)}${query}`
+      : `/head-hunting${query}`;
+  }
   return `/${query}`;
 }

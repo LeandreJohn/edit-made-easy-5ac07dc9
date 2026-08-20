@@ -18,6 +18,7 @@ import { Route as AssessmentResultRouteImport } from './routes/assessment-result
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SourceNameRouteImport } from './routes/source.$name'
+import { Route as HeadHuntingRoleRouteImport } from './routes/head-hunting.$role'
 import { Route as CareerSourcingHearfromRouteImport } from './routes/career-sourcing.$hearfrom'
 
 const HeadHuntingRoute = HeadHuntingRouteImport.update({
@@ -65,6 +66,11 @@ const SourceNameRoute = SourceNameRouteImport.update({
   path: '/source/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HeadHuntingRoleRoute = HeadHuntingRoleRouteImport.update({
+  id: '/$role',
+  path: '/$role',
+  getParentRoute: () => HeadHuntingRoute,
+} as any)
 const CareerSourcingHearfromRoute = CareerSourcingHearfromRouteImport.update({
   id: '/career-sourcing/$hearfrom',
   path: '/career-sourcing/$hearfrom',
@@ -79,8 +85,9 @@ export interface FileRoutesByFullPath {
   '/compliance-docs-u': typeof ComplianceDocsURoute
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
-  '/head-hunting': typeof HeadHuntingRoute
+  '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
+  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
 export interface FileRoutesByTo {
@@ -91,8 +98,9 @@ export interface FileRoutesByTo {
   '/compliance-docs-u': typeof ComplianceDocsURoute
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
-  '/head-hunting': typeof HeadHuntingRoute
+  '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
+  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
 export interface FileRoutesById {
@@ -104,8 +112,9 @@ export interface FileRoutesById {
   '/compliance-docs-u': typeof ComplianceDocsURoute
   '/dashboard': typeof DashboardRoute
   '/davao-hub': typeof DavaoHubRoute
-  '/head-hunting': typeof HeadHuntingRoute
+  '/head-hunting': typeof HeadHuntingRouteWithChildren
   '/career-sourcing/$hearfrom': typeof CareerSourcingHearfromRoute
+  '/head-hunting/$role': typeof HeadHuntingRoleRoute
   '/source/$name': typeof SourceNameRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/davao-hub'
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
+    | '/head-hunting/$role'
     | '/source/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/davao-hub'
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
+    | '/head-hunting/$role'
     | '/source/$name'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/davao-hub'
     | '/head-hunting'
     | '/career-sourcing/$hearfrom'
+    | '/head-hunting/$role'
     | '/source/$name'
   fileRoutesById: FileRoutesById
 }
@@ -155,7 +167,7 @@ export interface RootRouteChildren {
   ComplianceDocsURoute: typeof ComplianceDocsURoute
   DashboardRoute: typeof DashboardRoute
   DavaoHubRoute: typeof DavaoHubRoute
-  HeadHuntingRoute: typeof HeadHuntingRoute
+  HeadHuntingRoute: typeof HeadHuntingRouteWithChildren
   CareerSourcingHearfromRoute: typeof CareerSourcingHearfromRoute
   SourceNameRoute: typeof SourceNameRoute
 }
@@ -225,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SourceNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/head-hunting/$role': {
+      id: '/head-hunting/$role'
+      path: '/$role'
+      fullPath: '/head-hunting/$role'
+      preLoaderRoute: typeof HeadHuntingRoleRouteImport
+      parentRoute: typeof HeadHuntingRoute
+    }
     '/career-sourcing/$hearfrom': {
       id: '/career-sourcing/$hearfrom'
       path: '/career-sourcing/$hearfrom'
@@ -235,6 +254,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface HeadHuntingRouteChildren {
+  HeadHuntingRoleRoute: typeof HeadHuntingRoleRoute
+}
+
+const HeadHuntingRouteChildren: HeadHuntingRouteChildren = {
+  HeadHuntingRoleRoute: HeadHuntingRoleRoute,
+}
+
+const HeadHuntingRouteWithChildren = HeadHuntingRoute._addFileChildren(
+  HeadHuntingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
@@ -243,7 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComplianceDocsURoute: ComplianceDocsURoute,
   DashboardRoute: DashboardRoute,
   DavaoHubRoute: DavaoHubRoute,
-  HeadHuntingRoute: HeadHuntingRoute,
+  HeadHuntingRoute: HeadHuntingRouteWithChildren,
   CareerSourcingHearfromRoute: CareerSourcingHearfromRoute,
   SourceNameRoute: SourceNameRoute,
 }
