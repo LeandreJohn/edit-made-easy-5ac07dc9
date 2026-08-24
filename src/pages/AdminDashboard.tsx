@@ -1,15 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from '@/lib/router-compat';
-import { LogOut, Search, Download, FileText, User, Upload, Star, RefreshCw, BarChart3, ChevronLeft, ChevronRight, Users, Settings as SettingsIcon } from 'lucide-react';
-import SettingsPanel from '@/components/admin/SettingsPanel';
+import {
+  LogOut,
+  Search,
+  Download,
+  FileText,
+  User,
+  Star,
+  ChevronDown,
+  Mail,
+  Phone,
+  CalendarDays,
+  Loader2,
+  Wrench,
+  Sparkles,
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
 import page1Bg from '@/assets/resume-page1-bg.png';
 import page2Bg from '@/assets/resume-page2-bg.png';
 import Footer from '@/components/Footer';
-import { MOCK_APPLICANTS, type MockApplicant } from '@/data/mockApplicants';
+import type { MockApplicant } from '@/data/mockApplicants';
 import type { SelectedSkill } from '@/types/application';
-import { getApplicants, getDashboard, getDashboardByEmail } from '@/lib/apiClient';
+import { getApplicantByEmail, type AdminApplicantRecord } from '@/lib/apiClient';
+import { formatDateDenver } from '@/lib/date';
 import { toast } from 'sonner';
 
 const PROFICIENCY_DOTS: Record<SelectedSkill['proficiency'], number> = {
@@ -27,224 +41,129 @@ interface ApplicantState {
   photoDataUrl: string | null;
 }
 
-const buildEmptyApplicant = (id: string, name: string, email: string): MockApplicant => {
-  const [firstName, ...rest] = (name || email.split('@')[0] || 'Applicant').split(' ');
-  return {
-    id,
-    firstName: firstName || 'Applicant',
-    lastName: rest.join(' '),
-    email,
-    role: 'Cyberbacker',
-    location: '',
-    photoUrl: null,
-    about: '',
-    skills: [],
-    tools: [],
-    experiences: [],
-  };
+interface ToolEntry {
+  tool: string;
+  proficiency: SelectedSkill['proficiency'];
+}
+
+interface AdminApplicant extends MockApplicant {
+  phone: string;
+  dateAdded: string;
+  toolEntries: ToolEntry[];
+}
+
+/** Parse a field that may arrive as a JSON string or an already-parsed array. */
+function parseList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+const asProficiency = (v: unknown): SelectedSkill['proficiency'] => {
+  const s = String(v ?? '');
+  return (s in PROFICIENCY_DOTS ? s : 'Proficient') as SelectedSkill['proficiency'];
 };
 
-interface PageCacheEntry {
-  applicants: MockApplicant[];
-  startAfter: string;
-  hasMore: boolean;
+function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
+  const fullName = (rec.name || rec.email || 'Applicant').trim();
+  const [firstName, ...rest] = fullName.split(' ');
+
+  const skills = parseList<Record<string, unknown>>(rec.skills)
+    .filter((s) => s && s.skill)
+    .map((s) => ({
+      skill: String(s.skill),
+      category: String(s.category ?? ''),
+      proficiency: asProficiency(s.proficiency),
+    }));
+
+  const toolEntries = parseList<Record<string, unknown>>(rec.tools)
+    .filter((t) => t && t.tool)
+    .map((t) => ({ tool: String(t.tool), proficiency: asProficiency(t.proficiency) }));
+
+  const experiences = parseList<Record<string, unknown>>(rec.workexperience).map((e, i) => ({
+    id: String(e.id ?? `we-${i}`),
+    title: String(e.title ?? ''),
+    employer: String(e.employer ?? ''),
+    location: String(e.location ?? ''),
+    startDate: String(e.startDate ?? e.start_date ?? ''),
+    endDate: String(e.endDate ?? e.end_date ?? ''),
+    currentlyWorking: Boolean(e.currentlyWorking ?? e.current ?? e.currently_working ?? false),
+    responsibilities: String(e.responsibilities ?? ''),
+    toolsPlatforms: String(e.toolsPlatforms ?? e.tools_platforms ?? ''),
+  }));
+
+  return {
+    id: rec.id,
+    firstName: firstName || fullName,
+    lastName: rest.join(' '),
+    email: rec.email ?? '',
+    role: 'Cyberbacker',
+    location: '',
+    photoUrl: rec.profile_picture ?? null,
+    about: rec.values_proposition ?? '',
+    skills,
+    tools: toolEntries.map((t) => t.tool),
+    experiences,
+    phone: rec.phone ?? '',
+    dateAdded: rec.date_added ?? '',
+    toolEntries,
+  };
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'applicants' | 'settings'>('applicants');
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [applicants, setApplicants] = useState<MockApplicant[]>(MOCK_APPLICANTS);
-  const [selectedId, setSelectedId] = useState<string>(MOCK_APPLICANTS[0]?.id ?? '');
-  const [loadingList, setLoadingList] = useState(false);
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 50;
-  const [hasMore, setHasMore] = useState(false);
-  const pageCacheRef = useRef<Record<number, PageCacheEntry>>({});
-  const startAfterByPageRef = useRef<Record<number, string>>({});
-  const [stateMap, setStateMap] = useState<Record<string, ApplicantState>>(() => {
-    const initial: Record<string, ApplicantState> = {};
-    MOCK_APPLICANTS.forEach((a) => {
-      initial[a.id] = {
-        enabledSkills: Object.fromEntries(a.skills.map((s) => [s.skill, true])),
-        enabledTools: Object.fromEntries(a.tools.map((t) => [t, true])),
-        photoDataUrl: null,
-      };
-    });
-    return initial;
+  const [searched, setSearched] = useState(false);
+  const [applicant, setApplicant] = useState<AdminApplicant | null>(null);
+  const [state, setState] = useState<ApplicantState>({
+    enabledSkills: {},
+    enabledTools: {},
+    photoDataUrl: null,
   });
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({
+    about: true,
+    skills: true,
+    tools: true,
+    experience: true,
+  });
 
-  const ensureState = (id: string, a: MockApplicant) => {
-    setStateMap((m) =>
-      m[id]
-        ? m
-        : {
-            ...m,
-            [id]: {
-              enabledSkills: Object.fromEntries(a.skills.map((s) => [s.skill, true])),
-              enabledTools: Object.fromEntries(a.tools.map((t) => [t, true])),
-              photoDataUrl: null,
-            },
-          },
-    );
-  };
+  const toggleSection = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
-  const applyPage = (targetPage: number, entry: PageCacheEntry) => {
-    setApplicants(entry.applicants);
-    entry.applicants.forEach((a) => ensureState(a.id, a));
-    setSelectedId((prev) =>
-      entry.applicants.find((m) => m.id === prev) ? prev : entry.applicants[0]?.id ?? '',
-    );
-    setHasMore(entry.hasMore);
-    startAfterByPageRef.current[targetPage] = entry.startAfter;
-  };
-
-  const fetchApplicants = async (targetPage = page, { background = false } = {}) => {
-    const cached = pageCacheRef.current[targetPage];
-    if (cached && background) {
-      applyPage(targetPage, cached);
-    }
-    if (!cached) setLoadingList(true);
-    try {
-      const cursor = targetPage > 1 ? startAfterByPageRef.current[targetPage - 1] || '' : '';
-      const res = await getApplicants(targetPage, PAGE_SIZE, cursor);
-      if (res?.data?.length) {
-        const mapped = res.data.map((a) => buildEmptyApplicant(a.id, a.name, a.email));
-        const startAfter = res.start_after ?? mapped[mapped.length - 1]?.id ?? '';
-        const more = res.has_more ?? (res.data.length === PAGE_SIZE);
-        const entry: PageCacheEntry = { applicants: mapped, startAfter, hasMore: more };
-        // If cursor changed vs cached, invalidate later pages.
-        if (cached && cached.startAfter !== startAfter) {
-          Object.keys(pageCacheRef.current)
-            .map(Number)
-            .filter((p) => p > targetPage)
-            .forEach((p) => {
-              delete pageCacheRef.current[p];
-              delete startAfterByPageRef.current[p];
-            });
-        }
-        pageCacheRef.current[targetPage] = entry;
-        applyPage(targetPage, entry);
-        if (!background) {
-          toast.success(`Loaded ${res.count} applicant${res.count === 1 ? '' : 's'} (page ${targetPage})`);
-        }
-      } else if (!cached) {
-        setHasMore(false);
-        toast.message('No applicants returned from API');
-      }
-    } catch (e) {
-      if (!background) toast.error(e instanceof Error ? e.message : 'Failed to load applicants');
-    } finally {
-      setLoadingList(false);
-    }
-  };
-
-  const refreshCurrentPage = () => {
-    delete pageCacheRef.current[page];
-    void fetchApplicants(page);
-  };
-
-  useEffect(() => {
-    // Always refetch on page change so the list reflects the latest backend data;
-    // cache provides instant render while the background refresh runs.
-    void fetchApplicants(page, { background: !!pageCacheRef.current[page] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
-
-  // Fetch full applicant detail when selection changes (best-effort).
-  useEffect(() => {
-    if (!selectedId || selectedId.startsWith('app-')) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const d = await getDashboard(selectedId);
-        if (cancelled) return;
-        const pi = d.personal_info || {};
-        const sk = (d.skills?.items || []) as Array<{ skill?: string; category?: string; proficiency?: string }>;
-        const tl = (d.tools || []) as Array<{ tool?: string }>;
-        const we = (d.work_experience || []) as Array<Record<string, unknown>>;
-        setApplicants((list) =>
-          list.map((a) =>
-            a.id === selectedId
-              ? {
-                  ...a,
-                  firstName: pi.first_name || a.firstName,
-                  lastName: pi.last_name || a.lastName,
-                  email: d.email || a.email,
-                  location:
-                    [pi.city, pi.barangay, pi.street].filter(Boolean).join(', ') || a.location,
-                  about: d.skills?.value_proposition || a.about,
-                  skills: sk
-                    .filter((s) => s && s.skill)
-                    .map((s) => ({
-                      skill: String(s.skill),
-                      category: String(s.category || ''),
-                      proficiency: (s.proficiency as SelectedSkill['proficiency']) || 'Proficient',
-                    })),
-                  tools: tl.filter((t) => t && t.tool).map((t) => String(t.tool)),
-                  experiences: we.map((e, i) => ({
-                    id: String(e.id ?? `we-${i}`),
-                    title: String(e.title ?? ''),
-                    employer: String(e.employer ?? ''),
-                    location: String(e.location ?? ''),
-                    startDate: String(e.startDate ?? e.start_date ?? ''),
-                    endDate: String(e.endDate ?? e.end_date ?? ''),
-                    currentlyWorking: Boolean(e.currentlyWorking ?? e.currently_working ?? false),
-                    responsibilities: String(e.responsibilities ?? ''),
-                    toolsPlatforms: String(e.toolsPlatforms ?? e.tools_platforms ?? ''),
-                  })),
-                }
-              : a,
-          ),
-        );
-        // Initialise toggles for all skills/tools as enabled.
-        setStateMap((m) => ({
-          ...m,
-          [selectedId]: {
-            enabledSkills: Object.fromEntries(sk.filter((s) => s.skill).map((s) => [String(s.skill), true])),
-            enabledTools: Object.fromEntries(tl.filter((t) => t.tool).map((t) => [String(t.tool), true])),
-            photoDataUrl: m[selectedId]?.photoDataUrl ?? null,
-          },
-        }));
-      } catch (e) {
-        console.warn('getDashboard failed', e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId]);
-
-  const handleSearchEmail = async () => {
+  const handleSearch = async () => {
     const q = query.trim();
     if (!q) return;
-    // Plain in-memory filter for non-email lookups happens automatically via `filtered`.
-    if (!/\S+@\S+\.\S+/.test(q)) {
-      toast.message('Enter a full email address to look up an applicant outside the loaded pages.');
-      return;
-    }
     setSearching(true);
     try {
-      const d = await getDashboardByEmail(q);
-      if (!d?.id) {
+      const res = await getApplicantByEmail(q);
+      const rec = res?.data?.[0];
+      if (!rec?.id) {
+        setApplicant(null);
+        setSearched(true);
         toast.error('No applicant found for that email.');
         return;
       }
-      const pi = d.personal_info || {};
-      const name = [pi.first_name, pi.last_name].filter(Boolean).join(' ') || d.email;
-      const stub = buildEmptyApplicant(d.id, name, d.email);
-      // Replace the list with the matched applicant and reset pagination.
-      pageCacheRef.current = {};
-      startAfterByPageRef.current = {};
-      setApplicants([stub]);
-      ensureState(d.id, stub);
-      setPage(1);
-      setHasMore(false);
-      setSelectedId(d.id);
-      setQuery('');
-      toast.success(`Found ${name}`);
+      const mapped = mapRecord(rec);
+      setApplicant(mapped);
+      setSearched(true);
+      setState({
+        enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
+        enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
+        photoDataUrl: null,
+      });
+      if (mapped.photoUrl) {
+        void loadImageAsDataUrl(mapped.photoUrl).then((dataUrl) => {
+          if (dataUrl) setState((s) => ({ ...s, photoDataUrl: dataUrl }));
+        });
+      }
+      toast.success(`Found ${mapped.firstName} ${mapped.lastName}`.trim());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Search failed');
     } finally {
@@ -252,55 +171,30 @@ const AdminDashboard = () => {
     }
   };
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return applicants;
-    return applicants.filter((a) =>
-      `${a.firstName} ${a.lastName} ${a.email} ${a.role} ${a.location}`.toLowerCase().includes(q),
-    );
-  }, [query, applicants]);
+  const skillGroups = useMemo(() => {
+    if (!applicant) return [] as Array<{ category: string; items: SelectedSkill[] }>;
+    const map = new Map<string, SelectedSkill[]>();
+    applicant.skills.forEach((s) => {
+      const key = s.category || 'Other Skills';
+      map.set(key, [...(map.get(key) ?? []), s]);
+    });
+    return Array.from(map, ([category, items]) => ({ category, items }));
+  }, [applicant]);
 
-  const applicant = applicants.find((a) => a.id === selectedId) ?? applicants[0];
-  const state = stateMap[applicant?.id] ?? {
-    enabledSkills: {},
-    enabledTools: {},
-    photoDataUrl: null,
-  };
-
-  const toggleSkill = (skill: string) => {
-    setStateMap((m) => ({
-      ...m,
-      [applicant.id]: {
-        ...m[applicant.id],
-        enabledSkills: { ...m[applicant.id].enabledSkills, [skill]: !m[applicant.id].enabledSkills[skill] },
-      },
+  const toggleSkill = (skill: string) =>
+    setState((s) => ({
+      ...s,
+      enabledSkills: { ...s.enabledSkills, [skill]: !s.enabledSkills[skill] },
     }));
-  };
 
-  const toggleTool = (tool: string) => {
-    setStateMap((m) => ({
-      ...m,
-      [applicant.id]: {
-        ...m[applicant.id],
-        enabledTools: { ...m[applicant.id].enabledTools, [tool]: !m[applicant.id].enabledTools[tool] },
-      },
+  const toggleTool = (tool: string) =>
+    setState((s) => ({
+      ...s,
+      enabledTools: { ...s.enabledTools, [tool]: !s.enabledTools[tool] },
     }));
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setStateMap((m) => ({
-        ...m,
-        [applicant.id]: { ...m[applicant.id], photoDataUrl: reader.result as string },
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
 
   const generateResume = async () => {
+    if (!applicant) return;
     try {
       const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
       const [page1DataUrl, page2DataUrl] = await Promise.all([
@@ -320,7 +214,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-muted">
       <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo className="h-11 w-auto" variant="black" />
             <span className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded bg-primary/10 text-primary">
@@ -336,275 +230,250 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {tab === 'applicants'
-              ? 'Search applicants, manage their resume content, and generate downloadable resumes.'
-              : 'Configure role-fit formulas and the assessment link.'}
+          <h1 className="font-heading text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Search an applicant by email, review their profile, and generate a downloadable resume.
           </p>
         </div>
 
-        <div className="mb-5 inline-flex rounded-xl border border-border bg-card p-1 shadow-sm">
+        {/* Search */}
+        <div className="mb-6 flex items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="email"
+              placeholder="Search by email address..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleSearch();
+              }}
+              className="w-full bg-transparent border-0 outline-none pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
+              aria-label="Search applicants by email"
+            />
+          </div>
           <button
             type="button"
-            onClick={() => setTab('applicants')}
-            className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
-              tab === 'applicants'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            onClick={() => void handleSearch()}
+            disabled={searching || !query.trim()}
+            className="btn-primary text-sm px-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Users className="w-4 h-4" /> Applicants
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('settings')}
-            className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
-              tab === 'settings'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <SettingsIcon className="w-4 h-4" /> Settings
+            {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
           </button>
         </div>
 
-        {tab === 'settings' ? (
-          <SettingsPanel />
-        ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-          {/* Applicants list */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 h-fit">
-            <div className="flex gap-2 mb-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, role..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void handleSearchEmail(); }}
-                  className="form-input pl-9"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => void handleSearchEmail()}
-                disabled={searching || !query.trim()}
-                className="btn-primary text-sm px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Look up applicant by email"
-              >
-                {searching ? '...' : 'Search'}
-              </button>
-            </div>
-            <div className="flex items-center justify-between mb-2 px-1">
-              <p className="text-xs text-muted-foreground">
-                {filtered.length} applicant{filtered.length === 1 ? '' : 's'}
-              </p>
-              <button
-                onClick={refreshCurrentPage}
-                disabled={loadingList}
-                className="text-xs text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3 h-3 ${loadingList ? 'animate-spin' : ''}`} />
-                {loadingList ? 'Loading...' : 'Refresh'}
-              </button>
-            </div>
-            <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-              {filtered.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => setSelectedId(a.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    a.id === selectedId
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted text-foreground'
-                  }`}
-                >
-                  <p className="text-sm font-semibold leading-tight">
-                    {a.firstName} {a.lastName}
-                  </p>
-                  <p
-                    className={`text-xs mt-0.5 ${
-                      a.id === selectedId ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {a.role} · {a.email}
-                  </p>
-                </button>
-              ))}
-              {filtered.length === 0 && (
-                <p className="text-sm text-muted-foreground italic p-3">No applicants found.</p>
-              )}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={loadingList || page <= 1}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" /> Prev
-              </button>
-              <span className="text-xs text-muted-foreground">Page {page}</span>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={loadingList || !hasMore}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        {/* States */}
+        {searching && !applicant && (
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Looking up applicant...</p>
           </div>
+        )}
 
-          {/* Detail panel */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-6 pb-4 border-b border-border">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl border-2 border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                  {state.photoDataUrl ? (
-                    <img src={state.photoDataUrl} alt="Profile" className="w-full h-full object-cover" />
+        {!searching && !applicant && (
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
+            <Search className="w-8 h-8 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm font-medium text-foreground">
+              {searched ? 'No applicant found for that email.' : 'Search an applicant by email to begin'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {searched
+                ? 'Double-check the address and try again.'
+                : 'Enter the full email address used on their application.'}
+            </p>
+          </div>
+        )}
+
+        {applicant && (
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="flex flex-wrap items-start justify-between gap-4 p-6 border-b border-border">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-20 h-20 rounded-2xl border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                  {applicant.photoUrl ? (
+                    <img
+                      src={applicant.photoUrl}
+                      alt={`${applicant.firstName} ${applicant.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <User className="w-7 h-7 text-muted-foreground" />
+                    <User className="w-8 h-8 text-muted-foreground" />
                   )}
                 </div>
-                <div>
-                  <h2 className="font-heading text-xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <h2 className="font-heading text-2xl font-bold text-foreground truncate">
                     {applicant.firstName} {applicant.lastName}
                   </h2>
                   <p className="text-sm text-muted-foreground">{applicant.role}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{applicant.location}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                    {applicant.email && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" /> {applicant.email}
+                      </span>
+                    )}
+                    {applicant.phone && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" /> {applicant.phone}
+                      </span>
+                    )}
+                    {applicant.dateAdded && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarDays className="w-3.5 h-3.5" /> Applied{' '}
+                        {formatDateDenver(applicant.dateAdded)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => photoInputRef.current?.click()}
-                  className="btn-outline text-sm inline-flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" /> Upload Photo
-                </button>
-                <button
-                  onClick={() =>
-                    navigate(`/assessment-result?cid=${encodeURIComponent(applicant.id)}`)
-                  }
-                  className="btn-outline text-sm inline-flex items-center gap-2"
-                >
-                  <BarChart3 className="w-4 h-4" /> View Assessment
-                </button>
-                <button
-                  onClick={generateResume}
-                  className="btn-primary text-sm inline-flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" /> Generate Resume PDF
-                </button>
-              </div>
+              <button
+                onClick={generateResume}
+                className="btn-primary text-sm inline-flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Generate Resume PDF
+              </button>
             </div>
 
-            <section className="mb-6">
-              <h3 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wide mb-2">
-                About
-              </h3>
-              <p className="text-sm text-foreground leading-relaxed">{applicant.about}</p>
-            </section>
+            {/* About */}
+            <Section
+              title="About"
+              open={open.about}
+              onToggle={() => toggleSection('about')}
+              icon={<User className="w-4 h-4" />}
+            >
+              {applicant.about ? (
+                <p className="text-sm text-foreground leading-relaxed">{applicant.about}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No value proposition added.</p>
+              )}
+            </Section>
 
-            <section className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wide">
-                  Core Skills
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  Toggle to include/exclude on resume
-                </span>
-              </div>
-              <div className="space-y-2">
-                {applicant.skills.map((s) => {
-                  const enabled = state.enabledSkills[s.skill];
-                  return (
-                    <label
-                      key={s.skill}
-                      className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        enabled
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-border bg-muted/40 opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={() => toggleSkill(s.skill)}
-                          className="w-4 h-4 accent-primary shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{s.skill}</p>
-                          <p className="text-xs text-muted-foreground">{s.proficiency}</p>
-                        </div>
+            {/* Skills */}
+            <Section
+              title="Core Skills"
+              open={open.skills}
+              onToggle={() => toggleSection('skills')}
+              icon={<Sparkles className="w-4 h-4" />}
+              hint="Toggle to include/exclude on resume"
+              count={applicant.skills.length}
+            >
+              {applicant.skills.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No skills added.</p>
+              ) : (
+                <div className="space-y-5">
+                  {skillGroups.map((group) => (
+                    <div key={group.category}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                        {group.category}
+                      </p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                        {group.items.map((s) => {
+                          const enabled = state.enabledSkills[s.skill];
+                          return (
+                            <label
+                              key={`${group.category}-${s.skill}`}
+                              className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
+                                enabled
+                                  ? 'border-primary/40 bg-primary/5'
+                                  : 'border-border bg-muted/40 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={!!enabled}
+                                  onChange={() => toggleSkill(s.skill)}
+                                  className="w-4 h-4 accent-primary shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {s.skill}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">{s.proficiency}</p>
+                                </div>
+                              </div>
+                              <StarRating count={PROFICIENCY_STARS[s.proficiency]} />
+                            </label>
+                          );
+                        })}
                       </div>
-                      <StarRating count={PROFICIENCY_STARS[s.proficiency]} />
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Section>
 
-            <section className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wide">
-                  Tools
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  Toggle to include/exclude on resume
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {applicant.tools.map((t) => {
-                  const enabled = state.enabledTools[t];
-                  return (
-                    <label
-                      key={t}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        enabled
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-border bg-muted/40 opacity-60'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={() => toggleTool(t)}
-                        className="w-4 h-4 accent-primary shrink-0"
-                      />
-                      <span className="text-sm font-medium text-foreground">{t}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
+            {/* Tools */}
+            <Section
+              title="Tools"
+              open={open.tools}
+              onToggle={() => toggleSection('tools')}
+              icon={<Wrench className="w-4 h-4" />}
+              hint="Toggle to include/exclude on resume"
+              count={applicant.toolEntries.length}
+            >
+              {applicant.toolEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No tools added.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {applicant.toolEntries.map((t) => {
+                    const enabled = state.enabledTools[t.tool];
+                    return (
+                      <label
+                        key={t.tool}
+                        className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
+                          enabled
+                            ? 'border-primary/40 bg-primary/5'
+                            : 'border-border bg-muted/40 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={!!enabled}
+                            onChange={() => toggleTool(t.tool)}
+                            className="w-4 h-4 accent-primary shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{t.tool}</p>
+                            <p className="text-xs text-muted-foreground">{t.proficiency}</p>
+                          </div>
+                        </div>
+                        <StarRating count={PROFICIENCY_STARS[t.proficiency]} />
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </Section>
 
-            <section>
-              <h3 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wide mb-3 inline-flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Experience
-              </h3>
+            {/* Experience */}
+            <Section
+              title="Experience"
+              open={open.experience}
+              onToggle={() => toggleSection('experience')}
+              icon={<FileText className="w-4 h-4" />}
+              count={applicant.experiences.length}
+              last
+            >
               {applicant.experiences.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No experience added.</p>
               ) : (
                 <div className="space-y-3">
                   {applicant.experiences.map((e) => (
                     <div key={e.id} className="border border-border rounded-xl p-4">
-                      <p className="text-sm font-semibold text-foreground">
-                        {e.title} — {e.startDate}
-                        {e.endDate || e.currentlyWorking ? `–${e.currentlyWorking ? 'Present' : e.endDate}` : ''}
-                      </p>
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{e.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {e.startDate}
+                          {e.currentlyWorking
+                            ? ' – Present'
+                            : e.endDate
+                              ? ` – ${e.endDate}`
+                              : ''}
+                        </p>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {e.employer}
                         {e.location ? ` · ${e.location}` : ''}
@@ -614,19 +483,68 @@ const AdminDashboard = () => {
                           {e.responsibilities}
                         </p>
                       )}
+                      {e.toolsPlatforms && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          <span className="font-medium text-foreground">Tools:</span>{' '}
+                          {e.toolsPlatforms}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
-            </section>
+            </Section>
           </div>
-        </div>
         )}
       </main>
       <Footer />
     </div>
   );
 };
+
+const Section = ({
+  title,
+  icon,
+  hint,
+  count,
+  open,
+  onToggle,
+  last,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  hint?: string;
+  count?: number;
+  open: boolean;
+  onToggle: () => void;
+  last?: boolean;
+  children: React.ReactNode;
+}) => (
+  <section className={last ? '' : 'border-b border-border'}>
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="w-full flex items-center justify-between gap-3 px-6 py-4 text-left hover:bg-muted/50 transition-colors"
+    >
+      <span className="inline-flex items-center gap-2 font-heading text-sm font-semibold uppercase tracking-wide text-foreground">
+        {icon}
+        {title}
+        {typeof count === 'number' && (
+          <span className="text-xs font-medium normal-case text-muted-foreground">({count})</span>
+        )}
+      </span>
+      <span className="inline-flex items-center gap-3">
+        {hint && <span className="hidden sm:inline text-xs text-muted-foreground">{hint}</span>}
+        <ChevronDown
+          className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </span>
+    </button>
+    {open && <div className="px-6 pb-6">{children}</div>}
+  </section>
+);
 
 const StarRating = ({ count }: { count: number }) => (
   <div className="flex gap-0.5 shrink-0">

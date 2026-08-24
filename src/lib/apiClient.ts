@@ -682,6 +682,30 @@ export function getDashboardByEmail(email: string) {
   return request<DashboardResponse>(`/dashboard/${encodeURIComponent(email)}`, { method: 'GET' });
 }
 
+/** Admin resume record returned by /dashboard/email/{email}. */
+export interface AdminApplicantRecord {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  date_added?: string;
+  /** JSON-encoded arrays (may also arrive already parsed). */
+  workexperience?: string | unknown[];
+  tools?: string | unknown[];
+  skills?: string | unknown[];
+  values_proposition?: string;
+  profile_picture?: string | null;
+  [k: string]: unknown;
+}
+
+/** Admin applicant lookup by email address. */
+export function getApplicantByEmail(email: string) {
+  return request<{ success: boolean; data: AdminApplicantRecord[] }>(
+    `/dashboard/email/${encodeURIComponent(email)}`,
+    { method: 'GET' },
+  );
+}
+
 // ------------------------ VALUES ASSESSMENT ------------------------
 
 export interface ValuesAssessmentPayload {
