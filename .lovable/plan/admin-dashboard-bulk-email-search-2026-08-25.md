@@ -5,11 +5,11 @@ Add a bulk lookup mode alongside the existing single-email search on `/admin`.
 ## What changes
 
 1. **Mode toggle above the search bar** — "Single" (current behavior, unchanged) and "Bulk".
-2. **Bulk input** — a textarea where the admin pastes multiple emails (one per line, or comma/semicolon separated). Input is split, trimmed, deduplicated and lightly validated before sending.
+2. **Bulk input** — a textarea where the admin pastes multiple emails (one per line, or comma/semicolon separated). Input is split, trimmed, deduplicated and lightly validated before sending. ( add instructions and examples on how how to input it)
 3. **Request** — one call to `/api/v1/app_site/dashboard/bulk-email` with body:
-   ```json
+  ```json
    { "emails": ["john@example.com", "jane@example.com"] }
-   ```
+  ```
    Response is read from the same `{ success, data: [ ... ] }` envelope as the single lookup.
 4. **Results list** — compact rows showing avatar, name, email, phone and applied date for each returned applicant. Clicking a row opens that applicant in the existing profile card (About / Core Skills / Tools / Experience) with Generate Resume PDF working as today.
 5. **Not-found feedback** — emails submitted but missing from the response are listed under the results as "No match" so nothing silently disappears.
