@@ -123,11 +123,37 @@ function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
   };
 }
 
+/** Split a free-text blob of emails (newline / comma / semicolon / space separated). */
+function parseEmailInput(raw: string): { emails: string[]; invalid: string[] } {
+  const tokens = raw
+    .split(/[\s,;]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const emails: string[] = [];
+  const invalid: string[] = [];
+  tokens.forEach((t) => {
+    const lower = t.toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lower)) {
+      if (!invalid.includes(t)) invalid.push(t);
+      return;
+    }
+    if (seen.has(lower)) return;
+    seen.add(lower);
+    emails.push(lower);
+  });
+  return { emails, invalid };
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<'single' | 'bulk'>('single');
   const [query, setQuery] = useState('');
+  const [bulkInput, setBulkInput] = useState('');
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [results, setResults] = useState<AdminApplicant[]>([]);
+  const [missingEmails, setMissingEmails] = useState<string[]>([]);
   const [applicant, setApplicant] = useState<AdminApplicant | null>(null);
   const [state, setState] = useState<ApplicantState>({
     enabledSkills: {},
@@ -143,6 +169,21 @@ const AdminDashboard = () => {
 
   const toggleSection = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
+  /** Select an applicant for the profile card and prime the resume toggles/photo. */
+  const selectApplicant = (mapped: AdminApplicant) => {
+    setApplicant(mapped);
+    setState({
+      enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
+      enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
+      photoDataUrl: null,
+    });
+    if (mapped.photoUrl) {
+      void loadImageAsDataUrl(mapped.photoUrl).then((dataUrl) => {
+        if (dataUrl) setState((s) => ({ ...s, photoDataUrl: dataUrl }));
+      });
+    }
+  };
+
   const handleSearch = async () => {
     const q = query.trim();
     if (!q) return;
@@ -150,6 +191,8 @@ const AdminDashboard = () => {
     try {
       const res = await getApplicantByEmail(q);
       const rec = res?.data?.[0];
+      setResults([]);
+      setMissingEmails([]);
       if (!rec?.id) {
         setApplicant(null);
         setSearched(true);
@@ -157,24 +200,51 @@ const AdminDashboard = () => {
         return;
       }
       const mapped = mapRecord(rec);
-      setApplicant(mapped);
+      selectApplicant(mapped);
       setSearched(true);
-      setState({
-        enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
-        enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
-        photoDataUrl: null,
-      });
-      if (mapped.photoUrl) {
-        void loadImageAsDataUrl(mapped.photoUrl).then((dataUrl) => {
-          if (dataUrl) setState((s) => ({ ...s, photoDataUrl: dataUrl }));
-        });
-      }
       toast.success(`Found ${mapped.firstName} ${mapped.lastName}`.trim());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Search failed');
     } finally {
       setSearching(false);
     }
+  };
+
+  const handleBulkSearch = async () => {
+    const { emails, invalid } = parseEmailInput(bulkInput);
+    if (invalid.length) {
+      toast.error(`Invalid email${invalid.length > 1 ? 's' : ''}: ${invalid.slice(0, 3).join(', ')}`);
+      return;
+    }
+    if (!emails.length) {
+      toast.error('Enter at least one email address.');
+      return;
+    }
+    setSearching(true);
+    try {
+      const res = await getApplicantsByEmails(emails);
+      const recs = (res?.data ?? []).filter((r) => r?.id);
+      const mapped = recs.map(mapRecord);
+      const found = new Set(mapped.map((m) => m.email.toLowerCase()));
+      setResults(mapped);
+      setMissingEmails(emails.filter((e) => !found.has(e)));
+      setApplicant(null);
+      setSearched(true);
+      if (!mapped.length) toast.error('No applicants found for those emails.');
+      else toast.success(`Found ${mapped.length} of ${emails.length} applicant(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Bulk search failed');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const switchMode = (next: 'single' | 'bulk') => {
+    setMode(next);
+    setApplicant(null);
+    setResults([]);
+    setMissingEmails([]);
+    setSearched(false);
   };
 
   const skillGroups = useMemo(() => {
