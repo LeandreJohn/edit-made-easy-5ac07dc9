@@ -314,31 +314,91 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="mb-6 flex items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="email"
-              placeholder="Search by email address..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleSearch();
-              }}
-              className="w-full bg-transparent border-0 outline-none pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
-              aria-label="Search applicants by email"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleSearch()}
-            disabled={searching || !query.trim()}
-            className="btn-primary text-sm px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-          </button>
+        {/* Mode toggle */}
+        <div className="mb-3 inline-flex rounded-xl border border-border bg-card p-1 shadow-sm">
+          {(['single', 'bulk'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                mode === m
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {m === 'single' ? <Search className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+              {m === 'single' ? 'Single' : 'Bulk'}
+            </button>
+          ))}
         </div>
+
+        {/* Search */}
+        {mode === 'single' ? (
+          <div className="mb-6 flex items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="email"
+                placeholder="Search by email address..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleSearch();
+                }}
+                className="w-full bg-transparent border-0 outline-none pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
+                aria-label="Search applicants by email"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSearch()}
+              disabled={searching || !query.trim()}
+              className="btn-primary text-sm px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <label
+              htmlFor="bulk-emails"
+              className="block text-sm font-semibold text-foreground mb-1"
+            >
+              Bulk email lookup
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Paste one email per line, or separate them with commas or semicolons. Duplicates are
+              removed automatically.
+            </p>
+            <pre className="text-[11px] leading-relaxed text-muted-foreground bg-muted rounded-lg px-3 py-2 mb-3 whitespace-pre-wrap">
+{`john@example.com
+jane@example.com
+maria@example.com`}
+            </pre>
+            <textarea
+              id="bulk-emails"
+              rows={5}
+              value={bulkInput}
+              onChange={(e) => setBulkInput(e.target.value)}
+              placeholder="john@example.com&#10;jane@example.com"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="text-xs text-muted-foreground">
+                {parseEmailInput(bulkInput).emails.length} valid email(s) detected
+              </span>
+              <button
+                type="button"
+                onClick={() => void handleBulkSearch()}
+                disabled={searching || !bulkInput.trim()}
+                className="btn-primary text-sm px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search all'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* States */}
         {searching && !applicant && (
@@ -348,18 +408,89 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {!searching && !applicant && (
+        {/* Bulk results list */}
+        {!searching && !applicant && mode === 'bulk' && (results.length > 0 || missingEmails.length > 0) && (
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-6">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">
+                {results.length} applicant{results.length === 1 ? '' : 's'} found
+              </h2>
+            </div>
+            <ul className="divide-y divide-border">
+              {results.map((r) => (
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() => selectApplicant(r)}
+                    className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-muted/60 transition-colors"
+                  >
+                    <div className="w-11 h-11 rounded-xl border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                      {r.photoUrl ? (
+                        <img
+                          src={r.photoUrl}
+                          alt={`${r.firstName} ${r.lastName}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {r.firstName} {r.lastName}
+                      </p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                        {r.email && <span className="truncate">{r.email}</span>}
+                        {r.phone && <span>{r.phone}</span>}
+                        {r.dateAdded && <span>{formatDateDenver(r.dateAdded)}</span>}
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 -rotate-90 text-muted-foreground shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {missingEmails.length > 0 && (
+              <div className="px-5 py-3 border-t border-border bg-muted/40">
+                <p className="text-xs font-semibold text-foreground mb-1">
+                  No match ({missingEmails.length})
+                </p>
+                <p className="text-xs text-muted-foreground break-words">
+                  {missingEmails.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!searching && !applicant && results.length === 0 && missingEmails.length === 0 && (
           <div className="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
             <Search className="w-8 h-8 text-muted-foreground/50 mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground">
-              {searched ? 'No applicant found for that email.' : 'Search an applicant by email to begin'}
+              {searched
+                ? mode === 'bulk'
+                  ? 'No applicants found for those emails.'
+                  : 'No applicant found for that email.'
+                : mode === 'bulk'
+                  ? 'Paste a list of emails to look them up together'
+                  : 'Search an applicant by email to begin'}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {searched
-                ? 'Double-check the address and try again.'
+                ? 'Double-check the addresses and try again.'
                 : 'Enter the full email address used on their application.'}
             </p>
           </div>
+        )}
+
+        {applicant && results.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setApplicant(null)}
+            className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back to results
+          </button>
         )}
 
         {applicant && (
