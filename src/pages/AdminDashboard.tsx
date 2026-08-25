@@ -8,12 +8,14 @@ import {
   User,
   Star,
   ChevronDown,
+  ChevronLeft,
   Mail,
   Phone,
   CalendarDays,
   Loader2,
   Wrench,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
@@ -22,7 +24,11 @@ import page2Bg from '@/assets/resume-page2-bg.png';
 import Footer from '@/components/Footer';
 import type { MockApplicant } from '@/data/mockApplicants';
 import type { SelectedSkill } from '@/types/application';
-import { getApplicantByEmail, type AdminApplicantRecord } from '@/lib/apiClient';
+import {
+  getApplicantByEmail,
+  getApplicantsByEmails,
+  type AdminApplicantRecord,
+} from '@/lib/apiClient';
 import { formatDateDenver } from '@/lib/date';
 import { toast } from 'sonner';
 
