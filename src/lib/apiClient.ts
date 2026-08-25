@@ -706,6 +706,14 @@ export function getApplicantByEmail(email: string) {
   );
 }
 
+/** Admin bulk applicant lookup by a list of email addresses. */
+export function getApplicantsByEmails(emails: string[]) {
+  return request<{ success: boolean; data: AdminApplicantRecord[] }>('/dashboard/bulk-email', {
+    method: 'POST',
+    body: JSON.stringify({ emails }),
+  });
+}
+
 // ------------------------ VALUES ASSESSMENT ------------------------
 
 export interface ValuesAssessmentPayload {
