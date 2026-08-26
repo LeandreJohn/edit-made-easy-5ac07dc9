@@ -319,6 +319,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           schoolLocation: e.school_location || '',
           graduationDate: normalizeGraduation(e.graduation_date),
           degreeField: e.degree || '',
+          degreeFieldOther: e.other_degree || '',
         });
         const pb = d.professional_background || {};
         setProfessional({
@@ -1813,7 +1814,10 @@ const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
 const EducationView = ({ data }: { data: Education }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
     <Field label="Highest Level" value={data.highestLevel} />
-    <Field label="Degree / Field" value={data.degreeField} />
+    <Field
+      label="Degree / Field"
+      value={data.degreeField === 'Other' ? (data.degreeFieldOther || 'Other') : data.degreeField}
+    />
     <Field label="School Name" value={data.schoolName} />
     <Field label="School Location" value={data.schoolLocation} />
     <Field label="Graduation Date" value={formatGraduation(data.graduationDate)} />

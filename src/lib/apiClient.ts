@@ -337,6 +337,7 @@ export function updateEducation(contactId: string, e: Education) {
       school_location: e.schoolLocation,
       graduation_date: e.graduationDate,
       degree: e.degreeField,
+      other_degree: e.degreeField === 'Other' ? (e.degreeFieldOther ?? '').trim() : '',
     }),
   });
 }
@@ -632,7 +633,7 @@ export interface DashboardResponse {
     Social_Link?: string | null;
     [k: string]: unknown;
   };
-  education: { education_level?: string; school_name?: string; school_location?: string; graduation_date?: string; degree?: string };
+  education: { education_level?: string; school_name?: string; school_location?: string; graduation_date?: string; degree?: string; other_degree?: string };
   professional_background: { preferred_industry?: string; preferred_role?: string; preferred_bio?: string | null; availability?: string; hours_per_day?: string };
   work_experience: Array<Record<string, unknown>>;
   tools: Array<Record<string, unknown>>;
