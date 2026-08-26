@@ -18,7 +18,7 @@ const EDUCATION_LEVELS = [
   'Doctorate / PhD',
 ];
 
-const FIELDS_OF_STUDY = [
+export const FIELDS_OF_STUDY = [
   'Accounting & Finance',
   'Architecture',
   'Arts & Design',

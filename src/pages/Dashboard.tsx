@@ -12,7 +12,7 @@ import {
 import { notificationsForTags } from '@/data/tagNotifications';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
-import EducationStep from '@/components/steps/EducationStep';
+import EducationStep, { FIELDS_OF_STUDY } from '@/components/steps/EducationStep';
 import PersonalInfoStep from '@/components/steps/PersonalInfoStep';
 import ProfessionalBgStep from '@/components/steps/ProfessionalBgStep';
 import WorkExperienceStep from '@/components/steps/WorkExperienceStep';
@@ -313,13 +313,15 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           valueProposition: str(d.skills?.value_proposition),
         });
         const e = d.education || {};
+        const rawDegree = (e.degree || '').trim();
+        const isKnownDegree = FIELDS_OF_STUDY.includes(rawDegree);
         setEducation({
           highestLevel: e.education_level || '',
           schoolName: e.school_name || '',
           schoolLocation: e.school_location || '',
           graduationDate: normalizeGraduation(e.graduation_date),
-          degreeField: e.degree || '',
-          degreeFieldOther: e.other_degree || '',
+          degreeField: rawDegree && !isKnownDegree ? 'Other' : rawDegree,
+          degreeFieldOther: rawDegree && !isKnownDegree ? rawDegree : (e.other_degree || ''),
         });
         const pb = d.professional_background || {};
         setProfessional({
