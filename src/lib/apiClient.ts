@@ -696,8 +696,17 @@ export interface AdminApplicantRecord {
   skills?: string | unknown[];
   values_proposition?: string;
   profile_picture?: string | null;
+  /** InnerMetrix Values assessment scores (JSON string or parsed object). */
+  values_assessment_scores?: string | Record<string, unknown>;
+  /** URL to the Values assessment PDF report. */
+  values_assessment_result?: string;
+  /** InnerMetrix DISC assessment scores (JSON string or parsed object). */
+  disc_assessment_scores?: string | Record<string, unknown>;
+  /** URL to the DISC assessment PDF report. */
+  disc_assessment_result?: string;
   [k: string]: unknown;
 }
+
 
 /** Admin applicant lookup by email address. */
 export function getApplicantByEmail(email: string) {
