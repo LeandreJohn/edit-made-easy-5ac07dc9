@@ -683,27 +683,36 @@ export function getDashboardByEmail(email: string) {
   return request<DashboardResponse>(`/dashboard/${encodeURIComponent(email)}`, { method: 'GET' });
 }
 
-/** Admin resume record returned by /dashboard/email/{email}. */
+/**
+ * Admin applicant record returned by /dashboard/email/{email} and
+ * /dashboard/bulk-email. Every section is optional and some nested values may
+ * arrive as JSON strings, so consumers must parse defensively.
+ */
 export interface AdminApplicantRecord {
   id: string;
-  name?: string;
   email?: string;
-  phone?: string;
-  date_added?: string;
-  /** JSON-encoded arrays (may also arrive already parsed). */
-  workexperience?: string | unknown[];
-  tools?: string | unknown[];
-  skills?: string | unknown[];
-  values_proposition?: string;
+  date_applied?: string | null;
   profile_picture?: string | null;
-  /** InnerMetrix Values assessment scores (JSON string or parsed object). */
-  values_assessment_scores?: string | Record<string, unknown>;
-  /** URL to the Values assessment PDF report. */
-  values_assessment_result?: string;
-  /** InnerMetrix DISC assessment scores (JSON string or parsed object). */
-  disc_assessment_scores?: string | Record<string, unknown>;
-  /** URL to the DISC assessment PDF report. */
-  disc_assessment_result?: string;
+  last_update_changes?: string | null;
+  can_do_assessment?: string | null;
+  tag?: string[] | null;
+  last_stage_date_changed?: string | null;
+  personal_info?: Record<string, unknown> | null;
+  education?: Record<string, unknown> | null;
+  professional_background?: Record<string, unknown> | null;
+  work_experience?: unknown[] | string | null;
+  tools?: unknown[] | string | null;
+  skills?: { items?: unknown[]; structured?: unknown[]; value_proposition?: string } | string | null;
+  portfolio?: { link?: string | null; files?: string[] | string | null } | null;
+  certifications?: unknown[] | string | null;
+  work_setup?: Record<string, unknown> | null;
+  compliance?: Record<string, unknown> | null;
+  values?: {
+    value_assessment_report?: string | null;
+    value_assessment_score?: string | Record<string, unknown> | null;
+    disc_assessment_report?: string | null;
+    disc_assessment_score?: string | Record<string, unknown> | null;
+  } | null;
   [k: string]: unknown;
 }
 
