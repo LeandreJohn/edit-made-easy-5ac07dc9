@@ -815,9 +815,66 @@ const StarRating = ({ count }: { count: number }) => (
   </div>
 );
 
+const AssessmentCard = ({
+  label,
+  icon,
+  scores,
+  reportUrl,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  scores: Record<string, unknown> | undefined;
+  reportUrl: string | undefined;
+}) => {
+  const entries = scores
+    ? Object.entries(scores).filter(([_, v]) =>
+        typeof v === 'string' || typeof v === 'number',
+      )
+    : [];
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          {icon}
+          {label}
+        </span>
+        {reportUrl ? (
+          <a
+            href={reportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            View report <ExternalLink className="w-3 h-3" />
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground">No report</span>
+        )}
+      </div>
+      {entries.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {entries.map(([key, value]) => (
+            <div key={key} className="bg-muted/50 rounded-lg px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+                {key}
+              </p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {String(value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">No scores available.</p>
+      )}
+    </div>
+  );
+};
+
 // ============================================================================
 // PDF GENERATION
 // ============================================================================
+
 
 function drawResume(
   doc: jsPDF,
