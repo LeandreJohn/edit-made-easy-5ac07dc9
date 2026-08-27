@@ -59,6 +59,10 @@ interface AdminApplicant extends MockApplicant {
   phone: string;
   dateAdded: string;
   toolEntries: ToolEntry[];
+  valuesScores?: Record<string, unknown>;
+  valuesReportUrl?: string;
+  discScores?: Record<string, unknown>;
+  discReportUrl?: string;
 }
 
 /** Parse a field that may arrive as a JSON string or an already-parsed array. */
@@ -75,10 +79,27 @@ function parseList<T>(value: unknown): T[] {
   return [];
 }
 
+/** Parse a field that may arrive as a JSON string or an already-parsed object. */
+function parseJsonObject(value: unknown): Record<string, unknown> | undefined {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 const asProficiency = (v: unknown): SelectedSkill['proficiency'] => {
   const s = String(v ?? '');
   return (s in PROFICIENCY_DOTS ? s : 'Proficient') as SelectedSkill['proficiency'];
 };
+
 
 function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
   const fullName = (rec.name || rec.email || 'Applicant').trim();
