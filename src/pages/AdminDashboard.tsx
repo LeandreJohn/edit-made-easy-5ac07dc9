@@ -823,11 +823,15 @@ const AssessmentCard = ({
 }: {
   label: string;
   icon: React.ReactNode;
-  scores: Record<string, unknown> | undefined;
+  scores: unknown;
   reportUrl: string | undefined;
 }) => {
-  const entries = scores
-    ? Object.entries(scores).filter(([_, v]) =>
+  const normalized =
+    scores && typeof scores === 'object' && !Array.isArray(scores)
+      ? (scores as Record<string, unknown>)
+      : undefined;
+  const entries = normalized
+    ? Object.entries(normalized).filter(([_, v]) =>
         typeof v === 'string' || typeof v === 'number',
       )
     : [];
@@ -870,6 +874,7 @@ const AssessmentCard = ({
     </div>
   );
 };
+
 
 // ============================================================================
 // PDF GENERATION
