@@ -571,7 +571,29 @@ maria@example.com`}
               </button>
             </div>
 
+            {/* Assessments */}
+            <div className="px-6 py-4 border-b border-border bg-muted/30">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                Assessments
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AssessmentCard
+                  label="Values Assessment"
+                  icon={<FileBarChart className="w-4 h-4" />}
+                  scores={applicant.valuesScores?.results ?? applicant.valuesScores}
+                  reportUrl={applicant.valuesReportUrl}
+                />
+                <AssessmentCard
+                  label="DISC Assessment"
+                  icon={<FileBarChart className="w-4 h-4" />}
+                  scores={applicant.discScores}
+                  reportUrl={applicant.discReportUrl}
+                />
+              </div>
+            </div>
+
             {/* About */}
+
             <Section
               title="About"
               open={open.about}
