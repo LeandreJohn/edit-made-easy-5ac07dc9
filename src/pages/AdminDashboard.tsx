@@ -55,14 +55,84 @@ interface ToolEntry {
   proficiency: SelectedSkill['proficiency'];
 }
 
+interface CertificationEntry {
+  id: string;
+  title: string;
+  organization: string;
+  type: string;
+  dateCompleted: string;
+  expirationDate: string;
+  credentialId: string;
+  certificateUrl: string;
+}
+
 interface AdminApplicant extends MockApplicant {
   phone: string;
   dateAdded: string;
+  lastUpdated: string;
+  canDoAssessment: string;
+  tags: string[];
   toolEntries: ToolEntry[];
   valuesScores?: Record<string, unknown>;
   valuesReportUrl?: string;
   discScores?: Record<string, unknown>;
   discReportUrl?: string;
+  personal: {
+    middleName: string;
+    suffix: string;
+    dateOfBirth: string;
+    street: string;
+    barangay: string;
+    city: string;
+    country: string;
+    nationality: string;
+    languages: string;
+    address: string;
+    referredBy: string;
+    socialLinks: { label: string; url: string }[];
+  };
+  education: {
+    level: string;
+    school: string;
+    schoolLocation: string;
+    graduationDate: string;
+    degree: string;
+  };
+  professional: {
+    industry: string;
+    roles: string;
+    bio: string;
+    availability: string;
+    hoursPerDay: string;
+  };
+  portfolio: { link: string; files: string[] };
+  certifications: CertificationEntry[];
+  workSetup: {
+    primaryDevice: string;
+    secondaryDevice: string;
+    hdWebcam: string;
+    noiseCancellingHeadset: string;
+    primaryIsp: string;
+    secondaryIsp: string;
+    primaryIspLink: string;
+    secondaryIspLink: string;
+    cpu: string;
+    ram: string;
+    storage: string;
+    detectionSource: string;
+    detectionConsent: string;
+    primaryDeviceFiles: string[];
+    secondaryDeviceFiles: string[];
+  };
+  compliance: {
+    backgroundCheck: string;
+    validIdFiles: string[];
+    nbiFiles: string[];
+    nbiValidity: string;
+    policeFiles: string[];
+    policeValidity: string;
+    coeFiles: string[];
+  };
 }
 
 /** Parse a field that may arrive as a JSON string or an already-parsed array. */
@@ -95,59 +165,163 @@ function parseJsonObject(value: unknown): Record<string, unknown> | undefined {
   return undefined;
 }
 
+/** Coerce any nullable field into a trimmed display string. */
+const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v).trim());
+
+/** Normalize a list of file URLs that may arrive as an array or a JSON string. */
+const fileList = (value: unknown): string[] =>
+  parseList<unknown>(value)
+    .map((f) => str(f))
+    .filter((f) => f.length > 0);
+
 const asProficiency = (v: unknown): SelectedSkill['proficiency'] => {
   const s = String(v ?? '');
   return (s in PROFICIENCY_DOTS ? s : 'Proficient') as SelectedSkill['proficiency'];
 };
 
-
 function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
-  const fullName = (rec.name || rec.email || 'Applicant').trim();
-  const [firstName, ...rest] = fullName.split(' ');
+  const pi = (rec.personal_info ?? {}) as Record<string, unknown>;
+  const edu = (rec.education ?? {}) as Record<string, unknown>;
+  const pb = (rec.professional_background ?? {}) as Record<string, unknown>;
+  const ws = (rec.work_setup ?? {}) as Record<string, unknown>;
+  const comp = (rec.compliance ?? {}) as Record<string, unknown>;
+  const values = (rec.values ?? {}) as Record<string, unknown>;
+  const skillsSection = parseJsonObject(rec.skills) ?? {};
 
-  const skills = parseList<Record<string, unknown>>(rec.skills)
+  const firstName = str(pi.first_name);
+  const lastName = [str(pi.last_name), str(pi.suffix)].filter(Boolean).join(' ');
+
+  const skills = parseList<Record<string, unknown>>(skillsSection.items)
     .filter((s) => s && s.skill)
     .map((s) => ({
-      skill: String(s.skill),
-      category: String(s.category ?? ''),
+      skill: str(s.skill),
+      category: str(s.category),
       proficiency: asProficiency(s.proficiency),
     }));
 
   const toolEntries = parseList<Record<string, unknown>>(rec.tools)
     .filter((t) => t && t.tool)
-    .map((t) => ({ tool: String(t.tool), proficiency: asProficiency(t.proficiency) }));
+    .map((t) => ({ tool: str(t.tool), proficiency: asProficiency(t.proficiency) }));
 
-  const experiences = parseList<Record<string, unknown>>(rec.workexperience).map((e, i) => ({
-    id: String(e.id ?? `we-${i}`),
-    title: String(e.title ?? ''),
-    employer: String(e.employer ?? ''),
-    location: String(e.location ?? ''),
-    startDate: String(e.startDate ?? e.start_date ?? ''),
-    endDate: String(e.endDate ?? e.end_date ?? ''),
+  const experiences = parseList<Record<string, unknown>>(rec.work_experience).map((e, i) => ({
+    id: str(e.id) || `we-${i}`,
+    title: str(e.title),
+    employer: str(e.employer),
+    location: str(e.location),
+    startDate: str(e.startDate ?? e.start_date),
+    endDate: str(e.endDate ?? e.end_date),
     currentlyWorking: Boolean(e.currentlyWorking ?? e.current ?? e.currently_working ?? false),
-    responsibilities: String(e.responsibilities ?? ''),
-    toolsPlatforms: String(e.toolsPlatforms ?? e.tools_platforms ?? ''),
+    responsibilities: str(e.responsibilities),
+    toolsPlatforms: str(e.toolsPlatforms ?? e.tools_platforms),
+  }));
+
+  const socialRaw = parseJsonObject(pi.Social_Link ?? pi.social_link) ?? {};
+  const socialLinks = Object.entries(socialRaw)
+    .map(([label, url]) => ({ label, url: str(url) }))
+    .filter((s) => s.url.length > 0);
+
+  const dobRaw = pi.date_of_birth;
+  const dateOfBirth =
+    typeof dobRaw === 'number'
+      ? formatDateDenver(new Date(dobRaw))
+      : str(dobRaw)
+        ? formatDateDenver(str(dobRaw))
+        : '';
+
+  const portfolio = (rec.portfolio ?? {}) as Record<string, unknown>;
+
+  const certifications = parseList<Record<string, unknown>>(rec.certifications).map((c, i) => ({
+    id: str(c.id) || `cert-${i}`,
+    title: str(c.title),
+    organization: str(c.organization),
+    type: str(c.type),
+    dateCompleted: str(c.dateCompleted ?? c.date_completed),
+    expirationDate: str(c.expirationDate ?? c.expiration_date),
+    credentialId: str(c.credentialId ?? c.credential_id),
+    certificateUrl: str(c.certificate_url ?? c.certificateUrl),
   }));
 
   return {
     id: rec.id,
-    firstName: firstName || fullName,
-    lastName: rest.join(' '),
-    email: rec.email ?? '',
+    firstName: firstName || str(rec.email) || 'Applicant',
+    lastName,
+    email: str(rec.email),
     role: 'Cyberbacker',
-    location: '',
+    location: [str(pi.city), str(pi.country)].filter(Boolean).join(', '),
     photoUrl: rec.profile_picture ?? null,
-    about: rec.values_proposition ?? '',
+    about: str(skillsSection.value_proposition),
     skills,
     tools: toolEntries.map((t) => t.tool),
     experiences,
-    phone: rec.phone ?? '',
-    dateAdded: rec.date_added ?? '',
+    phone: str(pi.phone),
+    dateAdded: str(rec.date_applied),
+    lastUpdated: str(rec.last_update_changes),
+    canDoAssessment: str(rec.can_do_assessment),
+    tags: Array.isArray(rec.tag) ? rec.tag.map(str).filter(Boolean) : [],
     toolEntries,
-    valuesScores: parseJsonObject(rec.values_assessment_scores),
-    valuesReportUrl: rec.values_assessment_result ?? undefined,
-    discScores: parseJsonObject(rec.disc_assessment_scores),
-    discReportUrl: rec.disc_assessment_result ?? undefined,
+    valuesScores: parseJsonObject(values.value_assessment_score),
+    valuesReportUrl: str(values.value_assessment_report) || undefined,
+    discScores: parseJsonObject(values.disc_assessment_score),
+    discReportUrl: str(values.disc_assessment_report) || undefined,
+    personal: {
+      middleName: str(pi.middle_name),
+      suffix: str(pi.suffix),
+      dateOfBirth,
+      street: str(pi.street),
+      barangay: str(pi.barangay),
+      city: str(pi.city),
+      country: str(pi.country),
+      nationality: str(pi.nationality),
+      languages: str(pi.languages),
+      address: str(pi.address),
+      referredBy: str(pi['Referred By'] ?? pi.referred_by),
+      socialLinks,
+    },
+    education: {
+      level: str(edu.education_level),
+      school: str(edu.school_name),
+      schoolLocation: str(edu.school_location),
+      graduationDate: str(edu.graduation_date) ? formatDateDenver(str(edu.graduation_date)) : '',
+      degree: str(edu.degree),
+    },
+    professional: {
+      industry: str(pb.preferred_industry),
+      roles: str(pb.preferred_role),
+      bio: str(pb.preferred_bio),
+      availability: str(pb.availability),
+      hoursPerDay: str(pb.hours_per_day),
+    },
+    portfolio: {
+      link: str(portfolio.link),
+      files: fileList(portfolio.files),
+    },
+    certifications,
+    workSetup: {
+      primaryDevice: str(ws.primary_device),
+      secondaryDevice: str(ws.secondary_device),
+      hdWebcam: str(ws.has_hd_webcam),
+      noiseCancellingHeadset: str(ws.has_noise_cancelling_headset),
+      primaryIsp: str(ws.primary_internet_provider),
+      secondaryIsp: str(ws.secondary_internet_provider),
+      primaryIspLink: str(ws.primary_internet_provider_sharable_link),
+      secondaryIspLink: str(ws.secondary_internet_provider_sharable_link),
+      cpu: str(ws.detected_cpu),
+      ram: str(ws.detected_ram),
+      storage: str(ws.detected_storage),
+      detectionSource: str(ws.detection_source),
+      detectionConsent: str(ws.detection_consent),
+      primaryDeviceFiles: fileList(ws.primary_device_spec_files),
+      secondaryDeviceFiles: fileList(ws.secondary_device_spec_files),
+    },
+    compliance: {
+      backgroundCheck: str(comp.background_check),
+      validIdFiles: fileList(comp.valid_id_files),
+      nbiFiles: fileList(comp.nbi_clearance_files),
+      nbiValidity: str(comp.nbi_validity) ? formatDateDenver(str(comp.nbi_validity)) : '',
+      policeFiles: fileList(comp.police_clearance_files),
+      policeValidity: str(comp.police_validity) ? formatDateDenver(str(comp.police_validity)) : '',
+      coeFiles: fileList(comp.COE ?? comp.coe),
+    },
   };
 }
 
