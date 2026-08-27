@@ -144,8 +144,13 @@ function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
     phone: rec.phone ?? '',
     dateAdded: rec.date_added ?? '',
     toolEntries,
+    valuesScores: parseJsonObject(rec.values_assessment_scores),
+    valuesReportUrl: rec.values_assessment_result ?? undefined,
+    discScores: parseJsonObject(rec.disc_assessment_scores),
+    discReportUrl: rec.disc_assessment_result ?? undefined,
   };
 }
+
 
 /** Split a free-text blob of emails (newline / comma / semicolon / space separated). */
 function parseEmailInput(raw: string): { emails: string[]; invalid: string[] } {
