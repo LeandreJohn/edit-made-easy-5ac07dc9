@@ -16,6 +16,8 @@ import {
   Wrench,
   Sparkles,
   Users,
+  ExternalLink,
+  FileBarChart,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
@@ -31,6 +33,7 @@ import {
 } from '@/lib/apiClient';
 import { formatDateDenver } from '@/lib/date';
 import { toast } from 'sonner';
+
 
 const PROFICIENCY_DOTS: Record<SelectedSkill['proficiency'], number> = {
   'No Experience': 1,
