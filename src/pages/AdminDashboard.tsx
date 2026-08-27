@@ -16,6 +16,8 @@ import {
   Wrench,
   Sparkles,
   Users,
+  ExternalLink,
+  FileBarChart,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
@@ -31,6 +33,7 @@ import {
 } from '@/lib/apiClient';
 import { formatDateDenver } from '@/lib/date';
 import { toast } from 'sonner';
+
 
 const PROFICIENCY_DOTS: Record<SelectedSkill['proficiency'], number> = {
   'No Experience': 1,
@@ -56,6 +59,10 @@ interface AdminApplicant extends MockApplicant {
   phone: string;
   dateAdded: string;
   toolEntries: ToolEntry[];
+  valuesScores?: Record<string, unknown>;
+  valuesReportUrl?: string;
+  discScores?: Record<string, unknown>;
+  discReportUrl?: string;
 }
 
 /** Parse a field that may arrive as a JSON string or an already-parsed array. */
@@ -72,10 +79,27 @@ function parseList<T>(value: unknown): T[] {
   return [];
 }
 
+/** Parse a field that may arrive as a JSON string or an already-parsed object. */
+function parseJsonObject(value: unknown): Record<string, unknown> | undefined {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 const asProficiency = (v: unknown): SelectedSkill['proficiency'] => {
   const s = String(v ?? '');
   return (s in PROFICIENCY_DOTS ? s : 'Proficient') as SelectedSkill['proficiency'];
 };
+
 
 function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
   const fullName = (rec.name || rec.email || 'Applicant').trim();
@@ -120,8 +144,13 @@ function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
     phone: rec.phone ?? '',
     dateAdded: rec.date_added ?? '',
     toolEntries,
+    valuesScores: parseJsonObject(rec.values_assessment_scores),
+    valuesReportUrl: rec.values_assessment_result ?? undefined,
+    discScores: parseJsonObject(rec.disc_assessment_scores),
+    discReportUrl: rec.disc_assessment_result ?? undefined,
   };
 }
+
 
 /** Split a free-text blob of emails (newline / comma / semicolon / space separated). */
 function parseEmailInput(raw: string): { emails: string[]; invalid: string[] } {
@@ -542,7 +571,29 @@ maria@example.com`}
               </button>
             </div>
 
+            {/* Assessments */}
+            <div className="px-6 py-4 border-b border-border bg-muted/30">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                Assessments
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AssessmentCard
+                  label="Values Assessment"
+                  icon={<FileBarChart className="w-4 h-4" />}
+                  scores={applicant.valuesScores?.results ?? applicant.valuesScores}
+                  reportUrl={applicant.valuesReportUrl}
+                />
+                <AssessmentCard
+                  label="DISC Assessment"
+                  icon={<FileBarChart className="w-4 h-4" />}
+                  scores={applicant.discScores}
+                  reportUrl={applicant.discReportUrl}
+                />
+              </div>
+            </div>
+
             {/* About */}
+
             <Section
               title="About"
               open={open.about}
@@ -764,9 +815,71 @@ const StarRating = ({ count }: { count: number }) => (
   </div>
 );
 
+const AssessmentCard = ({
+  label,
+  icon,
+  scores,
+  reportUrl,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  scores: unknown;
+  reportUrl: string | undefined;
+}) => {
+  const normalized =
+    scores && typeof scores === 'object' && !Array.isArray(scores)
+      ? (scores as Record<string, unknown>)
+      : undefined;
+  const entries = normalized
+    ? Object.entries(normalized).filter(([_, v]) =>
+        typeof v === 'string' || typeof v === 'number',
+      )
+    : [];
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          {icon}
+          {label}
+        </span>
+        {reportUrl ? (
+          <a
+            href={reportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            View report <ExternalLink className="w-3 h-3" />
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground">No report</span>
+        )}
+      </div>
+      {entries.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {entries.map(([key, value]) => (
+            <div key={key} className="bg-muted/50 rounded-lg px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+                {key}
+              </p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {String(value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">No scores available.</p>
+      )}
+    </div>
+  );
+};
+
+
 // ============================================================================
 // PDF GENERATION
 // ============================================================================
+
 
 function drawResume(
   doc: jsPDF,
