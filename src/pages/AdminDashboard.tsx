@@ -1313,6 +1313,66 @@ maria@example.com`}
   );
 };
 
+/** Label / value grid used across the read-only profile sections. */
+const InfoGrid = ({ items }: { items: [string, string][] }) => {
+  const rows = items.filter(([, v]) => v && v.trim().length > 0);
+  if (rows.length === 0)
+    return <p className="text-sm text-muted-foreground italic">No details provided.</p>;
+  return (
+    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+      {rows.map(([label, value]) => (
+        <div key={label} className="min-w-0">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </dt>
+          <dd className="text-sm text-foreground break-words whitespace-pre-line">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
+
+/** External URL rendered as a chip that opens in a new tab. */
+const ExternalUrl = ({ url, label }: { url: string; label?: string }) => (
+  <a
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    title={url}
+    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/40 text-sm text-primary hover:bg-muted hover:border-primary/40 transition-colors max-w-full"
+  >
+    <span className="truncate">{label || url}</span>
+    <ExternalLink className="w-4 h-4 shrink-0" />
+  </a>
+);
+
+/** Row of previewable file chips. */
+const FileChips = ({ files, className = '' }: { files: string[]; className?: string }) => {
+  const list = files.filter((f) => f && f.trim().length > 0);
+  if (list.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {list.map((f, i) => (
+        <FilePreviewLink key={`${f}-${i}`} url={f} />
+      ))}
+    </div>
+  );
+};
+
+/** Labelled group of file chips (hidden when there are no files). */
+const FileGroup = ({ label, files }: { label: string; files: string[] }) => {
+  const list = files.filter((f) => f && f.trim().length > 0);
+  if (list.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        {label}
+      </p>
+      <FileChips files={list} />
+    </div>
+  );
+};
+
 const Section = ({
   title,
   icon,
