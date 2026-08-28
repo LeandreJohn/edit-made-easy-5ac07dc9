@@ -55,6 +55,10 @@ const PROFICIENCY_STARS = PROFICIENCY_DOTS;
 interface ApplicantState {
   enabledSkills: Record<string, boolean>; // keyed by skill name
   enabledTools: Record<string, boolean>; // keyed by tool name
+  /** Include the value proposition ("ABOUT ME") block on the resume. */
+  includeAbout: boolean;
+  /** Per-work-experience inclusion, keyed by experience id. */
+  enabledExperiences: Record<string, boolean>;
   photoDataUrl: string | null;
 }
 
@@ -369,6 +373,8 @@ const AdminDashboard = () => {
   const [state, setState] = useState<ApplicantState>({
     enabledSkills: {},
     enabledTools: {},
+    includeAbout: true,
+    enabledExperiences: {},
     photoDataUrl: null,
   });
   const [open, setOpen] = useState<Record<string, boolean>>({
@@ -396,6 +402,8 @@ const AdminDashboard = () => {
     setState({
       enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
       enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
+      includeAbout: true,
+      enabledExperiences: Object.fromEntries(mapped.experiences.map((e) => [e.id, true])),
       photoDataUrl: null,
     });
     if (mapped.photoUrl) {
@@ -490,6 +498,16 @@ const AdminDashboard = () => {
       enabledTools: { ...s.enabledTools, [tool]: !s.enabledTools[tool] },
     }));
 
+  const toggleAbout = () => setState((s) => ({ ...s, includeAbout: !s.includeAbout }));
+
+  const toggleExperience = (id: string) =>
+    setState((s) => ({
+      ...s,
+      enabledExperiences: { ...s.enabledExperiences, [id]: !s.enabledExperiences[id] },
+    }));
+
+
+
   const generateResume = async () => {
     if (!applicant) return;
     try {
@@ -499,7 +517,7 @@ const AdminDashboard = () => {
         loadImageAsDataUrl(page2Bg),
       ]);
       drawResume(doc, applicant, state, page1DataUrl, page2DataUrl);
-      const filename = `${applicant.firstName}_${applicant.lastName}_Resume.pdf`.replace(/\s+/g, '_');
+      const filename = `${applicant.firstName}_Resume.pdf`.replace(/\s+/g, '_');
       doc.save(filename);
       toast.success('Resume generated successfully');
     } catch (err) {
@@ -1183,7 +1201,7 @@ maria@example.com`}
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-border">
                   <p className="text-sm text-muted-foreground">
-                    Choose which skills and tools appear on the generated resume.
+                    Choose what appears on the generated resume — untick anything to leave it out.
                   </p>
                   <button
                     onClick={generateResume}
@@ -1192,6 +1210,91 @@ maria@example.com`}
                     <Download className="w-4 h-4" /> Generate Resume PDF
                   </button>
                 </div>
+
+                {/* Value proposition (resume toggle) */}
+                <Section
+                  title="Value Proposition"
+                  open={open.about}
+                  onToggle={() => toggleSection('about')}
+                  icon={<User className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                >
+                  {!applicant.about ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      No value proposition provided.
+                    </p>
+                  ) : (
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                        state.includeAbout
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-border bg-muted/40 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={state.includeAbout}
+                        onChange={toggleAbout}
+                        className="w-4 h-4 accent-primary shrink-0 mt-0.5"
+                      />
+                      <p className="text-sm text-foreground whitespace-pre-line">
+                        {applicant.about}
+                      </p>
+                    </label>
+                  )}
+                </Section>
+
+                {/* Work experience (resume toggles) */}
+                <Section
+                  title="Work Experience"
+                  open={open.experience}
+                  onToggle={() => toggleSection('experience')}
+                  icon={<Briefcase className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                  count={applicant.experiences.length}
+                >
+                  {applicant.experiences.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      No work experience added.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {applicant.experiences.map((e) => {
+                        const enabled = state.enabledExperiences[e.id];
+                        const range = e.currentlyWorking
+                          ? [e.startDate, 'Present'].filter(Boolean).join(' - ')
+                          : [e.startDate, e.endDate].filter(Boolean).join(' - ');
+                        return (
+                          <label
+                            key={e.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                              enabled
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border bg-muted/40 opacity-60'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!enabled}
+                              onChange={() => toggleExperience(e.id)}
+                              className="w-4 h-4 accent-primary shrink-0 mt-0.5"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {e.title || 'Untitled role'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {[e.employer, e.location, range].filter(Boolean).join(' • ')}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Section>
+
+
 
                 {/* Skills (resume toggles) */}
                 <Section
@@ -1497,7 +1600,7 @@ const AssessmentCard = ({
 
 function drawResume(
   doc: jsPDF,
-  applicant: MockApplicant,
+  applicant: AdminApplicant,
   state: ApplicantState,
   page1Bg: string | null,
   page2Bg: string | null,
@@ -1536,7 +1639,7 @@ function drawResume(
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
       const cx = leftWPage2 / 2;
-      doc.text(`${applicant.firstName} ${applicant.lastName}`, cx, 70, { align: 'center' });
+      doc.text(applicant.firstName, cx, 70, { align: 'center' });
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.text(applicant.role, cx, 88, { align: 'center' });
@@ -1561,18 +1664,25 @@ function drawResume(
       }
     }
 
-    // Address/location sits directly under the picture.
+    // City / country sit directly under the picture.
     const locTextX = photoX + photoW / 2;
-    const locY = photoY + photoH + 26;
+    let locY = photoY + photoH + 26;
     doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    const [city, country] = applicant.location.split(',').map((s) => s.trim());
-    doc.text((city || applicant.location || '').toUpperCase(), locTextX, locY, { align: 'center', maxWidth: photoW });
+    const city = (applicant.personal.city || '').trim();
+    const country = (applicant.personal.country || '').trim();
+    if (city) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(city.toUpperCase(), locTextX, locY, { align: 'center', maxWidth: photoW });
+      locY += 13;
+    }
     if (country) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(country, locTextX, locY + 13, { align: 'center', maxWidth: photoW });
+      doc.setFont('helvetica', city ? 'normal' : 'bold');
+      doc.setFontSize(city ? 9 : 11);
+      doc.text(city ? country : country.toUpperCase(), locTextX, locY, {
+        align: 'center',
+        maxWidth: photoW,
+      });
     }
   };
 
@@ -1594,7 +1704,7 @@ function drawResume(
   doc.setTextColor(20, 20, 20);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(28);
-  doc.text(`${applicant.firstName} ${applicant.lastName}`, rightX, y);
+  doc.text(applicant.firstName, rightX, y);
   y += 26;
 
   doc.setFont('helvetica', 'normal');
@@ -1603,24 +1713,26 @@ function drawResume(
   doc.text(applicant.role, rightX, y);
   y += 28;
 
-  // About
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  doc.text('ABOUT ME', rightX, y);
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(50, 50, 50);
-  const aboutLines = doc.splitTextToSize(applicant.about, rightW);
-  doc.text(aboutLines, rightX, y, { lineHeightFactor: 1.4 });
-  y += aboutLines.length * 12 + 8;
+  // About (value proposition) — optional
+  if (state.includeAbout && applicant.about.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text('ABOUT ME', rightX, y);
+    y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(50, 50, 50);
+    const aboutLines = doc.splitTextToSize(applicant.about, rightW);
+    doc.text(aboutLines, rightX, y, { lineHeightFactor: 1.4 });
+    y += aboutLines.length * 12 + 8;
 
-  // Divider
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.7);
-  doc.line(rightX, y, rightX + rightW, y);
-  y += 16;
+    // Divider
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.7);
+    doc.line(rightX, y, rightX + rightW, y);
+    y += 16;
+  }
 
   // ===== Skills + Tools (paginated row-by-row) =====
   const colW = (rightW - 30) / 2;
@@ -1683,47 +1795,82 @@ function drawResume(
 
   y += 12;
 
-  // Divider before experience
-  y = ensureSpace(y, 30);
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.7);
-  doc.line(rightX, y, rightX + rightW, y);
-  y += 16;
+  // ===== Experience (only the entries ticked in the resume tab) =====
+  const includedExperiences = applicant.experiences.filter(
+    (e) =>
+      state.enabledExperiences[e.id] &&
+      (e.title || e.employer || e.responsibilities || e.startDate),
+  );
 
-  // ===== Experience =====
-  y = ensureSpace(y, 40);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  doc.text('EXPERIENCE', rightX, y);
-  y += 16;
-
-  for (const exp of applicant.experiences) {
-    const range = exp.currentlyWorking
-      ? `${exp.startDate}-Present`
-      : exp.endDate
-        ? `${exp.startDate}-${exp.endDate}`
-        : exp.startDate;
-
+  if (includedExperiences.length > 0) {
+    // Divider before experience
     y = ensureSpace(y, 30);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(20, 20, 20);
-    doc.text(`${exp.title} - ${range}`, rightX, y);
-    y += 14;
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.7);
+    doc.line(rightX, y, rightX + rightW, y);
+    y += 16;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(50, 50, 50);
-    const bullets = exp.responsibilities.split('\n').filter(Boolean);
-    for (const b of bullets) {
-      const lines = doc.splitTextToSize(`• ${b}`, rightW - 10);
-      // Break per bullet if needed
-      y = ensureSpace(y, lines.length * 11);
-      doc.text(lines, rightX + 6, y);
-      y += lines.length * 11;
+    y = ensureSpace(y, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text('EXPERIENCE', rightX, y);
+    y += 16;
+
+    for (const exp of includedExperiences) {
+      const range = exp.currentlyWorking
+        ? [exp.startDate, 'Present'].filter(Boolean).join(' - ')
+        : [exp.startDate, exp.endDate].filter(Boolean).join(' - ');
+
+      const heading = [exp.title || 'Role', range].filter(Boolean).join(' - ');
+      const subheading = [exp.employer, exp.location].filter(Boolean).join(' | ');
+
+      y = ensureSpace(y, subheading ? 44 : 30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(20, 20, 20);
+      const headingLines = doc.splitTextToSize(heading, rightW);
+      doc.text(headingLines, rightX, y);
+      y += headingLines.length * 13;
+
+      if (subheading) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9.5);
+        doc.setTextColor(80, 80, 80);
+        const subLines = doc.splitTextToSize(subheading, rightW);
+        doc.text(subLines, rightX, y);
+        y += subLines.length * 12;
+      }
+      y += 2;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(50, 50, 50);
+      const bullets = exp.responsibilities
+        .split('\n')
+        .map((b) => b.trim())
+        .filter(Boolean);
+      for (const b of bullets) {
+        const lines = doc.splitTextToSize(`• ${b}`, rightW - 10);
+        // Break per bullet if needed
+        y = ensureSpace(y, lines.length * 11);
+        doc.text(lines, rightX + 6, y);
+        y += lines.length * 11;
+      }
+
+      if (exp.toolsPlatforms.trim()) {
+        const toolLines = doc.splitTextToSize(
+          `Tools & Platforms: ${exp.toolsPlatforms.trim()}`,
+          rightW - 10,
+        );
+        y = ensureSpace(y, toolLines.length * 11 + 2);
+        doc.setTextColor(80, 80, 80);
+        doc.text(toolLines, rightX + 6, y);
+        y += toolLines.length * 11;
+      }
+
+      y += 8;
     }
-    y += 6;
   }
 }
 
