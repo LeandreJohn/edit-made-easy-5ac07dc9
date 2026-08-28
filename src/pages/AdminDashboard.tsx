@@ -55,6 +55,10 @@ const PROFICIENCY_STARS = PROFICIENCY_DOTS;
 interface ApplicantState {
   enabledSkills: Record<string, boolean>; // keyed by skill name
   enabledTools: Record<string, boolean>; // keyed by tool name
+  /** Include the value proposition ("ABOUT ME") block on the resume. */
+  includeAbout: boolean;
+  /** Per-work-experience inclusion, keyed by experience id. */
+  enabledExperiences: Record<string, boolean>;
   photoDataUrl: string | null;
 }
 
