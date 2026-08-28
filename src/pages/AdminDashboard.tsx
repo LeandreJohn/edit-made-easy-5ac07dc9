@@ -701,7 +701,13 @@ maria@example.com`}
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4 p-6 border-b border-border">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-2xl border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => applicant.photoUrl && setPreview({ url: applicant.photoUrl, name: 'Profile picture' })}
+                  disabled={!applicant.photoUrl}
+                  className="w-20 h-20 rounded-2xl border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0 disabled:cursor-default"
+                  title={applicant.photoUrl ? 'Preview profile picture' : undefined}
+                >
                   {applicant.photoUrl ? (
                     <img
                       src={applicant.photoUrl}
@@ -711,12 +717,14 @@ maria@example.com`}
                   ) : (
                     <User className="w-8 h-8 text-muted-foreground" />
                   )}
-                </div>
+                </button>
                 <div className="min-w-0">
                   <h2 className="font-heading text-2xl font-bold text-foreground truncate">
                     {applicant.firstName} {applicant.lastName}
                   </h2>
-                  <p className="text-sm text-muted-foreground">{applicant.role}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {applicant.location || applicant.role}
+                  </p>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                     {applicant.email && (
                       <span className="inline-flex items-center gap-1.5">
@@ -734,199 +742,553 @@ maria@example.com`}
                         {formatDateDenver(applicant.dateAdded)}
                       </span>
                     )}
+                    {applicant.lastUpdated && (
+                      <span className="inline-flex items-center gap-1.5">
+                        Updated {formatDateDenver(applicant.lastUpdated)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {applicant.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                    {applicant.canDoAssessment && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        Can do assessment: {applicant.canDoAssessment}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-              <button
-                onClick={generateResume}
-                className="btn-primary text-sm inline-flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" /> Generate Resume PDF
-              </button>
             </div>
 
-            {/* Assessments */}
-            <div className="px-6 py-4 border-b border-border bg-muted/30">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Assessments
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <AssessmentCard
-                  label="Values Assessment"
-                  icon={<FileBarChart className="w-4 h-4" />}
-                  scores={applicant.valuesScores?.results ?? applicant.valuesScores}
-                  reportUrl={applicant.valuesReportUrl}
-                />
-                <AssessmentCard
-                  label="DISC Assessment"
-                  icon={<FileBarChart className="w-4 h-4" />}
-                  scores={applicant.discScores}
-                  reportUrl={applicant.discReportUrl}
-                />
+            {/* Tabs */}
+            <div className="px-6 pt-4 border-b border-border bg-muted/30">
+              <div className="flex gap-1">
+                {([
+                  { key: 'profile', label: 'Applicant Profile', icon: <User className="w-4 h-4" /> },
+                  { key: 'resume', label: 'Resume', icon: <FileText className="w-4 h-4" /> },
+                ] as const).map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setProfileTab(t.key)}
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
+                      profileTab === t.key
+                        ? 'border-primary text-primary bg-card'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {t.icon}
+                    {t.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* About */}
+            {profileTab === 'profile' ? (
+              <>
+                {/* Assessments */}
+                <div className="px-6 py-4 border-b border-border bg-muted/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                    Assessments
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AssessmentCard
+                      label="Values Assessment"
+                      icon={<FileBarChart className="w-4 h-4" />}
+                      scores={applicant.valuesScores?.results ?? applicant.valuesScores}
+                      reportUrl={applicant.valuesReportUrl}
+                    />
+                    <AssessmentCard
+                      label="DISC Assessment"
+                      icon={<FileBarChart className="w-4 h-4" />}
+                      scores={applicant.discScores?.results ?? applicant.discScores}
+                      reportUrl={applicant.discReportUrl}
+                    />
+                  </div>
+                </div>
 
-            <Section
-              title="About"
-              open={open.about}
-              onToggle={() => toggleSection('about')}
-              icon={<User className="w-4 h-4" />}
-            >
-              {applicant.about ? (
-                <p className="text-sm text-foreground leading-relaxed">{applicant.about}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">No value proposition added.</p>
-              )}
-            </Section>
+                {/* About */}
+                <Section
+                  title="About"
+                  open={open.about}
+                  onToggle={() => toggleSection('about')}
+                  icon={<User className="w-4 h-4" />}
+                >
+                  {applicant.about ? (
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                      {applicant.about}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No value proposition added.
+                    </p>
+                  )}
+                </Section>
 
-            {/* Skills */}
-            <Section
-              title="Core Skills"
-              open={open.skills}
-              onToggle={() => toggleSection('skills')}
-              icon={<Sparkles className="w-4 h-4" />}
-              hint="Toggle to include/exclude on resume"
-              count={applicant.skills.length}
-            >
-              {applicant.skills.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No skills added.</p>
-              ) : (
-                <div className="space-y-5">
-                  {skillGroups.map((group) => (
-                    <div key={group.category}>
+                {/* Personal info */}
+                <Section
+                  title="Personal Information"
+                  open={open.personal}
+                  onToggle={() => toggleSection('personal')}
+                  icon={<User className="w-4 h-4" />}
+                >
+                  <InfoGrid
+                    items={[
+                      ['Middle name', applicant.personal.middleName],
+                      ['Suffix', applicant.personal.suffix],
+                      ['Date of birth', applicant.personal.dateOfBirth],
+                      ['Phone', applicant.phone],
+                      ['Nationality', applicant.personal.nationality],
+                      ['Languages', applicant.personal.languages],
+                      [
+                        'Address',
+                        applicant.personal.address ||
+                          [
+                            applicant.personal.street,
+                            applicant.personal.barangay,
+                            applicant.personal.city,
+                            applicant.personal.country,
+                          ]
+                            .filter(Boolean)
+                            .join(', '),
+                      ],
+                      ['Referred by', applicant.personal.referredBy],
+                    ]}
+                  />
+                  {applicant.personal.socialLinks.length > 0 && (
+                    <div className="mt-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                        {group.category}
+                        Social profiles
                       </p>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                        {group.items.map((s) => {
-                          const enabled = state.enabledSkills[s.skill];
-                          return (
-                            <label
-                              key={`${group.category}-${s.skill}`}
-                              className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
-                                enabled
-                                  ? 'border-primary/40 bg-primary/5'
-                                  : 'border-border bg-muted/40 opacity-60'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <input
-                                  type="checkbox"
-                                  checked={!!enabled}
-                                  onChange={() => toggleSkill(s.skill)}
-                                  className="w-4 h-4 accent-primary shrink-0"
-                                />
+                      <div className="flex flex-wrap gap-2">
+                        {applicant.personal.socialLinks.map((s) => (
+                          <ExternalUrl key={s.label} url={s.url} label={s.label} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Section>
+
+                {/* Education */}
+                <Section
+                  title="Education"
+                  open={open.education}
+                  onToggle={() => toggleSection('education')}
+                  icon={<GraduationCap className="w-4 h-4" />}
+                >
+                  <InfoGrid
+                    items={[
+                      ['Highest level', applicant.education.level],
+                      ['School', applicant.education.school],
+                      ['School location', applicant.education.schoolLocation],
+                      ['Graduation date', applicant.education.graduationDate],
+                      ['Degree / Field of study', applicant.education.degree],
+                    ]}
+                  />
+                </Section>
+
+                {/* Professional background */}
+                <Section
+                  title="Professional Background"
+                  open={open.professional}
+                  onToggle={() => toggleSection('professional')}
+                  icon={<Briefcase className="w-4 h-4" />}
+                >
+                  <InfoGrid
+                    items={[
+                      ['Preferred industry', applicant.professional.industry],
+                      ['Preferred roles', applicant.professional.roles],
+                      ['Availability', applicant.professional.availability],
+                      ['Hours per day', applicant.professional.hoursPerDay],
+                      ['Bio', applicant.professional.bio],
+                    ]}
+                  />
+                </Section>
+
+                {/* Experience */}
+                <Section
+                  title="Experience"
+                  open={open.experience}
+                  onToggle={() => toggleSection('experience')}
+                  icon={<FileText className="w-4 h-4" />}
+                  count={applicant.experiences.length}
+                >
+                  {applicant.experiences.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No experience added.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {applicant.experiences.map((e) => (
+                        <div key={e.id} className="border border-border rounded-xl p-4">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <p className="text-sm font-semibold text-foreground">{e.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {e.startDate}
+                              {e.currentlyWorking
+                                ? ' – Present'
+                                : e.endDate
+                                  ? ` – ${e.endDate}`
+                                  : ''}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {e.employer}
+                            {e.location ? ` · ${e.location}` : ''}
+                          </p>
+                          {e.responsibilities && (
+                            <p className="text-sm text-foreground mt-2 whitespace-pre-line leading-relaxed">
+                              {e.responsibilities}
+                            </p>
+                          )}
+                          {e.toolsPlatforms && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              <span className="font-medium text-foreground">Tools:</span>{' '}
+                              {e.toolsPlatforms}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+
+                {/* Skills */}
+                <Section
+                  title="Core Skills"
+                  open={open.skills}
+                  onToggle={() => toggleSection('skills')}
+                  icon={<Sparkles className="w-4 h-4" />}
+                  count={applicant.skills.length}
+                >
+                  {applicant.skills.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No skills added.</p>
+                  ) : (
+                    <div className="space-y-5">
+                      {skillGroups.map((group) => (
+                        <div key={group.category}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                            {group.category}
+                          </p>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                            {group.items.map((s) => (
+                              <div
+                                key={`${group.category}-${s.skill}`}
+                                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                              >
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium text-foreground truncate">
                                     {s.skill}
                                   </p>
                                   <p className="text-xs text-muted-foreground">{s.proficiency}</p>
                                 </div>
+                                <StarRating count={PROFICIENCY_STARS[s.proficiency]} />
                               </div>
-                              <StarRating count={PROFICIENCY_STARS[s.proficiency]} />
-                            </label>
-                          );
-                        })}
-                      </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Section>
+                  )}
+                </Section>
 
-            {/* Tools */}
-            <Section
-              title="Tools"
-              open={open.tools}
-              onToggle={() => toggleSection('tools')}
-              icon={<Wrench className="w-4 h-4" />}
-              hint="Toggle to include/exclude on resume"
-              count={applicant.toolEntries.length}
-            >
-              {applicant.toolEntries.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No tools added.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {applicant.toolEntries.map((t) => {
-                    const enabled = state.enabledTools[t.tool];
-                    return (
-                      <label
-                        key={t.tool}
-                        className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
-                          enabled
-                            ? 'border-primary/40 bg-primary/5'
-                            : 'border-border bg-muted/40 opacity-60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <input
-                            type="checkbox"
-                            checked={!!enabled}
-                            onChange={() => toggleTool(t.tool)}
-                            className="w-4 h-4 accent-primary shrink-0"
-                          />
+                {/* Tools */}
+                <Section
+                  title="Tools"
+                  open={open.tools}
+                  onToggle={() => toggleSection('tools')}
+                  icon={<Wrench className="w-4 h-4" />}
+                  count={applicant.toolEntries.length}
+                >
+                  {applicant.toolEntries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No tools added.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {applicant.toolEntries.map((t) => (
+                        <div
+                          key={t.tool}
+                          className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                        >
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{t.tool}</p>
                             <p className="text-xs text-muted-foreground">{t.proficiency}</p>
                           </div>
+                          <StarRating count={PROFICIENCY_STARS[t.proficiency]} />
                         </div>
-                        <StarRating count={PROFICIENCY_STARS[t.proficiency]} />
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </Section>
-
-            {/* Experience */}
-            <Section
-              title="Experience"
-              open={open.experience}
-              onToggle={() => toggleSection('experience')}
-              icon={<FileText className="w-4 h-4" />}
-              count={applicant.experiences.length}
-              last
-            >
-              {applicant.experiences.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No experience added.</p>
-              ) : (
-                <div className="space-y-3">
-                  {applicant.experiences.map((e) => (
-                    <div key={e.id} className="border border-border rounded-xl p-4">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-sm font-semibold text-foreground">{e.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {e.startDate}
-                          {e.currentlyWorking
-                            ? ' – Present'
-                            : e.endDate
-                              ? ` – ${e.endDate}`
-                              : ''}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {e.employer}
-                        {e.location ? ` · ${e.location}` : ''}
-                      </p>
-                      {e.responsibilities && (
-                        <p className="text-sm text-foreground mt-2 whitespace-pre-line leading-relaxed">
-                          {e.responsibilities}
-                        </p>
-                      )}
-                      {e.toolsPlatforms && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          <span className="font-medium text-foreground">Tools:</span>{' '}
-                          {e.toolsPlatforms}
-                        </p>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
+                </Section>
+
+                {/* Portfolio */}
+                <Section
+                  title="Portfolio"
+                  open={open.portfolio}
+                  onToggle={() => toggleSection('portfolio')}
+                  icon={<FolderOpen className="w-4 h-4" />}
+                >
+                  {applicant.portfolio.link ? (
+                    /^https?:\/\//i.test(applicant.portfolio.link) ? (
+                      <ExternalUrl url={applicant.portfolio.link} label="Portfolio link" />
+                    ) : (
+                      <p className="text-sm text-foreground">{applicant.portfolio.link}</p>
+                    )
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No portfolio link.</p>
+                  )}
+                  <FileChips files={applicant.portfolio.files} className="mt-3" />
+                </Section>
+
+                {/* Certifications */}
+                <Section
+                  title="Certifications"
+                  open={open.certifications}
+                  onToggle={() => toggleSection('certifications')}
+                  icon={<Award className="w-4 h-4" />}
+                  count={applicant.certifications.length}
+                >
+                  {applicant.certifications.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No certifications added.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {applicant.certifications.map((c) => (
+                        <div key={c.id} className="border border-border rounded-xl p-4">
+                          <p className="text-sm font-semibold text-foreground">{c.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {[c.organization, c.type].filter(Boolean).join(' · ')}
+                          </p>
+                          <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs text-muted-foreground">
+                            {c.dateCompleted && <span>Completed {c.dateCompleted}</span>}
+                            {c.expirationDate && <span>Expires {c.expirationDate}</span>}
+                            {c.credentialId && <span>ID: {c.credentialId}</span>}
+                          </div>
+                          <FileChips files={[c.certificateUrl]} className="mt-3" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+
+                {/* Work setup */}
+                <Section
+                  title="Work Setup"
+                  open={open.workSetup}
+                  onToggle={() => toggleSection('workSetup')}
+                  icon={<Monitor className="w-4 h-4" />}
+                >
+                  <InfoGrid
+                    items={[
+                      ['Primary device', applicant.workSetup.primaryDevice],
+                      ['Secondary device', applicant.workSetup.secondaryDevice],
+                      ['HD webcam', applicant.workSetup.hdWebcam],
+                      ['Noise-cancelling headset', applicant.workSetup.noiseCancellingHeadset],
+                      ['Primary ISP', applicant.workSetup.primaryIsp],
+                      ['Secondary ISP', applicant.workSetup.secondaryIsp],
+                      ['CPU', applicant.workSetup.cpu],
+                      ['RAM', applicant.workSetup.ram],
+                      ['Storage', applicant.workSetup.storage],
+                      ['Detection source', applicant.workSetup.detectionSource],
+                      ['Detection consent', applicant.workSetup.detectionConsent],
+                    ]}
+                  />
+                  {(applicant.workSetup.primaryIspLink || applicant.workSetup.secondaryIspLink) && (
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                        Speed test results
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {applicant.workSetup.primaryIspLink &&
+                          (/^https?:\/\//i.test(applicant.workSetup.primaryIspLink) ? (
+                            <ExternalUrl
+                              url={applicant.workSetup.primaryIspLink}
+                              label="Primary ISP speed test"
+                            />
+                          ) : (
+                            <span className="text-sm text-foreground">
+                              Primary: {applicant.workSetup.primaryIspLink}
+                            </span>
+                          ))}
+                        {applicant.workSetup.secondaryIspLink &&
+                          (/^https?:\/\//i.test(applicant.workSetup.secondaryIspLink) ? (
+                            <ExternalUrl
+                              url={applicant.workSetup.secondaryIspLink}
+                              label="Secondary ISP speed test"
+                            />
+                          ) : (
+                            <span className="text-sm text-foreground">
+                              Secondary: {applicant.workSetup.secondaryIspLink}
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                  <FileGroup
+                    label="Primary device specs"
+                    files={applicant.workSetup.primaryDeviceFiles}
+                  />
+                  <FileGroup
+                    label="Secondary device specs"
+                    files={applicant.workSetup.secondaryDeviceFiles}
+                  />
+                </Section>
+
+                {/* Compliance */}
+                <Section
+                  title="Compliance"
+                  open={open.compliance}
+                  onToggle={() => toggleSection('compliance')}
+                  icon={<ShieldCheck className="w-4 h-4" />}
+                  last
+                >
+                  <InfoGrid
+                    items={[
+                      ['Background check authorized', applicant.compliance.backgroundCheck],
+                      ['NBI valid until', applicant.compliance.nbiValidity],
+                      ['Police clearance valid until', applicant.compliance.policeValidity],
+                    ]}
+                  />
+                  <FileGroup label="Valid ID" files={applicant.compliance.validIdFiles} />
+                  <FileGroup label="NBI clearance" files={applicant.compliance.nbiFiles} />
+                  <FileGroup label="Police clearance" files={applicant.compliance.policeFiles} />
+                  <FileGroup
+                    label="Proof of separation / COE"
+                    files={applicant.compliance.coeFiles}
+                  />
+                </Section>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Choose which skills and tools appear on the generated resume.
+                  </p>
+                  <button
+                    onClick={generateResume}
+                    className="btn-primary text-sm inline-flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> Generate Resume PDF
+                  </button>
                 </div>
-              )}
-            </Section>
+
+                {/* Skills (resume toggles) */}
+                <Section
+                  title="Core Skills"
+                  open={open.skills}
+                  onToggle={() => toggleSection('skills')}
+                  icon={<Sparkles className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                  count={applicant.skills.length}
+                >
+                  {applicant.skills.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No skills added.</p>
+                  ) : (
+                    <div className="space-y-5">
+                      {skillGroups.map((group) => (
+                        <div key={group.category}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                            {group.category}
+                          </p>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                            {group.items.map((s) => {
+                              const enabled = state.enabledSkills[s.skill];
+                              return (
+                                <label
+                                  key={`${group.category}-${s.skill}`}
+                                  className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
+                                    enabled
+                                      ? 'border-primary/40 bg-primary/5'
+                                      : 'border-border bg-muted/40 opacity-60'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!enabled}
+                                      onChange={() => toggleSkill(s.skill)}
+                                      className="w-4 h-4 accent-primary shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-foreground truncate">
+                                        {s.skill}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {s.proficiency}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <StarRating count={PROFICIENCY_STARS[s.proficiency]} />
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+
+                {/* Tools (resume toggles) */}
+                <Section
+                  title="Tools"
+                  open={open.tools}
+                  onToggle={() => toggleSection('tools')}
+                  icon={<Wrench className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                  count={applicant.toolEntries.length}
+                  last
+                >
+                  {applicant.toolEntries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No tools added.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {applicant.toolEntries.map((t) => {
+                        const enabled = state.enabledTools[t.tool];
+                        return (
+                          <label
+                            key={t.tool}
+                            className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
+                              enabled
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border bg-muted/40 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={!!enabled}
+                                onChange={() => toggleTool(t.tool)}
+                                className="w-4 h-4 accent-primary shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {t.tool}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{t.proficiency}</p>
+                              </div>
+                            </div>
+                            <StarRating count={PROFICIENCY_STARS[t.proficiency]} />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Section>
+              </>
+            )}
           </div>
+        )}
+        {preview && (
+          <FilePreviewModal
+            open
+            onClose={() => setPreview(null)}
+            url={preview.url}
+            name={preview.name}
+          />
         )}
       </main>
       <Footer />
