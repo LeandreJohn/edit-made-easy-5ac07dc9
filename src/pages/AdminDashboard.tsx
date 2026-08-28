@@ -373,10 +373,19 @@ const AdminDashboard = () => {
   });
   const [open, setOpen] = useState<Record<string, boolean>>({
     about: true,
+    personal: true,
+    education: true,
+    professional: true,
     skills: true,
     tools: true,
     experience: true,
+    portfolio: true,
+    certifications: true,
+    workSetup: true,
+    compliance: true,
   });
+  const [profileTab, setProfileTab] = useState<'profile' | 'resume'>('profile');
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
 
   const toggleSection = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
