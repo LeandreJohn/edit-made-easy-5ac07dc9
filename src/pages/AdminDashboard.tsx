@@ -1547,11 +1547,18 @@ const AssessmentCard = ({
     scores && typeof scores === 'object' && !Array.isArray(scores)
       ? (scores as Record<string, unknown>)
       : undefined;
+
   const entries = normalized
-    ? Object.entries(normalized).filter(([_, v]) =>
-        typeof v === 'string' || typeof v === 'number',
+    ? Object.entries(normalized).filter(
+        ([_, v]) => typeof v === 'string' || typeof v === 'number',
       )
     : [];
+
+  const isDiscStyle =
+    normalized &&
+    ((normalized.authentic && typeof normalized.authentic === 'object') ||
+      (normalized.modified && typeof normalized.modified === 'object'));
+
   return (
     <div className="rounded-xl border border-border bg-card p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
@@ -1572,7 +1579,52 @@ const AssessmentCard = ({
           <span className="text-xs text-muted-foreground">No report</span>
         )}
       </div>
-      {entries.length > 0 ? (
+      {isDiscStyle ? (
+        <div className="space-y-3">
+          {normalized?.authentic && typeof normalized.authentic === 'object' && !Array.isArray(normalized.authentic) && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                Authentic
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(normalized.authentic as Record<string, unknown>)
+                  .filter(([_, v]) => typeof v === 'string' || typeof v === 'number')
+                  .map(([key, value]) => (
+                    <div key={key} className="bg-muted/50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+                        {key}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {String(value)}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          {normalized?.modified && typeof normalized.modified === 'object' && !Array.isArray(normalized.modified) && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                Modified
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {Object.entries(normalized.modified as Record<string, unknown>)
+                  .filter(([_, v]) => typeof v === 'string' || typeof v === 'number')
+                  .map(([key, value]) => (
+                    <div key={key} className="bg-muted/50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+                        {key}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {String(value)}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : entries.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {entries.map(([key, value]) => (
             <div key={key} className="bg-muted/50 rounded-lg px-2 py-1.5">
