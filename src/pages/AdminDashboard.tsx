@@ -498,6 +498,16 @@ const AdminDashboard = () => {
       enabledTools: { ...s.enabledTools, [tool]: !s.enabledTools[tool] },
     }));
 
+  const toggleAbout = () => setState((s) => ({ ...s, includeAbout: !s.includeAbout }));
+
+  const toggleExperience = (id: string) =>
+    setState((s) => ({
+      ...s,
+      enabledExperiences: { ...s.enabledExperiences, [id]: !s.enabledExperiences[id] },
+    }));
+
+
+
   const generateResume = async () => {
     if (!applicant) return;
     try {
