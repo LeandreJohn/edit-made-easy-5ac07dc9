@@ -1795,47 +1795,82 @@ function drawResume(
 
   y += 12;
 
-  // Divider before experience
-  y = ensureSpace(y, 30);
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.7);
-  doc.line(rightX, y, rightX + rightW, y);
-  y += 16;
+  // ===== Experience (only the entries ticked in the resume tab) =====
+  const includedExperiences = applicant.experiences.filter(
+    (e) =>
+      state.enabledExperiences[e.id] &&
+      (e.title || e.employer || e.responsibilities || e.startDate),
+  );
 
-  // ===== Experience =====
-  y = ensureSpace(y, 40);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  doc.text('EXPERIENCE', rightX, y);
-  y += 16;
-
-  for (const exp of applicant.experiences) {
-    const range = exp.currentlyWorking
-      ? `${exp.startDate}-Present`
-      : exp.endDate
-        ? `${exp.startDate}-${exp.endDate}`
-        : exp.startDate;
-
+  if (includedExperiences.length > 0) {
+    // Divider before experience
     y = ensureSpace(y, 30);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(20, 20, 20);
-    doc.text(`${exp.title} - ${range}`, rightX, y);
-    y += 14;
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.7);
+    doc.line(rightX, y, rightX + rightW, y);
+    y += 16;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(50, 50, 50);
-    const bullets = exp.responsibilities.split('\n').filter(Boolean);
-    for (const b of bullets) {
-      const lines = doc.splitTextToSize(`• ${b}`, rightW - 10);
-      // Break per bullet if needed
-      y = ensureSpace(y, lines.length * 11);
-      doc.text(lines, rightX + 6, y);
-      y += lines.length * 11;
+    y = ensureSpace(y, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text('EXPERIENCE', rightX, y);
+    y += 16;
+
+    for (const exp of includedExperiences) {
+      const range = exp.currentlyWorking
+        ? [exp.startDate, 'Present'].filter(Boolean).join(' - ')
+        : [exp.startDate, exp.endDate].filter(Boolean).join(' - ');
+
+      const heading = [exp.title || 'Role', range].filter(Boolean).join(' - ');
+      const subheading = [exp.employer, exp.location].filter(Boolean).join(' | ');
+
+      y = ensureSpace(y, subheading ? 44 : 30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(20, 20, 20);
+      const headingLines = doc.splitTextToSize(heading, rightW);
+      doc.text(headingLines, rightX, y);
+      y += headingLines.length * 13;
+
+      if (subheading) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9.5);
+        doc.setTextColor(80, 80, 80);
+        const subLines = doc.splitTextToSize(subheading, rightW);
+        doc.text(subLines, rightX, y);
+        y += subLines.length * 12;
+      }
+      y += 2;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(50, 50, 50);
+      const bullets = exp.responsibilities
+        .split('\n')
+        .map((b) => b.trim())
+        .filter(Boolean);
+      for (const b of bullets) {
+        const lines = doc.splitTextToSize(`• ${b}`, rightW - 10);
+        // Break per bullet if needed
+        y = ensureSpace(y, lines.length * 11);
+        doc.text(lines, rightX + 6, y);
+        y += lines.length * 11;
+      }
+
+      if (exp.toolsPlatforms.trim()) {
+        const toolLines = doc.splitTextToSize(
+          `Tools & Platforms: ${exp.toolsPlatforms.trim()}`,
+          rightW - 10,
+        );
+        y = ensureSpace(y, toolLines.length * 11 + 2);
+        doc.setTextColor(80, 80, 80);
+        doc.text(toolLines, rightX + 6, y);
+        y += toolLines.length * 11;
+      }
+
+      y += 8;
     }
-    y += 6;
   }
 }
 
