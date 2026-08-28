@@ -1704,7 +1704,7 @@ function drawResume(
   doc.setTextColor(20, 20, 20);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(28);
-  doc.text(`${applicant.firstName} ${applicant.lastName}`, rightX, y);
+  doc.text(applicant.firstName, rightX, y);
   y += 26;
 
   doc.setFont('helvetica', 'normal');
@@ -1713,24 +1713,26 @@ function drawResume(
   doc.text(applicant.role, rightX, y);
   y += 28;
 
-  // About
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  doc.text('ABOUT ME', rightX, y);
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(50, 50, 50);
-  const aboutLines = doc.splitTextToSize(applicant.about, rightW);
-  doc.text(aboutLines, rightX, y, { lineHeightFactor: 1.4 });
-  y += aboutLines.length * 12 + 8;
+  // About (value proposition) — optional
+  if (state.includeAbout && applicant.about.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    doc.text('ABOUT ME', rightX, y);
+    y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(50, 50, 50);
+    const aboutLines = doc.splitTextToSize(applicant.about, rightW);
+    doc.text(aboutLines, rightX, y, { lineHeightFactor: 1.4 });
+    y += aboutLines.length * 12 + 8;
 
-  // Divider
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.7);
-  doc.line(rightX, y, rightX + rightW, y);
-  y += 16;
+    // Divider
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.7);
+    doc.line(rightX, y, rightX + rightW, y);
+    y += 16;
+  }
 
   // ===== Skills + Tools (paginated row-by-row) =====
   const colW = (rightW - 30) / 2;
