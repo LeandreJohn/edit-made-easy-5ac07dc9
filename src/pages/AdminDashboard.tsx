@@ -373,6 +373,8 @@ const AdminDashboard = () => {
   const [state, setState] = useState<ApplicantState>({
     enabledSkills: {},
     enabledTools: {},
+    includeAbout: true,
+    enabledExperiences: {},
     photoDataUrl: null,
   });
   const [open, setOpen] = useState<Record<string, boolean>>({
