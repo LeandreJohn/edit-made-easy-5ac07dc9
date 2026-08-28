@@ -1726,7 +1726,7 @@ function drawResume(
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.text(city.toUpperCase(), locTextX, locY, { align: 'center', maxWidth: photoW });
-      locY += 13;
+      locY += 20;
     }
     if (country) {
       doc.setFont('helvetica', city ? 'normal' : 'bold');
