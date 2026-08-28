@@ -18,12 +18,20 @@ import {
   Users,
   ExternalLink,
   FileBarChart,
+  GraduationCap,
+  Briefcase,
+  FolderOpen,
+  Award,
+  Monitor,
+  ShieldCheck,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
 import page1Bg from '@/assets/resume-page1-bg.png';
 import page2Bg from '@/assets/resume-page2-bg.png';
 import Footer from '@/components/Footer';
+import FilePreviewLink from '@/components/common/FilePreviewLink';
+import FilePreviewModal from '@/components/common/FilePreviewModal';
 import type { MockApplicant } from '@/data/mockApplicants';
 import type { SelectedSkill } from '@/types/application';
 import {
@@ -365,16 +373,26 @@ const AdminDashboard = () => {
   });
   const [open, setOpen] = useState<Record<string, boolean>>({
     about: true,
+    personal: true,
+    education: true,
+    professional: true,
     skills: true,
     tools: true,
     experience: true,
+    portfolio: true,
+    certifications: true,
+    workSetup: true,
+    compliance: true,
   });
+  const [profileTab, setProfileTab] = useState<'profile' | 'resume'>('profile');
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
 
   const toggleSection = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
   /** Select an applicant for the profile card and prime the resume toggles/photo. */
   const selectApplicant = (mapped: AdminApplicant) => {
     setApplicant(mapped);
+    setProfileTab('profile');
     setState({
       enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
       enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
@@ -1292,6 +1310,66 @@ maria@example.com`}
         )}
       </main>
       <Footer />
+    </div>
+  );
+};
+
+/** Label / value grid used across the read-only profile sections. */
+const InfoGrid = ({ items }: { items: [string, string][] }) => {
+  const rows = items.filter(([, v]) => v && v.trim().length > 0);
+  if (rows.length === 0)
+    return <p className="text-sm text-muted-foreground italic">No details provided.</p>;
+  return (
+    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+      {rows.map(([label, value]) => (
+        <div key={label} className="min-w-0">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </dt>
+          <dd className="text-sm text-foreground break-words whitespace-pre-line">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
+
+/** External URL rendered as a chip that opens in a new tab. */
+const ExternalUrl = ({ url, label }: { url: string; label?: string }) => (
+  <a
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    title={url}
+    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/40 text-sm text-primary hover:bg-muted hover:border-primary/40 transition-colors max-w-full"
+  >
+    <span className="truncate">{label || url}</span>
+    <ExternalLink className="w-4 h-4 shrink-0" />
+  </a>
+);
+
+/** Row of previewable file chips. */
+const FileChips = ({ files, className = '' }: { files: string[]; className?: string }) => {
+  const list = files.filter((f) => f && f.trim().length > 0);
+  if (list.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {list.map((f, i) => (
+        <FilePreviewLink key={`${f}-${i}`} url={f} />
+      ))}
+    </div>
+  );
+};
+
+/** Labelled group of file chips (hidden when there are no files). */
+const FileGroup = ({ label, files }: { label: string; files: string[] }) => {
+  const list = files.filter((f) => f && f.trim().length > 0);
+  if (list.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        {label}
+      </p>
+      <FileChips files={list} />
     </div>
   );
 };
