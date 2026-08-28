@@ -1600,7 +1600,7 @@ const AssessmentCard = ({
 
 function drawResume(
   doc: jsPDF,
-  applicant: MockApplicant,
+  applicant: AdminApplicant,
   state: ApplicantState,
   page1Bg: string | null,
   page2Bg: string | null,
