@@ -1664,18 +1664,25 @@ function drawResume(
       }
     }
 
-    // Address/location sits directly under the picture.
+    // City / country sit directly under the picture.
     const locTextX = photoX + photoW / 2;
-    const locY = photoY + photoH + 26;
+    let locY = photoY + photoH + 26;
     doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    const [city, country] = applicant.location.split(',').map((s) => s.trim());
-    doc.text((city || applicant.location || '').toUpperCase(), locTextX, locY, { align: 'center', maxWidth: photoW });
+    const city = (applicant.personal.city || '').trim();
+    const country = (applicant.personal.country || '').trim();
+    if (city) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(city.toUpperCase(), locTextX, locY, { align: 'center', maxWidth: photoW });
+      locY += 13;
+    }
     if (country) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(country, locTextX, locY + 13, { align: 'center', maxWidth: photoW });
+      doc.setFont('helvetica', city ? 'normal' : 'bold');
+      doc.setFontSize(city ? 9 : 11);
+      doc.text(city ? country : country.toUpperCase(), locTextX, locY, {
+        align: 'center',
+        maxWidth: photoW,
+      });
     }
   };
 
