@@ -1639,7 +1639,7 @@ function drawResume(
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
       const cx = leftWPage2 / 2;
-      doc.text(`${applicant.firstName} ${applicant.lastName}`, cx, 70, { align: 'center' });
+      doc.text(applicant.firstName, cx, 70, { align: 'center' });
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.text(applicant.role, cx, 88, { align: 'center' });
