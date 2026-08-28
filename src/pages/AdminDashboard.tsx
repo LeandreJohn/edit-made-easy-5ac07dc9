@@ -1602,7 +1602,7 @@ const AssessmentCard = ({
               </div>
             </div>
           )}
-          {normalized?.modified && typeof normalized.modified === 'object' && !Array.isArray(normalized.modified) && (
+          {!!normalized?.modified && typeof normalized.modified === 'object' && !Array.isArray(normalized.modified) && (
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
                 Modified
