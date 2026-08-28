@@ -18,12 +18,20 @@ import {
   Users,
   ExternalLink,
   FileBarChart,
+  GraduationCap,
+  Briefcase,
+  FolderOpen,
+  Award,
+  Monitor,
+  ShieldCheck,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Logo from '@/components/Logo';
 import page1Bg from '@/assets/resume-page1-bg.png';
 import page2Bg from '@/assets/resume-page2-bg.png';
 import Footer from '@/components/Footer';
+import FilePreviewLink from '@/components/common/FilePreviewLink';
+import FilePreviewModal from '@/components/common/FilePreviewModal';
 import type { MockApplicant } from '@/data/mockApplicants';
 import type { SelectedSkill } from '@/types/application';
 import {
