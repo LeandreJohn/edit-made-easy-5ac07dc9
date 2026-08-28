@@ -392,6 +392,7 @@ const AdminDashboard = () => {
   /** Select an applicant for the profile card and prime the resume toggles/photo. */
   const selectApplicant = (mapped: AdminApplicant) => {
     setApplicant(mapped);
+    setProfileTab('profile');
     setState({
       enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
       enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
