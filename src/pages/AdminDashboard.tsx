@@ -402,6 +402,8 @@ const AdminDashboard = () => {
     setState({
       enabledSkills: Object.fromEntries(mapped.skills.map((s) => [s.skill, true])),
       enabledTools: Object.fromEntries(mapped.tools.map((t) => [t, true])),
+      includeAbout: true,
+      enabledExperiences: Object.fromEntries(mapped.experiences.map((e) => [e.id, true])),
       photoDataUrl: null,
     });
     if (mapped.photoUrl) {
