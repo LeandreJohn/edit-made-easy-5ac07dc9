@@ -1581,7 +1581,7 @@ const AssessmentCard = ({
       </div>
       {isDiscStyle ? (
         <div className="space-y-3">
-          {normalized?.authentic && typeof normalized.authentic === 'object' && !Array.isArray(normalized.authentic) && (
+          {!!normalized?.authentic && typeof normalized.authentic === 'object' && !Array.isArray(normalized.authentic) && (
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
                 Authentic
