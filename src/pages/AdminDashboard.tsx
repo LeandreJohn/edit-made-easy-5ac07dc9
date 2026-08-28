@@ -1201,7 +1201,7 @@ maria@example.com`}
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-border">
                   <p className="text-sm text-muted-foreground">
-                    Choose which skills and tools appear on the generated resume.
+                    Choose what appears on the generated resume — untick anything to leave it out.
                   </p>
                   <button
                     onClick={generateResume}
@@ -1210,6 +1210,91 @@ maria@example.com`}
                     <Download className="w-4 h-4" /> Generate Resume PDF
                   </button>
                 </div>
+
+                {/* Value proposition (resume toggle) */}
+                <Section
+                  title="Value Proposition"
+                  open={open.about}
+                  onToggle={() => toggleSection('about')}
+                  icon={<User className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                >
+                  {!applicant.about ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      No value proposition provided.
+                    </p>
+                  ) : (
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                        state.includeAbout
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-border bg-muted/40 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={state.includeAbout}
+                        onChange={toggleAbout}
+                        className="w-4 h-4 accent-primary shrink-0 mt-0.5"
+                      />
+                      <p className="text-sm text-foreground whitespace-pre-line">
+                        {applicant.about}
+                      </p>
+                    </label>
+                  )}
+                </Section>
+
+                {/* Work experience (resume toggles) */}
+                <Section
+                  title="Work Experience"
+                  open={open.experience}
+                  onToggle={() => toggleSection('experience')}
+                  icon={<Briefcase className="w-4 h-4" />}
+                  hint="Toggle to include/exclude on resume"
+                  count={applicant.experiences.length}
+                >
+                  {applicant.experiences.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      No work experience added.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {applicant.experiences.map((e) => {
+                        const enabled = state.enabledExperiences[e.id];
+                        const range = e.currentlyWorking
+                          ? [e.startDate, 'Present'].filter(Boolean).join(' - ')
+                          : [e.startDate, e.endDate].filter(Boolean).join(' - ');
+                        return (
+                          <label
+                            key={e.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                              enabled
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border bg-muted/40 opacity-60'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!enabled}
+                              onChange={() => toggleExperience(e.id)}
+                              className="w-4 h-4 accent-primary shrink-0 mt-0.5"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {e.title || 'Untitled role'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {[e.employer, e.location, range].filter(Boolean).join(' • ')}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Section>
+
+
 
                 {/* Skills (resume toggles) */}
                 <Section
