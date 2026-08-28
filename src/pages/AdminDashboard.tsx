@@ -517,7 +517,7 @@ const AdminDashboard = () => {
         loadImageAsDataUrl(page2Bg),
       ]);
       drawResume(doc, applicant, state, page1DataUrl, page2DataUrl);
-      const filename = `${applicant.firstName}_${applicant.lastName}_Resume.pdf`.replace(/\s+/g, '_');
+      const filename = `${applicant.firstName}_Resume.pdf`.replace(/\s+/g, '_');
       doc.save(filename);
       toast.success('Resume generated successfully');
     } catch (err) {
