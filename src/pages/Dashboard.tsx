@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ErrorRetry from '@/components/common/ErrorRetry';
+import { useAllSkipAnswers } from '@/lib/skipAnswers';
 import SectionSkeleton from '@/components/common/SectionSkeleton';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useNavigate } from '@/lib/router-compat';
@@ -144,6 +145,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [skills, setSkills] = useState<SelectedSkill[]>([]);
   const [tools, setTools] = useState<SelectedTool[]>([]);
   const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
+  const skipAnswers = useAllSkipAnswers();
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [workSetup, setWorkSetup] = useState<WorkSetupData>(emptyWorkSetup);
   const [compliance, setCompliance] = useState<ComplianceFormData>(emptyCompliance);
@@ -755,15 +757,44 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     .filter(([k]) => !sectionChecks[k as keyof typeof sectionChecks])
     .map(([key, label]) => ({ key, label }));
 
-  // Sequential gating (mirrors the wizard): a required section stays locked until
-  // every earlier required section is complete. Optional sections are never locked.
-  const GATED_ORDER: SectionKey[] = ['personal', 'education', 'professional', 'valueProp', 'workSetup', 'compliance'];
+  // Sequential gating in sidebar order. Optional sections (work experience,
+  // tools, skills, portfolio, certifications) count as done once they hold data
+  // or the applicant answered "No" to their question.
+  const GATED_ORDER: SectionKey[] = [
+    'personal', 'education', 'professional', 'workExperience', 'tools', 'skills',
+    'portfolio', 'certifications', 'valueProp', 'workSetup', 'compliance',
+  ];
+
+  const hasRealWorkExperience = workExperiences.some(
+    (w) => (w.title || '').trim() && (w.title || '').trim().toLowerCase() !== 'no experience',
+  );
+  const sectionDone: Record<SectionKey, boolean> = {
+    personal: sectionChecks.personal,
+    education: sectionChecks.education,
+    professional: sectionChecks.professional,
+    workExperience: hasRealWorkExperience
+      || workExperiences.length > 0
+      || skipAnswers.workExperience === false,
+    tools: sectionChecks.tools || skipAnswers.tools === false,
+    skills: sectionChecks.skills || skipAnswers.skills === false,
+    portfolio: !!portfolioLink.trim()
+      || portfolioFileUrls.length > 0
+      || portfolioFileNames.length > 0
+      || skipAnswers.portfolio === false,
+    certifications: certifications.length > 0 || skipAnswers.certifications === false,
+    valueProp: sectionChecks.valueProp,
+    workSetup: sectionChecks.workSetup,
+    compliance: sectionChecks.compliance,
+  };
+
   const isSectionLocked = (key: SectionKey): boolean => {
     const idx = GATED_ORDER.indexOf(key);
     if (idx <= 0) return false;
-    return GATED_ORDER.slice(0, idx).some(
-      (k) => !sectionChecks[k as keyof typeof sectionChecks],
-    );
+    // If any later section already has saved data, earlier optional blanks
+    // must not block the applicant.
+    const laterHasData = GATED_ORDER.slice(idx + 1).some((k) => sectionDone[k]);
+    if (laterHasData) return false;
+    return GATED_ORDER.slice(0, idx).some((k) => !sectionDone[k]);
   };
 
 
@@ -1206,7 +1237,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               </h2>
               {isEditableSection && (
                 !editing ? (
-                  <button onClick={startEdit} className="btn-outline text-sm inline-flex items-center gap-2">
+                  <button
+                    onClick={startEdit}
+                    className="text-sm font-semibold inline-flex items-center gap-2 rounded-lg px-4 py-2 bg-emerald-600 text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                  >
                     <Pencil className="w-4 h-4" /> Edit
                   </button>
                 ) : (
@@ -1773,13 +1807,15 @@ const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
             <Field label="Barangay" value={profile.barangay} />
             <Field label="City / Municipality" value={profile.city} />
           </>
-        ) : (
+        ) : (profile.houseStreet || '').trim() ? (
           <>
-            <Field label="Street Address" value={profile.address || profile.houseStreet} />
+            <Field label="Street Address" value={profile.houseStreet} />
             <Field label="City" value={profile.city} />
             <Field label="State / Region / Province" value={profile.stateRegion ?? ''} />
             <Field label="Postal / ZIP Code" value={profile.postalCode ?? ''} />
           </>
+        ) : (
+          <Field label="Address" value={profile.address} />
         )}
         <Field label="Referred By" value={profile.referredBy ?? ''} />
       </div>

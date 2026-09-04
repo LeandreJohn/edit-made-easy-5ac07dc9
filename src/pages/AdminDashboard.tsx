@@ -225,7 +225,9 @@ function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
     currentlyWorking: Boolean(e.currentlyWorking ?? e.current ?? e.currently_working ?? false),
     responsibilities: str(e.responsibilities),
     toolsPlatforms: str(e.toolsPlatforms ?? e.tools_platforms),
-  }));
+  }))
+    // A lone "No Experience" placeholder means the applicant has none.
+    .filter((e) => e.title.trim().toLowerCase() !== 'no experience');
 
   const socialRaw = parseJsonObject(pi.Social_Link ?? pi.social_link) ?? {};
   const socialLinks = Object.entries(socialRaw)

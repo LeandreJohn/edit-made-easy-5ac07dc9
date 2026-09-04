@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { Certification } from '@/types/application';
+import SkipGate, { SkipGateBanner } from '@/components/wizard/SkipGate';
+import { useSkipAnswer } from '@/lib/skipAnswers';
 import FileDropzone from '@/components/wizard/FileDropzone';
 import { Trash2 } from 'lucide-react';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
@@ -23,7 +24,7 @@ const emptyCert = (): Certification => ({
 
 const CertificationsStep = ({ data, onChange, onSkip }: CertificationsStepProps) => {
   // Default to "yes" view if the applicant already added anything.
-  const [hasCerts, setHasCerts] = useState<boolean | null>(data.length > 0 ? true : null);
+  const [hasCerts, setHasCerts] = useSkipAnswer('certifications', data.length > 0);
 
   const certs = data.length ? data : [emptyCert()];
 
@@ -48,88 +49,34 @@ const CertificationsStep = ({ data, onChange, onSkip }: CertificationsStepProps)
 
   const MAX_CERTS = 5;
 
-  if (hasCerts === null) {
+  if (hasCerts !== true) {
     return (
-      <div className="animate-fade-in space-y-6">
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-semibold text-foreground">Certifications / Trainings</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sharing certifications or trainings helps clients better understand your qualifications. If you don't have any yet, that's perfectly fine — you can continue without them.
-          </p>
-        </div>
-
-        <div className="border border-border rounded-xl p-8 text-center space-y-6">
-          <h3 className="text-lg font-heading font-semibold text-foreground">
-            Do you have certifications or trainings you'd like to include?
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              onClick={() => setHasCerts(true)}
-              className="btn-primary px-6"
-            >
-              Yes, I have certifications
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onChange([]);
-                setHasCerts(false);
-              }}
-              className="btn-outline px-6"
-            >
-              No, I don't have any yet
-            </button>
-          </div>
-        </div>
-      </div>
+      <SkipGate
+        title="Certifications / Trainings"
+        intro="Sharing certifications or trainings helps clients better understand your qualifications. If you don't have any yet, that's perfectly fine — you can continue without them."
+        question="Do you have certifications or trainings you'd like to include?"
+        yesLabel="Yes, I have certifications"
+        noLabel="No, I don't have any yet"
+        noTitle="No certifications added"
+        noBody="You indicated you don't have any certifications or trainings yet. You can continue to the next step, or change your answer to add some."
+        answer={hasCerts}
+        onAnswer={(v) => {
+          if (v === false) onChange([]);
+          setHasCerts(v);
+        }}
+        onSkip={onSkip}
+      />
     );
   }
 
-  if (hasCerts === false) {
-    return (
-      <div className="animate-fade-in space-y-6">
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">No certifications added</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              You indicated you don't have any certifications or trainings yet. You can continue to the next step, or change your answer to add some.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setHasCerts(null)}
-            className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
-          >
-            Change answer
-          </button>
-        </div>
-        {onSkip && (
-          <button type="button" onClick={onSkip} className="btn-primary w-full">
-            Continue to next step
-          </button>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Showcase your certifications and trainings.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Include any completed courses, certifications, internal trainings, or workshops that strengthen your qualifications. Limit to 5 entries.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setHasCerts(null)}
-          className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
-        >
-          Change answer
-        </button>
-      </div>
+      <SkipGateBanner
+        title="Showcase your certifications and trainings."
+        body="Include any completed courses, certifications, internal trainings, or workshops that strengthen your qualifications. Limit to 5 entries."
+        onChangeAnswer={() => setHasCerts(null)}
+      />
       <h3 className="text-lg font-heading font-semibold text-foreground">Certifications / Trainings</h3>
 
       {certs.map((cert, index) => (
