@@ -1,18 +1,52 @@
 import FileDropzone from '@/components/wizard/FileDropzone';
 import { Link as LinkIcon } from 'lucide-react';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
+import SkipGate, { SkipGateBanner } from '@/components/wizard/SkipGate';
+import { useSkipAnswer } from '@/lib/skipAnswers';
 
 interface PortfolioStepProps {
   portfolioLink: string;
   onPortfolioLinkChange: (value: string) => void;
   onFilesChange: (files: File[]) => void;
   initialFiles?: File[];
+  /** Wizard only — advance when the applicant answers "No". */
+  onSkip?: () => void;
 }
 
-const PortfolioStep = ({ portfolioLink, onPortfolioLinkChange, onFilesChange, initialFiles }: PortfolioStepProps) => {
+const PortfolioStep = ({ portfolioLink, onPortfolioLinkChange, onFilesChange, initialFiles, onSkip }: PortfolioStepProps) => {
+  const hasData = !!(portfolioLink || '').trim() || (initialFiles?.length ?? 0) > 0;
+  const [hasPortfolio, setHasPortfolio] = useSkipAnswer('portfolio', hasData);
+
+  if (hasPortfolio !== true) {
+    return (
+      <SkipGate
+        title="Portfolio / Sample Works"
+        intro="Sharing samples of your work helps clients see the quality and type of support you can provide. If you don't have samples ready, you can continue without them."
+        question="Do you have a portfolio or work samples to share?"
+        yesLabel="Yes, I have samples to share"
+        noLabel="No, not right now"
+        noTitle="No portfolio added"
+        noBody="You indicated you don't have portfolio samples to share right now. You can continue to the next step, or change your answer to add some."
+        answer={hasPortfolio}
+        onAnswer={(v) => {
+          if (v === false) {
+            onPortfolioLinkChange('');
+            onFilesChange([]);
+          }
+          setHasPortfolio(v);
+        }}
+        onSkip={onSkip}
+      />
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
+      <SkipGateBanner
+        title="Portfolio / Sample Works"
+        body="Add a portfolio link and upload any sample works you'd like clients to see."
+        onChangeAnswer={() => setHasPortfolio(null)}
+      />
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
         <p className="text-sm text-muted-foreground leading-relaxed">
           Upload samples that best demonstrate the quality of your work and the type of support you can provide to clients.

@@ -553,12 +553,14 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 data={values.selectedTools}
                 onChange={(d: SelectedTool[]) => setField('selectedTools', d)}
                 selectedRoles={values.professionalBackground.preferredRole}
+                onSkip={() => setCurrentSubStep(6)}
               />
             )}
             {currentSubStep === 6 && (
               <SkillsStep
                 data={values.selectedSkills}
                 onChange={(d: SelectedSkill[]) => setField('selectedSkills', d)}
+                onSkip={() => setCurrentSubStep(7)}
               />
             )}
             {currentSubStep === 7 && (
@@ -567,6 +569,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 onPortfolioLinkChange={(v) => setField('portfolioLink', v)}
                 onFilesChange={(files) => setField('portfolioFiles', files)}
                 initialFiles={values.portfolioFiles}
+                onSkip={() => setCurrentSubStep(8)}
               />
             )}
             {currentSubStep === 8 && (
@@ -651,6 +654,21 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                   canSubmitCoe: d.canSubmitCoe ?? '',
                 })}
               />
+            )}
+            {currentSubStep === 12 && (
+              <div className="mb-6">
+                <WizardNavigation
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  isFirst={false}
+                  isLast={currentSubStep === TOTAL_SUBSTEPS}
+                  isSubmitting={submitting}
+                  cooldownSeconds={assessmentCooldown}
+                  checkingLabel={submitting ? 'Checking…' : undefined}
+                  nextLabel={assessmentPhase === 'disc' ? 'Submit' : 'Next'}
+                  disableNext={!isSubStepValid(currentSubStep, values)}
+                />
+              </div>
             )}
             {currentSubStep === 12 && (
               <AssessmentStep

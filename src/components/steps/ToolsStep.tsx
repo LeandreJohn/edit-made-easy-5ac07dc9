@@ -2,6 +2,8 @@ import { SelectedTool, ProficiencyLevel } from '@/types/application';
 import { Plus, Trash2, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { getSuggestedToolsForRoles, GENERIC_VA_TOOLS } from '@/data/roleToolsMatrix';
+import SkipGate, { SkipGateBanner } from '@/components/wizard/SkipGate';
+import { useSkipAnswer } from '@/lib/skipAnswers';
 
 interface ToolsStepProps {
   data: SelectedTool[];
@@ -9,6 +11,8 @@ interface ToolsStepProps {
   /** Comma-separated or array of role names currently selected on the
    *  Professional Background step. Drives the Suggested tools chips. */
   selectedRoles?: string[] | string;
+  /** Wizard only — advance when the applicant answers "No". */
+  onSkip?: () => void;
 }
 
 const PROFICIENCY_LEVELS: ProficiencyLevel[] = [
@@ -26,7 +30,8 @@ const PROFICIENCY_STARS: Record<ProficiencyLevel, number> = {
   Expert: 5,
 };
 
-const ToolsStep = ({ data, onChange, selectedRoles }: ToolsStepProps) => {
+const ToolsStep = ({ data, onChange, selectedRoles, onSkip }: ToolsStepProps) => {
+  const [hasTools, setHasTools] = useSkipAnswer('tools', data.length > 0);
   const [newTool, setNewTool] = useState('');
   const [newProficiency, setNewProficiency] = useState<ProficiencyLevel>('Intermediate');
 
@@ -63,8 +68,33 @@ const ToolsStep = ({ data, onChange, selectedRoles }: ToolsStepProps) => {
   const isAdded = (name: string) =>
     data.some((t) => t.tool.toLowerCase() === name.toLowerCase());
 
+  if (hasTools !== true) {
+    return (
+      <SkipGate
+        title="Tools & Platforms Used"
+        intro="Listing the tools and platforms you've worked with helps clients see how quickly you can plug into their workflow. If you haven't used any yet, you can continue without adding them."
+        question="Do you use any tools or platforms you'd like to add?"
+        yesLabel="Yes, I use tools and platforms"
+        noLabel="No, I don't have any yet"
+        noTitle="No tools or platforms added"
+        noBody="You indicated you don't have tools or platforms to add yet. You can continue to the next step, or change your answer to add some."
+        answer={hasTools}
+        onAnswer={(v) => {
+          if (v === false) onChange([]);
+          setHasTools(v);
+        }}
+        onSkip={onSkip}
+      />
+    );
+  }
+
   return (
     <div className="animate-fade-in space-y-6">
+      <SkipGateBanner
+        title="Tools & Platforms Used"
+        body="Add the tools and platforms you've used and rate your proficiency for each."
+        onChangeAnswer={() => setHasTools(null)}
+      />
       <div>
         <h3 className="text-lg font-heading font-semibold text-foreground mb-1">
           Tools & Platforms Used

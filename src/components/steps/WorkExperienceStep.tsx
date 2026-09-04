@@ -1,7 +1,16 @@
-import { useState } from 'react';
 import { WorkExperience } from '@/types/application';
 import { Trash2 } from 'lucide-react';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
+import SkipGate, { SkipGateBanner } from '@/components/wizard/SkipGate';
+import { useSkipAnswer } from '@/lib/skipAnswers';
+
+/** Sentinel entry saved when the applicant says they have no work experience. */
+export const NO_EXPERIENCE_TITLE = 'No Experience';
+
+export const isNoExperience = (list: WorkExperience[]): boolean =>
+  list.length === 1
+  && (list[0].title || '').trim().toLowerCase() === NO_EXPERIENCE_TITLE.toLowerCase()
+  && !(list[0].employer || '').trim();
 
 interface WorkExperienceStepProps {
   data: WorkExperience[];
@@ -22,12 +31,12 @@ const emptyExperience = (): WorkExperience => ({
 });
 
 const WorkExperienceStep = ({ data, onChange, onSkip }: WorkExperienceStepProps) => {
-  // Default to "yes" view if the user already has any saved experience entries.
-  const [hasExperience, setHasExperience] = useState<boolean | null>(
-    data.length > 0 ? true : null,
-  );
+  // Default to "yes" view if the user already has real saved entries.
+  const hasRealData = data.length > 0 && !isNoExperience(data);
+  const [hasExperience, setHasExperience] = useSkipAnswer('workExperience', hasRealData);
 
-  const experiences = data.length ? data : [emptyExperience()];
+  const realData = isNoExperience(data) ? [] : data;
+  const experiences = realData.length ? realData : [emptyExperience()];
 
   const updateExp = (index: number, field: keyof WorkExperience, value: string | boolean) => {
     const updated = [...experiences];
@@ -44,88 +53,38 @@ const WorkExperienceStep = ({ data, onChange, onSkip }: WorkExperienceStepProps)
     onChange(experiences.filter((_, i) => i !== index));
   };
 
-  if (hasExperience === null) {
+  if (hasExperience !== true) {
     return (
-      <div className="animate-fade-in space-y-6">
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-semibold text-foreground">Work Experience</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sharing your prior work experience helps potential clients understand your background and the value you bring. If you don't have any yet, that's perfectly fine — you can continue without it.
-          </p>
-        </div>
-
-        <div className="border border-border rounded-xl p-8 text-center space-y-6">
-          <h3 className="text-lg font-heading font-semibold text-foreground">
-            Do you have prior work experience you'd like to include?
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              onClick={() => setHasExperience(true)}
-              className="btn-primary px-6"
-            >
-              Yes, I have work experience
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onChange([]);
-                setHasExperience(false);
-              }}
-              className="btn-outline px-6"
-            >
-              No, I don't have any yet
-            </button>
-          </div>
-        </div>
-      </div>
+      <SkipGate
+        title="Work Experience"
+        intro="Sharing your prior work experience helps potential clients understand your background and the value you bring. If you don't have any yet, that's perfectly fine — you can continue without it."
+        question="Do you have prior work experience you'd like to include?"
+        yesLabel="Yes, I have work experience"
+        noLabel="No, I don't have any yet"
+        noTitle="No work experience added"
+        noBody="You indicated you don't have prior work experience yet. You can continue to the next step, or change your answer to add some."
+        answer={hasExperience}
+        onAnswer={(v) => {
+          if (v === false) {
+            onChange([{ ...emptyExperience(), title: NO_EXPERIENCE_TITLE }]);
+          } else if (v === true && isNoExperience(data)) {
+            onChange([]);
+          }
+          setHasExperience(v);
+        }}
+        onSkip={onSkip}
+      />
     );
   }
 
-  if (hasExperience === false) {
-    return (
-      <div className="animate-fade-in space-y-6">
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">No work experience added</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              You indicated you don't have prior work experience yet. You can continue to the next step, or change your answer to add some.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setHasExperience(null)}
-            className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
-          >
-            Change answer
-          </button>
-        </div>
-        {onSkip && (
-          <button type="button" onClick={onSkip} className="btn-primary w-full">
-            Continue to next step
-          </button>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="animate-fade-in space-y-8">
-      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Work Experience</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Provide your professional work experience starting with your most recent role. Include positions that best reflect your skills, responsibilities, achievements, and the value you can bring to potential clients. Be clear and specific when describing your responsibilities and accomplishments. Focus on measurable results and relevant experience that demonstrates your professionalism and readiness to support clients. If you have held multiple roles within the same company, begin with your most recent position, then add your previous roles separately.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setHasExperience(null)}
-          className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
-        >
-          Change answer
-        </button>
-      </div>
+      <SkipGateBanner
+        title="Work Experience"
+        body="Provide your professional work experience starting with your most recent role. Include positions that best reflect your skills, responsibilities, achievements, and the value you can bring to potential clients. Be clear and specific when describing your responsibilities and accomplishments. Focus on measurable results and relevant experience that demonstrates your professionalism and readiness to support clients. If you have held multiple roles within the same company, begin with your most recent position, then add your previous roles separately."
+        onChangeAnswer={() => setHasExperience(null)}
+      />
       {experiences.map((exp, index) => (
         <div key={exp.id} className="relative border border-border rounded-xl p-6">
           {experiences.length > 1 && (
