@@ -1807,13 +1807,15 @@ const PersonalView = ({ profile }: { profile: PersonalInfo }) => {
             <Field label="Barangay" value={profile.barangay} />
             <Field label="City / Municipality" value={profile.city} />
           </>
-        ) : (
+        ) : (profile.houseStreet || '').trim() ? (
           <>
-            <Field label="Street Address" value={profile.address || profile.houseStreet} />
+            <Field label="Street Address" value={profile.houseStreet} />
             <Field label="City" value={profile.city} />
             <Field label="State / Region / Province" value={profile.stateRegion ?? ''} />
             <Field label="Postal / ZIP Code" value={profile.postalCode ?? ''} />
           </>
+        ) : (
+          <Field label="Address" value={profile.address} />
         )}
         <Field label="Referred By" value={profile.referredBy ?? ''} />
       </div>
