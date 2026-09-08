@@ -193,6 +193,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [introOpen, setIntroOpen] = useState(false);
   const [manageDocsOpen, setManageDocsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(() => {
+    try { return sessionStorage.getItem('cb_dashboard_disclaimer_seen') === '1'; }
+    catch { return false; }
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -987,6 +991,34 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       </header>
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+        {/* Disclaimer prompt for incomplete profiles */}
+        {completionPct < 100 && !disclaimerDismissed && (
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl shadow-sm p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                <ClipboardCheck className="w-4.5 h-4.5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-heading text-base font-bold text-amber-900">Important reminder</p>
+                <p className="text-sm text-amber-900/90 mt-1">
+                  Please make sure the information in your Profile Builder is accurate, complete, and up to date, as it may be reviewed and assessed at any point.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDisclaimerDismissed(true);
+                  try { sessionStorage.setItem('cb_dashboard_disclaimer_seen', '1'); } catch { /* ignore */ }
+                }}
+                className="text-amber-900/70 hover:text-amber-900 text-sm font-medium shrink-0"
+                aria-label="Dismiss disclaimer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Welcome banner */}
         <div
           className="relative rounded-2xl overflow-hidden mb-6 bg-primary text-primary-foreground bg-no-repeat"

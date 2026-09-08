@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Home } from 'lucide-react';
+import { Home, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -144,6 +144,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [showWizardDisclaimer, setShowWizardDisclaimer] = useState(false);
 
 
   // Persist wizard progress so a browser refresh resumes on the same step.
@@ -284,6 +285,18 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
       lastName: values.personalInfo.lastName,
     });
   }, [values.email, values.personalInfo.firstName, values.personalInfo.lastName]);
+
+  // Show the disclaimer banner once after the intro video is closed (or
+  // immediately on first wizard start if the intro video is skipped/already seen).
+  useEffect(() => {
+    if (!started || showIntroModal) return;
+    try {
+      if (sessionStorage.getItem('cb_wizard_disclaimer_seen') === '1') return;
+      sessionStorage.setItem('cb_wizard_disclaimer_seen', '1');
+    } catch { /* ignore */ }
+    setShowWizardDisclaimer(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, showIntroModal]);
 
   // Reset the background-check warning when the box is ticked or the user
   // leaves the Compliance step.
@@ -515,6 +528,29 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 </span>
               )}
             </div>
+            {showWizardDisclaimer && (
+              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                    <ClipboardCheck className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-amber-900">Important reminder</p>
+                    <p className="text-sm text-amber-900/90 mt-1">
+                      Please make sure the information in your Profile Builder is accurate, complete, and up to date, as it may be reviewed and assessed at any point.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowWizardDisclaimer(false)}
+                    className="text-amber-900/70 hover:text-amber-900 text-sm font-medium shrink-0"
+                    aria-label="Dismiss disclaimer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
