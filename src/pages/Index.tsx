@@ -289,9 +289,11 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   // Show the disclaimer banner once after the intro video is closed (or
   // immediately on first wizard start if the intro video is skipped/already seen).
   useEffect(() => {
-    if (!started || !showWizardDisclaimer) return;
-    if (showIntroModal) return;
-    try { sessionStorage.setItem('cb_wizard_disclaimer_seen', '1'); } catch { /* ignore */ }
+    if (!started || showIntroModal) return;
+    try {
+      if (sessionStorage.getItem('cb_wizard_disclaimer_seen') === '1') return;
+      sessionStorage.setItem('cb_wizard_disclaimer_seen', '1');
+    } catch { /* ignore */ }
     setShowWizardDisclaimer(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, showIntroModal]);
