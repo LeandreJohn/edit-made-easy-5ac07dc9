@@ -144,6 +144,10 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [showWizardDisclaimer, setShowWizardDisclaimer] = useState(() => {
+    try { return sessionStorage.getItem('cb_wizard_disclaimer_seen') !== '1'; }
+    catch { return true; }
+  });
 
 
   // Persist wizard progress so a browser refresh resumes on the same step.
