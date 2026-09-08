@@ -193,6 +193,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [introOpen, setIntroOpen] = useState(false);
   const [manageDocsOpen, setManageDocsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(() => {
+    try { return sessionStorage.getItem('cb_dashboard_disclaimer_seen') === '1'; }
+    catch { return false; }
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!userMenuOpen) return;
