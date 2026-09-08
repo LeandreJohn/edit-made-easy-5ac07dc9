@@ -552,7 +552,6 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               </div>
             )}
           </div>
-          </div>
 
           <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
             {currentSubStep === 1 && (
