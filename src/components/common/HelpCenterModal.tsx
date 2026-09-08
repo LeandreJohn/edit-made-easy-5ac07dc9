@@ -12,6 +12,12 @@ const HelpCenterModal = ({ open, onOpenChange }: Props) => (
       </DialogHeader>
       <div className="space-y-4 text-sm text-foreground leading-relaxed">
         <section>
+          <h3 className="font-heading font-semibold text-base mb-1">Disclaimer</h3>
+          <p className="text-muted-foreground">
+            Please make sure the information in your Profile Builder is accurate, complete, and up to date, as it may be reviewed and assessed at any point.
+          </p>
+        </section>
+        <section>
           <h3 className="font-heading font-semibold text-base mb-1">Getting started</h3>
           <p className="text-muted-foreground">
             Complete each step in the left sidebar of the application wizard. Your progress is
