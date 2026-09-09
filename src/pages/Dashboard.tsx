@@ -1150,7 +1150,11 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             <button
               onClick={() => setAssessmentOpen(true)}
               disabled={assessmentDone}
-              className="btn-primary text-sm px-5 py-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`text-sm px-5 py-2 whitespace-nowrap inline-flex items-center justify-center rounded-lg font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
+                assessmentDone
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 animate-breathe'
+              }`}
             >
               {assessmentDone ? 'Completed' : 'Start Assessment'}
             </button>
