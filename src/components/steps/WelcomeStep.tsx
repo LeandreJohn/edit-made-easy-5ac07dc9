@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams } from '@/lib/router-compat';
 import { useEffect, useRef, useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
+import { trackApplicationLead } from '@/lib/tracking';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import {
@@ -181,6 +182,7 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
     setSignupPassword('');
     setSignupConfirm('');
     cameFromSignupRef.current = true;
+    trackApplicationLead();
     openNdaThenReady();
   };
 

@@ -162,6 +162,16 @@
   }
 }
 
+/* Subtle "breathing" glow used to draw attention to a primary action. */
+@keyframes cb-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(142 70% 40% / 0.45); }
+  50% { box-shadow: 0 0 0 6px hsl(142 70% 40% / 0); }
+}
+
+.animate-breathe {
+  animation: cb-breathe 2.4s ease-in-out infinite;
+}
+
 /* Quality-of-life: honour the OS "reduce motion" setting. */
 @media (prefers-reduced-motion: reduce) {
   *,

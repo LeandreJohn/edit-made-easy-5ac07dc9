@@ -9,7 +9,6 @@ import {
   getSourceName,
   getHearFrom,
 } from '@/lib/headhunting';
-import { trackApplicationLead } from '@/lib/tracking';
 
 type Step = {
   icon: typeof ClipboardCheck;
@@ -57,7 +56,6 @@ const CompletionStep = () => {
   }, []);
 
   const handleHome = () => {
-    trackApplicationLead();
     window.location.assign(homeHref);
   };
 
