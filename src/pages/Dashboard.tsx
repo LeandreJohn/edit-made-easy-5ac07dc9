@@ -772,33 +772,58 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const hasRealWorkExperience = workExperiences.some(
     (w) => (w.title || '').trim() && (w.title || '').trim().toLowerCase() !== 'no experience',
   );
-  const sectionDone: Record<SectionKey, boolean> = {
+  const hasSavedNoExperience = workExperiences.some(
+    (w) => (w.title || '').trim().toLowerCase() === 'no experience',
+  );
+
+  /** Sections that hold real saved data on the account. */
+  const sectionHasData: Record<SectionKey, boolean> = {
     personal: sectionChecks.personal,
     education: sectionChecks.education,
     professional: sectionChecks.professional,
-    workExperience: hasRealWorkExperience
-      || workExperiences.length > 0
-      || skipAnswers.workExperience === false,
-    tools: sectionChecks.tools || skipAnswers.tools === false,
-    skills: sectionChecks.skills || skipAnswers.skills === false,
+    workExperience: hasRealWorkExperience,
+    tools: sectionChecks.tools,
+    skills: sectionChecks.skills,
     portfolio: !!portfolioLink.trim()
       || portfolioFileUrls.length > 0
-      || portfolioFileNames.length > 0
-      || skipAnswers.portfolio === false,
-    certifications: certifications.length > 0 || skipAnswers.certifications === false,
+      || portfolioFileNames.length > 0,
+    certifications: certifications.length > 0,
     valueProp: sectionChecks.valueProp,
     workSetup: sectionChecks.workSetup,
     compliance: sectionChecks.compliance,
   };
 
+  /** Sections the applicant may move past — data, or an explicit "No" answer. */
+  const sectionSatisfied: Record<SectionKey, boolean> = {
+    ...sectionHasData,
+    workExperience: hasRealWorkExperience
+      || hasSavedNoExperience
+      || skipAnswers.workExperience === false,
+    tools: sectionHasData.tools || skipAnswers.tools === false,
+    skills: sectionHasData.skills || skipAnswers.skills === false,
+    portfolio: sectionHasData.portfolio || skipAnswers.portfolio === false,
+    certifications: sectionHasData.certifications || skipAnswers.certifications === false,
+  };
+
+  const anySectionHasData = Object.values(sectionHasData).some(Boolean);
+
+  // A brand-new, empty profile must start fully locked — drop any stale
+  // Yes/No answers left in the session by an earlier wizard run.
+  const skipCleared = useRef(false);
+  useEffect(() => {
+    if (loading || skipCleared.current) return;
+    skipCleared.current = true;
+    if (!anySectionHasData) clearSkipAnswers();
+  }, [loading, anySectionHasData]);
+
   const isSectionLocked = (key: SectionKey): boolean => {
     const idx = GATED_ORDER.indexOf(key);
     if (idx <= 0) return false;
-    // If any later section already has saved data, earlier optional blanks
-    // must not block the applicant.
-    const laterHasData = GATED_ORDER.slice(idx + 1).some((k) => sectionDone[k]);
+    // If a later section already holds real saved data, earlier optional
+    // blanks must not block the applicant.
+    const laterHasData = GATED_ORDER.slice(idx + 1).some((k) => sectionHasData[k]);
     if (laterHasData) return false;
-    return GATED_ORDER.slice(0, idx).some((k) => !sectionDone[k]);
+    return GATED_ORDER.slice(0, idx).some((k) => !sectionSatisfied[k]);
   };
 
 
