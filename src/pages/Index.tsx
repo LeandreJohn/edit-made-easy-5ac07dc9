@@ -589,12 +589,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               <WorkExperienceStep
                 data={values.workExperiences}
                 onChange={(d: WorkExperience[]) => setField('workExperiences', d)}
-                onSkip={() => {
-                  setCompletedSidebarSteps((prev) =>
-                    prev.includes(3) ? prev : [...prev, 3],
-                  );
-                  setCurrentSubStep(5);
-                }}
+                onSkip={() => skipToSubStep(5)}
               />
             )}
             {currentSubStep === 5 && (
@@ -602,14 +597,14 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 data={values.selectedTools}
                 onChange={(d: SelectedTool[]) => setField('selectedTools', d)}
                 selectedRoles={values.professionalBackground.preferredRole}
-                onSkip={() => setCurrentSubStep(6)}
+                onSkip={() => skipToSubStep(6)}
               />
             )}
             {currentSubStep === 6 && (
               <SkillsStep
                 data={values.selectedSkills}
                 onChange={(d: SelectedSkill[]) => setField('selectedSkills', d)}
-                onSkip={() => setCurrentSubStep(7)}
+                onSkip={() => skipToSubStep(7)}
               />
             )}
             {currentSubStep === 7 && (
@@ -618,19 +613,14 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 onPortfolioLinkChange={(v) => setField('portfolioLink', v)}
                 onFilesChange={(files) => setField('portfolioFiles', files)}
                 initialFiles={values.portfolioFiles}
-                onSkip={() => setCurrentSubStep(8)}
+                onSkip={() => skipToSubStep(8)}
               />
             )}
             {currentSubStep === 8 && (
               <CertificationsStep
                 data={values.certifications}
                 onChange={(d: Certification[]) => setField('certifications', d)}
-                onSkip={() => {
-                  setCompletedSidebarSteps((prev) =>
-                    prev.includes(5) ? prev : [...prev, 5],
-                  );
-                  setCurrentSubStep(9);
-                }}
+                onSkip={() => skipToSubStep(9)}
               />
             )}
 
@@ -732,6 +722,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
             )}
 
 
+            {currentSubStep !== 12 && (
             <WizardNavigation
               onPrevious={handlePrevious}
               onNext={handleNext}
@@ -743,6 +734,7 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
               nextLabel={currentSubStep === 12 ? (assessmentPhase === 'disc' ? 'Submit' : 'Next') : undefined}
               disableNext={!isSubStepValid(currentSubStep, values)}
             />
+            )}
 
 
           </div>
