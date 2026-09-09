@@ -408,6 +408,19 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
     if (currentSubStep > 1) setCurrentSubStep((s) => s - 1);
   };
 
+  /**
+   * Move on after answering "No" to an optional section, marking the sidebar
+   * step complete (green check) whenever the jump leaves it behind.
+   */
+  const skipToSubStep = (target: number) => {
+    const from = SUBSTEP_TO_SIDEBAR[currentSubStep];
+    const to = SUBSTEP_TO_SIDEBAR[target];
+    if (from && from !== to) {
+      setCompletedSidebarSteps((prev) => (prev.includes(from) ? prev : [...prev, from]));
+    }
+    setCurrentSubStep(target);
+  };
+
   const handleStepClick = (sidebarStep: number) => {
     const targetSubStep = SIDEBAR_TO_FIRST_SUBSTEP[sidebarStep];
     if (!targetSubStep || targetSubStep === currentSubStep) return;
