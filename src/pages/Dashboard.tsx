@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ErrorRetry from '@/components/common/ErrorRetry';
-import { useAllSkipAnswers } from '@/lib/skipAnswers';
+import { useAllSkipAnswers, clearSkipAnswers } from '@/lib/skipAnswers';
 import SectionSkeleton from '@/components/common/SectionSkeleton';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useNavigate } from '@/lib/router-compat';
