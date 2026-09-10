@@ -115,7 +115,7 @@ const ComplianceStep = ({ data, onChange }: ComplianceStepProps) => {
 
       <div className="space-y-2">
         <RequiredLabel>Valid ID</RequiredLabel>
-        <FileDropzone label="valid-id" imagesOnly multiple={false} maxFiles={1} initialFiles={value.validId ? [value.validId] : []} onFilesSelected={(files) => update('validId', files[0] ?? null)} />
+        <FileDropzone label="valid-id" imagesOnly={false} multiple={false} maxFiles={1} initialFiles={value.validId ? [value.validId] : []} onFilesSelected={(files) => update('validId', files[0] ?? null)} />
       </div>
 
       {/* NBI + Police gate — hides once answered */}
@@ -171,7 +171,7 @@ const ComplianceStep = ({ data, onChange }: ComplianceStepProps) => {
             >
               <Eye className="w-3.5 h-3.5" /> See example of document
             </button>
-            <FileDropzone label="nbi-clearance" imagesOnly multiple={false} maxFiles={1} initialFiles={value.nbiClearance ? [value.nbiClearance] : []} onFilesSelected={(files) => update('nbiClearance', files[0] ?? null)} />
+            <FileDropzone label="nbi-clearance" imagesOnly={false} multiple={false} maxFiles={1} initialFiles={value.nbiClearance ? [value.nbiClearance] : []} onFilesSelected={(files) => update('nbiClearance', files[0] ?? null)} />
             <div>
               <RequiredLabel>Valid Until</RequiredLabel>
               <input
@@ -200,7 +200,7 @@ const ComplianceStep = ({ data, onChange }: ComplianceStepProps) => {
             >
               <Eye className="w-3.5 h-3.5" /> See example of document
             </button>
-            <FileDropzone label="police-clearance" imagesOnly multiple={false} maxFiles={1} initialFiles={value.policeClearance ? [value.policeClearance] : []} onFilesSelected={(files) => update('policeClearance', files[0] ?? null)} />
+            <FileDropzone label="police-clearance" imagesOnly={false} multiple={false} maxFiles={1} initialFiles={value.policeClearance ? [value.policeClearance] : []} onFilesSelected={(files) => update('policeClearance', files[0] ?? null)} />
             <div>
               <RequiredLabel>Valid Until</RequiredLabel>
               <input
@@ -275,7 +275,6 @@ const ComplianceStep = ({ data, onChange }: ComplianceStepProps) => {
             imagesOnly={false}
             multiple={false}
             maxFiles={1}
-            accept="image/jpeg,image/png,application/pdf"
             initialFiles={value.proofOfSeparation ? [value.proofOfSeparation] : []}
             onFilesSelected={handleProofSelected}
           />

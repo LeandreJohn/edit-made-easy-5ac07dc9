@@ -147,7 +147,7 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
             )}
             <div>
               <label className="form-label">Add / Replace Files</label>
-              <FileDropzone onFilesSelected={setPFiles} label="portfolio" imagesOnly maxFiles={10} />
+              <FileDropzone onFilesSelected={setPFiles} label="portfolio" imagesOnly={false} maxFiles={10} />
             </div>
             <div className="flex justify-end pt-2">
               <button onClick={savePortfolio} disabled={pSaving} className="btn-primary inline-flex items-center gap-2">
