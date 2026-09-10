@@ -82,7 +82,7 @@ const PortfolioStep = ({ portfolioLink, onPortfolioLinkChange, onFilesChange, in
         <FileDropzone
           onFilesSelected={onFilesChange}
           label="portfolio"
-          imagesOnly
+          imagesOnly={false}
           maxFiles={10}
           initialFiles={initialFiles}
         />
