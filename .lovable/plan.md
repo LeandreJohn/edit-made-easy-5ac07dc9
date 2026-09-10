@@ -1,41 +1,39 @@
-# Use the newest profile ID, and fully reset when returning to Welcome
+# Fix: Compliance stays locked even when Work Setup is filled in
 
-## Goal
+## What's happening
 
-1. When saving Personal Information, if the server replies with a profile ID (`contact_id`), store that one and use it for every following save.
-2. When someone goes back to the Welcome screen from the wizard, wipe everything saved for that session so the next person starts clean.
+In the Dashboard, each section unlocks only when the sections above it are complete. Compliance sits right after Work Setup, so it stays locked whenever Work Setup is judged incomplete.
 
-## Part 1 — Adopt a returned profile ID
+Work Setup is judged complete by `isWorkSetupValid` (`src/lib/validation/stepValidation.ts`), which now requires the speedtest field to match:
 
-Today `updatePersonalInfo` in `src/lib/apiClient.ts` is typed as returning only `{ success }`, and its response is ignored by both callers, so a new ID from the server is silently dropped.
+```text
+/^(https?:\/\/)?(www\.)?speedtest\.net\//i
+```
 
-Changes:
-- `src/lib/apiClient.ts`
-  - Type the `/personal-info` response as `{ success: boolean; contact_id?: string }`.
-  - In `updatePersonalInfo`, if the response contains a non-empty `contact_id` that differs from the one sent, call `saveContactId(newId)` and return the response. This makes the swap automatic for every caller.
-  - `submitSubstep` case 1: return the resulting ID (or void) so the wizard can react; keep the other cases unchanged.
-- `src/pages/Index.tsx` (wizard) — after the Personal Info save, re-read the stored ID (`loadContactId()`) for subsequent steps instead of holding a stale value in a local variable, so later substeps post against the new ID.
-- `src/pages/Dashboard.tsx` — after `updatePersonalInfo`, refresh the local `contactId` from storage so the following saves, refresh, and assessment calls use the new ID.
+Two ways this rejects a profile that really is filled in:
 
-Because the ID lives in `localStorage` under `cb_contact_id` and every call reads it through `loadContactId()`, replacing it in one place propagates everywhere.
+1. The pattern requires a slash after the domain, so a stored value like `https://www.speedtest.net` (no path) fails.
+2. Any link the applicant saved before this rule existed — a share link on another speedtest domain, a shortened link, or an uploaded screenshot instead of a link — fails too, even though the backend has the data.
 
-## Part 2 — Clear session data on return to Welcome
+The check also needs primary device screenshots; those already fall back to backend URLs, so they are not the likely blocker. Which of the two above applies to this specific account is unconfirmed, so step 1 below is a quick check of the actual saved value before the fix lands.
 
-`handleBackToWelcome` in `src/pages/Index.tsx` currently clears only the wizard step state and the autosaved draft. Extend it to clear:
+## Plan
 
-- the stored profile ID (`clearContactId()`)
-- the saved name/email identity (`clearApplicantIdentity()`)
-- the Yes/No answers for optional sections (`clearSkipAnswers()`)
-- session flags: `cb_wizard_state_v1`, `cb_wizard_disclaimer_seen`, `cb_intro_video_shown`, `cb_dashboard_section`, `cb_dashboard_disclaimer_seen`, `cb_assessment_done_*`
-- cached assessment codes for the old ID: `cb_imx_values_code_*`, `cb_imx_disc_code_*`, and their `_done_*` twins
-- the form itself — reset it back to the blank defaults so the email/password and all answers on the Welcome screen start empty
+1. **Confirm** — open the account in the preview, read the Work Setup values coming from the backend, and note which required field the completion check rejects.
 
-Referral/acquisition context (`cb_referrer`, `cb_acquisition`) is kept, since it describes which link the visitor arrived through, not their answers.
+2. **Separate "complete" from "correctly formatted"** (`src/lib/validation/stepValidation.ts`)
+   - `isWorkSetupValid` (used for unlocking sections and the completion percentage) requires the speedtest link to be *present*, not to match the speedtest.net pattern.
+   - Keep a separate `isWorkSetupSaveValid` that additionally enforces the speedtest.net format. This is used only when the applicant is editing and saving the section, so new entries still have to be proper speedtest.net links while previously saved data never locks anyone out.
 
-Implementation detail: add a single `clearSessionData()` helper (in `src/lib/apiClient.ts` or a small new module) that performs the wipe, including a prefix sweep over `localStorage`/`sessionStorage` keys starting with `cb_imx_` and `cb_assessment_done_`, and call it from `handleBackToWelcome`.
+3. **Loosen the pattern itself** so legitimate links stop being rejected: allow the domain with or without a trailing path and accept speedtest.net subdomains.
+   ```text
+   /^(https?:\/\/)?([a-z0-9-]+\.)*speedtest\.net(\/|$)/i
+   ```
+
+4. **Wire the save-time check** — `src/pages/Dashboard.tsx` `isDraftSectionValid` for `workSetup` uses the stricter save variant; the sidebar gating and percentage (`sectionChecks`) use the relaxed one. The wizard's Work Setup step keeps its current inline error on the ISP tab.
 
 ## Verification
 
 - Build passes.
-- Wizard: save Personal Info, confirm the stored ID matches whatever the server returned and later steps post that ID.
-- Wizard: click back to Welcome, confirm the email/password fields and all stored answers are empty and no profile ID remains.
+- With a profile that has Work Setup data from the backend, Compliance is unlocked and the percentage counts Work Setup as done.
+- Editing Work Setup and typing a non-speedtest link still shows the error and blocks Save.
