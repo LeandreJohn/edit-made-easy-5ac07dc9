@@ -147,7 +147,7 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
             )}
             <div>
               <label className="form-label">Add / Replace Files</label>
-              <FileDropzone onFilesSelected={setPFiles} label="portfolio" imagesOnly maxFiles={10} />
+              <FileDropzone onFilesSelected={setPFiles} label="portfolio" imagesOnly={false} maxFiles={10} />
             </div>
             <div className="flex justify-end pt-2">
               <button onClick={savePortfolio} disabled={pSaving} className="btn-primary inline-flex items-center gap-2">
@@ -188,13 +188,13 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
             <div className="space-y-2">
               <label className="form-label">Valid ID</label>
               <ExistingFiles urls={existing.compliance.validIdFiles} label="Valid ID" />
-              <FileDropzone onFilesSelected={setValidId} label="valid id" maxFiles={1} />
+              <FileDropzone onFilesSelected={setValidId} label="valid id" imagesOnly={false} maxFiles={1} />
             </div>
 
             <div className="space-y-2">
               <label className="form-label">NBI Clearance</label>
               <ExistingFiles urls={existing.compliance.nbiFiles} label="NBI Clearance" />
-              <FileDropzone onFilesSelected={setNbi} label="nbi clearance" maxFiles={1} />
+              <FileDropzone onFilesSelected={setNbi} label="nbi clearance" imagesOnly={false} maxFiles={1} />
               <div>
                 <label className="form-label mt-2">Valid Until</label>
                 <input type="date" className="form-input" value={nbiValidity} onChange={(e) => setNbiValidity(e.target.value)} />
@@ -204,7 +204,7 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
             <div className="space-y-2">
               <label className="form-label">Police Clearance</label>
               <ExistingFiles urls={existing.compliance.policeFiles} label="Police Clearance" />
-              <FileDropzone onFilesSelected={setPolice} label="police clearance" maxFiles={1} />
+              <FileDropzone onFilesSelected={setPolice} label="police clearance" imagesOnly={false} maxFiles={1} />
               <div>
                 <label className="form-label mt-2">Valid Until</label>
                 <input type="date" className="form-input" value={policeValidity} onChange={(e) => setPoliceValidity(e.target.value)} />
@@ -214,7 +214,7 @@ const ManageDocumentsModal = ({ open, onOpenChange, contactId, existing, onSaved
             <div className="space-y-2">
               <label className="form-label">Proof of Separation / COE</label>
               <ExistingFiles urls={existing.compliance.coeFiles} label="COE" />
-              <FileDropzone onFilesSelected={setCoe} label="proof of separation" maxFiles={1} />
+              <FileDropzone onFilesSelected={setCoe} label="proof of separation" imagesOnly={false} maxFiles={1} />
             </div>
 
 

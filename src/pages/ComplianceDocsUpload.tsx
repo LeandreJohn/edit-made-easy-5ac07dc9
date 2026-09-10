@@ -6,7 +6,7 @@ import FileDropzone from '@/components/wizard/FileDropzone';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import { submitComplianceDocs } from '@/lib/apiClient';
 
-const ACCEPTED = 'image/jpeg,image/png,application/pdf';
+const ACCEPTED = 'image/jpeg,image/png,image/gif,application/pdf';
 
 const ComplianceDocsUpload = () => {
   const [email, setEmail] = useState('');

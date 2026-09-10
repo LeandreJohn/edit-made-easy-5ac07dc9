@@ -81,11 +81,19 @@ export function isValuePropositionValid(vp: string): boolean {
   return nonEmpty(vp);
 }
 
+/** Only speedtest.net result links are accepted for ISP speedtest fields. */
+export const SPEEDTEST_URL_RE = /^(https?:\/\/)?(www\.)?speedtest\.net\//i;
+
+export function isSpeedtestUrl(v: string | undefined | null): boolean {
+  return !!v && SPEEDTEST_URL_RE.test(v.trim());
+}
+
 export function isWorkSetupValid(w: WorkSetup): boolean {
   return nonEmpty(w.primaryDevice)
     && (w.deviceScreenshots?.length ?? 0) > 0
     && nonEmpty(w.primaryInternetProvider)
-    && nonEmpty(w.primaryISPSpeedtest);
+    && isSpeedtestUrl(w.primaryISPSpeedtest)
+    && (!nonEmpty(w.secondaryISPSpeedtest) || isSpeedtestUrl(w.secondaryISPSpeedtest));
 }
 
 /** Device tab only: minimum fields needed before advancing to the ISP tab. */

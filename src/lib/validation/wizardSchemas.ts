@@ -96,10 +96,23 @@ export const professionalBgSchema = z.object({
   }
 });
 
+const SPEEDTEST_RE = /^(https?:\/\/)?(www\.)?speedtest\.net\//i;
+const speedtestLink = (label: string) =>
+  required(label).regex(SPEEDTEST_RE, {
+    message: 'Enter a valid speedtest.net result link (e.g. https://www.speedtest.net/result/...)',
+  });
+
 export const workSetupSchema = z.object({
   primaryDevice: required('Primary device'),
   primaryInternetProvider: required('Primary internet provider'),
-  primaryISPSpeedtest: required('Primary ISP speedtest link'),
+  primaryISPSpeedtest: speedtestLink('Primary ISP speedtest link'),
+  secondaryISPSpeedtest: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || SPEEDTEST_RE.test(v), {
+      message: 'Enter a valid speedtest.net result link',
+    }),
 }).passthrough();
 
 export const complianceSchema = z.object({
