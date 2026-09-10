@@ -17,6 +17,11 @@ interface FileDropzoneProps {
   maxSizeMB?: number;
 }
 
+/** Allowed upload types across the app: JPEG, PNG, GIF, PDF. */
+export const DEFAULT_ACCEPT = 'image/jpeg,image/png,image/gif,application/pdf';
+const DEFAULT_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
+
 interface UploadedFile {
   id: string;
   file: File;
@@ -89,11 +94,21 @@ const FileDropzone = ({
         if (!accepted.length) return;
       }
 
-      if (imagesOnly) {
-        const rejected = accepted.filter((f) => !f.type.startsWith('image/'));
-        accepted = accepted.filter((f) => f.type.startsWith('image/'));
+      {
+        const allowed = imagesOnly ? IMAGE_TYPES : DEFAULT_TYPES;
+        // Some browsers report an empty MIME type — fall back to extension.
+        const isAllowed = (f: File) =>
+          allowed.includes(f.type) ||
+          (!f.type && /\.(jpe?g|png|gif|pdf)$/i.test(f.name) &&
+            (imagesOnly ? !/\.pdf$/i.test(f.name) : true));
+        const rejected = accepted.filter((f) => !isAllowed(f));
+        accepted = accepted.filter(isAllowed);
         if (rejected.length) {
-          toast.error('Only image files (JPG, PNG, WEBP, etc.) are allowed.');
+          toast.error(
+            imagesOnly
+              ? 'Only image files (JPG, PNG, GIF) are allowed.'
+              : 'Only JPEG, PNG, GIF, or PDF files are allowed.',
+          );
         }
         if (!accepted.length) return;
       }
@@ -154,7 +169,7 @@ const FileDropzone = ({
       >
         <input
           type="file"
-          accept={accept ?? (imagesOnly ? 'image/*' : undefined)}
+          accept={accept ?? (imagesOnly ? IMAGE_TYPES.join(',') : DEFAULT_ACCEPT)}
           multiple={multiple}
           onChange={handleChange}
           className="hidden"
@@ -163,7 +178,7 @@ const FileDropzone = ({
         <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
         <p className="text-sm font-medium text-foreground mb-1">Drag & Drop</p>
         <p className="text-xs text-muted-foreground mb-1">
-          {imagesOnly ? 'Images only — JPG, PNG, WEBP, GIF' : accept || 'Any file type'}
+          {imagesOnly ? 'Images only — JPG, PNG, GIF' : 'Accepted: JPG, PNG, GIF, PDF'}
         </p>
         <p className="text-xs text-muted-foreground mb-3">
           {multiple ? `Up to ${maxFiles} files · ` : ''}Max {maxSizeMB} MB per file
