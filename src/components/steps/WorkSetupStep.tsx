@@ -4,6 +4,7 @@ import RequiredLabel from '@/components/wizard/RequiredLabel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Cpu, Loader2, Eye, X, Monitor, Laptop } from 'lucide-react';
 import { toast } from 'sonner';
+import { isSpeedtestUrl } from '@/lib/validation/stepValidation';
 import windowsSampleImg from '@/assets/device-sample-windows.png';
 import macSampleImg from '@/assets/device-sample-mac.png';
 
@@ -183,6 +184,7 @@ const WorkSetupStep = forwardRef<WorkSetupStepHandle, WorkSetupStepProps>(({ dat
   const [internal, setInternal] = useState<WorkSetupData>(emptyWorkSetup);
   const [detecting, setDetecting] = useState(false);
   const [sampleOpen, setSampleOpen] = useState(false);
+  const [speedtestErrors, setSpeedtestErrors] = useState<{ primary?: string; secondary?: string }>({});
   const value = data ?? internal;
   const tab: 'device' | 'isp' = value.activeTab ?? 'device';
   const consent = value.consent ?? false;
@@ -192,6 +194,20 @@ const WorkSetupStep = forwardRef<WorkSetupStepHandle, WorkSetupStepProps>(({ dat
       if (tab === 'device') {
         const next = { ...value, activeTab: 'isp' as const };
         if (onChange) onChange(next); else setInternal(next);
+        return false;
+      }
+      const errors: { primary?: string; secondary?: string } = {};
+      const primary = (value.primaryISPSpeedtest ?? '').trim();
+      const secondary = (value.secondaryISPSpeedtest ?? '').trim();
+      if (primary && !isSpeedtestUrl(primary)) {
+        errors.primary = 'Enter a valid speedtest.net result link (e.g. https://www.speedtest.net/result/...)';
+      }
+      if (secondary && !isSpeedtestUrl(secondary)) {
+        errors.secondary = 'Enter a valid speedtest.net result link';
+      }
+      setSpeedtestErrors(errors);
+      if (errors.primary || errors.secondary) {
+        toast.error('Please use a valid speedtest.net link for your speed test result.');
         return false;
       }
       return true;
@@ -473,8 +489,15 @@ const WorkSetupStep = forwardRef<WorkSetupStepHandle, WorkSetupStepProps>(({ dat
             className="form-input"
             placeholder="https://www.speedtest.net/result/..."
             value={(value as WorkSetupData).primaryISPSpeedtest ?? ''}
-            onChange={(e) => update('primaryISPSpeedtest' as keyof WorkSetupData, e.target.value as never)}
+            onChange={(e) => {
+              update('primaryISPSpeedtest' as keyof WorkSetupData, e.target.value as never);
+              setSpeedtestErrors((p) => ({ ...p, primary: undefined }));
+            }}
           />
+          <p className="text-xs text-muted-foreground mt-1">Paste your result link from speedtest.net.</p>
+          {speedtestErrors.primary && (
+            <p className="text-xs text-destructive mt-1">{speedtestErrors.primary}</p>
+          )}
         </div>
         <div>
           <label className="form-label">Secondary/Back up Internet Provider</label>
@@ -487,8 +510,14 @@ const WorkSetupStep = forwardRef<WorkSetupStepHandle, WorkSetupStepProps>(({ dat
             className="form-input"
             placeholder="https://www.speedtest.net/result/..."
             value={(value as WorkSetupData).secondaryISPSpeedtest ?? ''}
-            onChange={(e) => update('secondaryISPSpeedtest' as keyof WorkSetupData, e.target.value as never)}
+            onChange={(e) => {
+              update('secondaryISPSpeedtest' as keyof WorkSetupData, e.target.value as never);
+              setSpeedtestErrors((p) => ({ ...p, secondary: undefined }));
+            }}
           />
+          {speedtestErrors.secondary && (
+            <p className="text-xs text-destructive mt-1">{speedtestErrors.secondary}</p>
+          )}
         </div>
         </TabsContent>
       </Tabs>
