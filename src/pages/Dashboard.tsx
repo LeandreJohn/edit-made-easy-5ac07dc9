@@ -816,14 +816,27 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     if (!anySectionHasData) clearSkipAnswers();
   }, [loading, anySectionHasData]);
 
+  // Only the required sections can hold a later section back. The optional
+  // ones (work experience, tools, skills, portfolio, certifications) keep their
+  // own Yes/No prompt inside the section but never lock anything behind them —
+  // a skipped answer isn't always remembered across sign-ins.
+  const REQUIRED_GATES: SectionKey[] = [
+    'personal', 'education', 'professional', 'valueProp', 'workSetup',
+  ];
+
   const isSectionLocked = (key: SectionKey): boolean => {
     const idx = GATED_ORDER.indexOf(key);
     if (idx <= 0) return false;
-    // If a later section already holds real saved data, earlier optional
-    // blanks must not block the applicant.
+    // If a later section already holds real saved data, earlier blanks must
+    // not block the applicant.
     const laterHasData = GATED_ORDER.slice(idx + 1).some((k) => sectionHasData[k]);
     if (laterHasData) return false;
-    return GATED_ORDER.slice(0, idx).some((k) => !sectionSatisfied[k]);
+    // Work Setup is the last required section — once it holds saved data,
+    // Compliance (which has nothing after it) is always reachable.
+    if (key === 'compliance' && sectionHasData.workSetup) return false;
+    return GATED_ORDER.slice(0, idx)
+      .filter((k) => REQUIRED_GATES.includes(k))
+      .some((k) => !sectionSatisfied[k]);
   };
 
 
