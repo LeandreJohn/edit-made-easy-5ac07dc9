@@ -1,39 +1,45 @@
-# Fix: Compliance stays locked even when Work Setup is filled in
+# Fix Compliance lock after skipped sections + "Not Found" upload failures
 
-## What's happening
+## Problem 1 — Compliance stays locked when optional sections were skipped
 
-In the Dashboard, each section unlocks only when the sections above it are complete. Compliance sits right after Work Setup, so it stays locked whenever Work Setup is judged incomplete.
+Dashboard sections unlock in order. A section counts as passed when it has data, or when the applicant answered "No" to its Yes/No question (Work Experience, Tools, Skills, Portfolio, Certifications).
 
-Work Setup is judged complete by `isWorkSetupValid` (`src/lib/validation/stepValidation.ts`), which now requires the speedtest field to match:
+Those Yes/No answers are kept in `sessionStorage` only (`cb_skip_*`). So on a new sign-in, a returning applicant who previously skipped Tools or Portfolio has neither data nor an answer for that section, and every section after it — including Compliance — stays locked. Typing anything into the skipped section unlocks the chain again, which matches what's being reported.
 
-```text
-/^(https?:\/\/)?(www\.)?speedtest\.net\//i
-```
+There is already a bypass for this ("if a later section has data, don't block"), but Compliance is the last section in the order, so nothing comes after it and the bypass never applies.
 
-Two ways this rejects a profile that really is filled in:
+### Fix
 
-1. The pattern requires a slash after the domain, so a stored value like `https://www.speedtest.net` (no path) fails.
-2. Any link the applicant saved before this rule existed — a share link on another speedtest domain, a shortened link, or an uploaded screenshot instead of a link — fails too, even though the backend has the data.
+In `src/pages/Dashboard.tsx`:
 
-The check also needs primary device screenshots; those already fall back to backend URLs, so they are not the likely blocker. Which of the two above applies to this specific account is unconfirmed, so step 1 below is a quick check of the actual saved value before the fix lands.
+- Change the unlock rule so only *required* sections can block: Personal Information, Education, Professional Background, Value Proposition, Work Setup. The optional five never lock anything behind them; their own Yes/No prompt still appears inside the section.
+- Keep the existing "a later section already has data" bypass, and extend it so the section being checked also unlocks when Work Setup already holds saved data (covers Compliance, the last item).
+- Persist the Yes/No answers per applicant in `localStorage` keyed by profile ID (`src/lib/skipAnswers.ts`), so a "No" answer survives signing out and back in instead of being lost with the session.
 
-## Plan
+Result: an applicant whose Work Setup is filled from the backend can always reach Compliance, whether or not they skipped optional sections.
 
-1. **Confirm** — open the account in the preview, read the Work Setup values coming from the backend, and note which required field the completion check rejects.
+## Problem 2 — "Not Found" on file upload, then the save fails
 
-2. **Separate "complete" from "correctly formatted"** (`src/lib/validation/stepValidation.ts`)
-   - `isWorkSetupValid` (used for unlocking sections and the completion percentage) requires the speedtest link to be *present*, not to match the speedtest.net pattern.
-   - Keep a separate `isWorkSetupSaveValid` that additionally enforces the speedtest.net format. This is used only when the applicant is editing and saving the section, so new entries still have to be proper speedtest.net links while previously saved data never locks anyone out.
+The toast text comes straight from the server: the request returns HTTP 404 and the app shows the `detail` message, so the save is being rejected before it reaches the save handler.
 
-3. **Loosen the pattern itself** so legitimate links stop being rejected: allow the domain with or without a trailing path and accept speedtest.net subdomains.
-   ```text
-   /^(https?:\/\/)?([a-z0-9-]+\.)*speedtest\.net(\/|$)/i
-   ```
+The most likely trigger is payload size. Every uploaded file is currently sent three times inside the same JSON body — as `content_base64`, `base64`, and `data_url`. Base64 already inflates a file by ~33%, so a single 10 MB attachment becomes roughly 40 MB of JSON, and the Compliance save can carry four attachments at once. Gateways in front of the API commonly reject oversized bodies with a generic 404/HTML page, which surfaces here as "Not Found".
 
-4. **Wire the save-time check** — `src/pages/Dashboard.tsx` `isDraftSectionValid` for `workSetup` uses the stricter save variant; the sidebar gating and percentage (`sectionChecks`) use the relaxed one. The wizard's Work Setup step keeps its current inline error on the ISP tab.
+### Fix
+
+In `src/lib/apiClient.ts`:
+
+- Send each file's base64 content once. Keep `file_name`, `filename`, `content_type`, `mime_type`, `size`, and `content_base64`; drop the duplicate `base64` and `data_url` copies. This cuts the request body to about a third.
+- Add a guard before sending: if the total encoded payload exceeds a safe threshold (about 15 MB), stop with a clear message naming the files to shrink, instead of letting the server reject it.
+- Improve the error text so a 404/HTML response reads as "Upload failed — the file may be too large or the server is unavailable" rather than a bare "Not Found", and include the failing action in the message.
+
+In the Compliance section (`src/pages/Dashboard.tsx`), when a save fails, keep the applicant in edit mode with their selections intact so nothing is lost on retry.
+
+### Needs your confirmation
+
+Dropping `base64` and `data_url` assumes the backend reads `content_base64`. If the backend actually reads one of the other two, tell me which and I'll keep that single field instead.
 
 ## Verification
 
 - Build passes.
-- With a profile that has Work Setup data from the backend, Compliance is unlocked and the percentage counts Work Setup as done.
-- Editing Work Setup and typing a non-speedtest link still shows the error and blocks Save.
+- With a profile that has Work Setup data and skipped optional sections, Compliance is reachable.
+- Uploading a document in Compliance saves; an oversized file gives a clear size message instead of "Not Found".
