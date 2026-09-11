@@ -60,6 +60,14 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 
     } catch { /* leave body untouched */ }
   }
+  // Guard oversized bodies: the gateway in front of the API rejects very large
+  // requests with a generic 404/HTML page, which used to surface as "Not Found".
+  if (typeof body === 'string' && body.length > MAX_REQUEST_BYTES) {
+    throw new Error(
+      'Your files are too large to upload together. Please upload smaller files '
+      + '(under about 8 MB each) or save one document at a time.',
+    );
+  }
   const res = await fetch(url(path), {
     ...init,
     body,
@@ -69,11 +77,18 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
+    let detail = '';
     try {
       const j = await res.json();
-      detail = j?.detail ?? detail;
-    } catch { /* ignore */ }
+      detail = typeof j?.detail === 'string' ? j.detail : '';
+    } catch { /* non-JSON error page */ }
+    const hasUpload = typeof body === 'string' && body.includes('content_base64');
+    if (!detail || /^not found$/i.test(detail)) {
+      detail = hasUpload
+        ? 'Upload failed — the file may be too large, or the server is unavailable. '
+          + 'Please try a smaller file and save again.'
+        : `Request failed (HTTP ${res.status}). Please try again.`;
+    }
     throw new Error(detail);
   }
   return (await res.json()) as T;
@@ -83,6 +98,9 @@ function fileNames(files: File[]): string[] {
   return files.map((file) => file.name);
 }
 
+/** Max JSON body we will send (~12 MB of characters). */
+const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
+
 export interface JsonUploadFile {
   file_name: string;
   filename: string;
@@ -90,8 +108,6 @@ export interface JsonUploadFile {
   mime_type: string;
   size: number;
   content_base64: string;
-  base64: string;
-  data_url: string;
 }
 
 async function toJsonUploadFile(file: File): Promise<JsonUploadFile> {
@@ -102,6 +118,8 @@ async function toJsonUploadFile(file: File): Promise<JsonUploadFile> {
     reader.readAsDataURL(file);
   });
   const contentBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+  // Only one copy of the payload is sent — the backend reads `content_base64`
+  // first and duplicating it tripled every upload request.
   return {
     file_name: file.name,
     filename: file.name,
@@ -109,8 +127,6 @@ async function toJsonUploadFile(file: File): Promise<JsonUploadFile> {
     mime_type: file.type || 'application/octet-stream',
     size: file.size,
     content_base64: contentBase64,
-    base64: contentBase64,
-    data_url: dataUrl,
   };
 }
 

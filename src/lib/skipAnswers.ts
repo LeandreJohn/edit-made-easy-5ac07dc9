@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Yes/No "do you have any…" answers for the optional profile sections.
- * Stored in sessionStorage so both the wizard steps and the dashboard
- * gating logic can read the same answer without prop-drilling.
+ * Answers live in sessionStorage for the current run and, once we know the
+ * applicant's profile id, are mirrored to localStorage keyed by that id so a
+ * "No" answer survives signing out and back in.
  */
 export type SkipKey =
   | 'workExperience'
@@ -15,11 +16,27 @@ export type SkipKey =
 const EVENT = 'cb-skip-answer-changed';
 const storageKey = (key: SkipKey) => `cb_skip_${key}`;
 
+/** Profile id read directly to avoid a circular import with the API client. */
+function contactId(): string | null {
+  try { return localStorage.getItem('cb_contact_id'); } catch { return null; }
+}
+
+const persistedKey = (key: SkipKey): string | null => {
+  const id = contactId();
+  return id ? `cb_skip_${id}_${key}` : null;
+};
+
+const parse = (v: string | null): boolean | null =>
+  v === 'yes' ? true : v === 'no' ? false : null;
+
 export function getSkipAnswer(key: SkipKey): boolean | null {
   try {
-    const v = sessionStorage.getItem(storageKey(key));
-    if (v === 'yes') return true;
-    if (v === 'no') return false;
+    const session = parse(sessionStorage.getItem(storageKey(key)));
+    if (session !== null) return session;
+  } catch { /* ignore */ }
+  try {
+    const pk = persistedKey(key);
+    if (pk) return parse(localStorage.getItem(pk));
   } catch { /* ignore */ }
   return null;
 }
@@ -28,6 +45,13 @@ export function setSkipAnswer(key: SkipKey, value: boolean | null): void {
   try {
     if (value === null) sessionStorage.removeItem(storageKey(key));
     else sessionStorage.setItem(storageKey(key), value ? 'yes' : 'no');
+  } catch { /* ignore */ }
+  try {
+    const pk = persistedKey(key);
+    if (pk) {
+      if (value === null) localStorage.removeItem(pk);
+      else localStorage.setItem(pk, value ? 'yes' : 'no');
+    }
   } catch { /* ignore */ }
   try {
     window.dispatchEvent(new CustomEvent(EVENT, { detail: key }));
