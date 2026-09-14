@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,28 +18,45 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+const AppRoutes = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.gtag) return;
+    try {
+      window.gtag('event', 'page_view', { page_path: location.pathname });
+    } catch {
+      /* tracking must never break the app */
+    }
+  }, [location]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/attendance" element={<Dashboard variant="attendance" />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/assessment-result" element={<AssessmentResult />} />
+      <Route path="/head-hunting" element={<HeadHunting />} />
+      <Route path="/head-hunting/:role" element={<HeadHunting />} />
+      <Route path="/davao-hub" element={<DavaoHub />} />
+      <Route path="/source/:name" element={<Source />} />
+      <Route path="/career-sourcing/:hearfrom" element={<CareerSourcing />} />
+      <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
+      <Route path="/assessment" element={<AssessmentPage />} />
+      <Route path="/ph-assessment" element={<AssessmentPage variant="ph" />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/attendance" element={<Dashboard variant="attendance" />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/assessment-result" element={<AssessmentResult />} />
-          <Route path="/head-hunting" element={<HeadHunting />} />
-          <Route path="/head-hunting/:role" element={<HeadHunting />} />
-          <Route path="/davao-hub" element={<DavaoHub />} />
-          <Route path="/source/:name" element={<Source />} />
-          <Route path="/career-sourcing/:hearfrom" element={<CareerSourcing />} />
-          <Route path="/compliance-docs-u" element={<ComplianceDocsUpload />} />
-          <Route path="/assessment" element={<AssessmentPage />} />
-          <Route path="/ph-assessment" element={<AssessmentPage variant="ph" />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

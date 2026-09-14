@@ -10,13 +10,14 @@ declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
     lintrk?: (action: string, data?: Record<string, unknown>) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
 /** Optional LinkedIn Campaign Manager conversion ID (numeric). */
 const LINKEDIN_CONVERSION_ID = import.meta.env.VITE_LINKEDIN_CONVERSION_ID as string | undefined;
 
-/** Fire the Meta `Lead` event and the matching LinkedIn conversion. */
+/** Fire the Meta `Lead`, LinkedIn conversion, and GA4 `generate_lead` events. */
 export function trackApplicationLead(): void {
   if (typeof window === 'undefined') return;
 
@@ -31,6 +32,12 @@ export function trackApplicationLead(): void {
     if (window.lintrk && Number.isFinite(conversionId) && conversionId > 0) {
       window.lintrk('track', { conversion_id: conversionId });
     }
+  } catch {
+    /* tracking must never break the app */
+  }
+
+  try {
+    window.gtag?.('event', 'generate_lead');
   } catch {
     /* tracking must never break the app */
   }
