@@ -10,6 +10,7 @@ declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
     lintrk?: (action: string, data?: Record<string, unknown>) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
