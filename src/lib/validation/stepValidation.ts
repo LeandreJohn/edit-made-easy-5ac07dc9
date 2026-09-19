@@ -132,3 +132,51 @@ export const SECTION_TO_SUBSTEP: Record<string, number> = {
   workSetup: 10,
   compliance: 11,
 };
+
+/**
+ * Field keys that are required but still blank, so the UI can highlight every
+ * missing field instead of guessing at the first empty input on the page.
+ */
+export function missingPersonalInfoFields(p: PersonalInfo): string[] {
+  const out: string[] = [];
+  if (!nonEmpty(p.firstName)) out.push('firstName');
+  if (!nonEmpty(p.lastName)) out.push('lastName');
+  if (!nonEmpty(p.dateOfBirth)) out.push('dateOfBirth');
+  if (!nonEmpty(p.phoneNumber)) out.push('phoneNumber');
+  if (!nonEmpty(p.languagesSpoken)) out.push('languagesSpoken');
+  if (!nonEmpty(p.country)) out.push('country');
+  if (!nonEmpty(p.nationality)) out.push('nationality');
+  if (p.country === 'Philippines') {
+    if (!nonEmpty(p.houseStreet)) out.push('houseStreet');
+    if (!nonEmpty(p.city)) out.push('city');
+    if (!nonEmpty(p.barangay)) out.push('barangay');
+  } else if (nonEmpty(p.country)) {
+    if (!nonEmpty(p.address)) out.push('address');
+    if (!nonEmpty(p.city)) out.push('city');
+  }
+  return out;
+}
+
+export function missingEducationFields(e: Education): string[] {
+  const out: string[] = [];
+  if (!nonEmpty(e.highestLevel)) out.push('highestLevel');
+  if (!nonEmpty(e.schoolName)) out.push('schoolName');
+  if (!nonEmpty(e.schoolLocation)) out.push('schoolLocation');
+  const isUndergrad = /undergraduate|currently/i.test(e.highestLevel || '');
+  const grad = (e.graduationDate || '').trim();
+  const gradOk = isUndergrad ? grad === '' || isGraduationComplete(grad) : isGraduationComplete(grad);
+  if (!gradOk) out.push('graduationDate');
+  if (e.highestLevel !== 'High School Graduate') {
+    if (!nonEmpty(e.degreeField)) out.push('degreeField');
+    else if (e.degreeField === 'Other' && !nonEmpty(e.degreeFieldOther)) out.push('degreeField');
+  }
+  return out;
+}
+
+export function missingProfessionalFields(p: ProfessionalBackground): string[] {
+  const out: string[] = [];
+  if (!nonEmpty(p.preferredIndustry)) out.push('preferredIndustry');
+  if (!nonEmpty(p.preferredRole)) out.push('preferredRole');
+  if (!nonEmpty(p.schedule || p.availability)) out.push('schedule');
+  return out;
+}
