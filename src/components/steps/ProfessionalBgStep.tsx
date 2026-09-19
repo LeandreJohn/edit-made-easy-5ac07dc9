@@ -4,6 +4,7 @@ import { ProfessionalBackground } from '@/types/application';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SearchableSelect from '@/components/common/SearchableSelect';
 import RoleInfoModal from '@/components/common/RoleInfoModal';
+import PayRangeSlider from '@/components/common/PayRangeSlider';
 import { INDUSTRY_OPTIONS } from '@/data/industries';
 import { type RoleName } from '@/data/roleDescriptions';
 import { getRolesForIndustry } from '@/data/industryRoleMatrix';
@@ -163,6 +164,11 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
           </div>
         </div>
       </div>
+
+      <PayRangeSlider
+        value={data.currentPayRange}
+        onChange={(v) => update('currentPayRange', v)}
+      />
 
       <RoleInfoModal open={roleModalOpen} onOpenChange={setRoleModalOpen} initialRole={initialRole} />
     </div>
