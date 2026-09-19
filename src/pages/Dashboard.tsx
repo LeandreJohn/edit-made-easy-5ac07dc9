@@ -53,6 +53,7 @@ import {
   isPersonalInfoValid, isEducationValid, isProfessionalValid, isValuePropositionValid,
   isWorkSetupValid, isComplianceValid, isToolsValid, isSkillsValid,
   normalizeGraduation, formatGraduation,
+  missingPersonalInfoFields, missingEducationFields, missingProfessionalFields,
 } from '@/lib/validation/stepValidation';
 import { formatDateDenver, formatTimeDenver } from '@/lib/date';
 
@@ -79,7 +80,7 @@ const emptyEducation: Education = {
 
 const emptyProfessional: ProfessionalBackground = {
   preferredIndustry: '', preferredRole: '',
-  availability: '', schedule: '', hoursPerDay: '',
+  availability: '', schedule: '', hoursPerDay: '', currentPayRange: '',
 };
 
 type SectionKey =
@@ -336,6 +337,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           availability: pb.availability || '',
           schedule: pb.availability || '',
           hoursPerDay: pb.hours_per_day || '',
+          currentPayRange: pb.current_pay_range || '',
         });
         // Skills: the backend sends a richer `structured` array when available.
         const structured = (d.skills?.structured || []) as Array<Record<string, unknown>>;
@@ -510,38 +512,47 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
 
   const cancelEdit = () => setEditing(false);
 
+  /** Required-field keys that are still missing in the section being edited. */
+  const missingFieldsForSection = (): string[] => {
+    switch (activeSection) {
+      case 'personal': return missingPersonalInfoFields(draftProfile);
+      case 'education': return missingEducationFields(draftEducation);
+      case 'professional': return missingProfessionalFields(draftProfessional);
+      default: return [];
+    }
+  };
+
   /**
-   * Scroll to and focus the first empty required-looking control in the section
-   * so the applicant sees exactly what is missing instead of a disabled Save.
+   * Highlight every missing required field (never optional ones) and scroll to
+   * the first, so the applicant sees exactly what is left to fill in.
    */
-  const focusFirstInvalidField = () => {
+  const highlightMissingFields = () => {
     const root = sectionBodyRef.current;
     if (!root) return;
-    const controls = Array.from(
-      root.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-        'input, select, textarea',
-      ),
-    ).filter((el) => {
-      if (el.disabled || (el as HTMLInputElement).readOnly) return false;
-      const type = (el as HTMLInputElement).type;
-      if (type === 'hidden' || type === 'file' || type === 'checkbox' || type === 'radio') return false;
-      if (el.offsetParent === null) return false;
-      return !el.value?.trim();
+    root.querySelectorAll('[data-missing-required]').forEach((el) => {
+      el.classList.remove('ring-2', 'ring-destructive', 'rounded-lg');
+      el.removeAttribute('data-missing-required');
     });
-    const target = controls[0];
-    if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    target.focus({ preventScroll: true });
-    target.setAttribute('aria-invalid', 'true');
-    target.classList.add('ring-2', 'ring-destructive', 'border-destructive');
-    const clear = () => {
-      target.classList.remove('ring-2', 'ring-destructive', 'border-destructive');
-      target.removeAttribute('aria-invalid');
-      target.removeEventListener('input', clear);
-      target.removeEventListener('change', clear);
-    };
-    target.addEventListener('input', clear);
-    target.addEventListener('change', clear);
+    const keys = missingFieldsForSection();
+    const targets = keys
+      .map((k) => root.querySelector<HTMLElement>(`[data-field="${k}"]`))
+      .filter((el): el is HTMLElement => !!el);
+    targets.forEach((el) => {
+      el.setAttribute('data-missing-required', 'true');
+      el.classList.add('ring-2', 'ring-destructive', 'rounded-lg');
+      const clear = () => {
+        el.classList.remove('ring-2', 'ring-destructive', 'rounded-lg');
+        el.removeAttribute('data-missing-required');
+        el.removeEventListener('input', clear);
+        el.removeEventListener('change', clear);
+      };
+      el.addEventListener('input', clear);
+      el.addEventListener('change', clear);
+    });
+    const first = targets[0];
+    if (!first) return;
+    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    first.querySelector<HTMLElement>('input, select, textarea, button')?.focus({ preventScroll: true });
   };
 
   const saveEdit = async () => {
@@ -552,7 +563,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     // Missing required data — point the applicant at the offending field.
     if (!isDraftSectionValid()) {
       toast.error('Please complete the required fields before saving.');
-      focusFirstInvalidField();
+      highlightMissingFields();
       return;
     }
     // Warn once when saving compliance without the background check authorization.
@@ -865,8 +876,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       case 'personal': return isPersonalInfoValid(draftProfile);
       case 'education': return isEducationValid(draftEducation);
       case 'professional': return isProfessionalValid(draftProfessional);
-      case 'tools': return isToolsValid(draftTools);
-      case 'skills': return isSkillsValid(draftSkills);
+      case 'tools': return isToolsValid(draftTools) || skipAnswers.tools === false;
+      case 'skills': return isSkillsValid(draftSkills) || skipAnswers.skills === false;
       case 'valueProp': return isValuePropositionValid(draftProfile.valueProposition);
       case 'workSetup': return isWorkSetupValid({
         primaryDevice: draftWorkSetup.primaryDevice,
@@ -948,12 +959,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               >
                 {reapplyLabel}
               </button>
-            )}
-            {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground bg-muted px-2.5 py-1.5 rounded-md whitespace-nowrap">
-                <Clock className="w-3.5 h-3.5" />
-                Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
-              </span>
             )}
 
             {variant === 'attendance' && (
@@ -1229,12 +1234,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                       >
                         {reapplyLabel}
                       </button>
-                    )}
-                    {variant === 'reapply' && !canReapply && daysLeft !== null && daysLeft > 0 && (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground bg-muted px-2.5 py-1.5 rounded-md mt-2">
-                        <Clock className="w-3.5 h-3.5" />
-                        Reapply in {daysLeft} day{daysLeft === 1 ? '' : 's'}
-                      </span>
                     )}
                   </>
                 )}
@@ -1943,6 +1942,7 @@ const ProfessionalView = ({ data }: { data: ProfessionalBackground }) => (
       <Field label="Preferred Role" value={data.preferredRole} />
       <Field label="Availability" value={data.schedule} />
       <Field label="Hours Per Day" value={data.hoursPerDay} />
+      <Field label="Current Pay Range" value={data.currentPayRange} />
     </div>
   </div>
 );
