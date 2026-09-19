@@ -352,7 +352,9 @@ export function updateEducation(contactId: string, e: Education) {
       school_name: e.schoolName,
       school_location: e.schoolLocation,
       graduation_date: e.graduationDate,
-      degree: e.degreeField,
+      // The degree field is hidden for high-school graduates; the backend
+      // still requires a value, so send an explicit placeholder.
+      degree: e.highestLevel === 'High School Graduate' ? 'N/A' : e.degreeField,
       other_degree: e.degreeField === 'Other' ? (e.degreeFieldOther ?? '').trim() : '',
     }),
   });
@@ -370,6 +372,7 @@ export function updateProfessionalBackground(contactId: string, p: ProfessionalB
       preferred_role: p.preferredRole,
       availability,
       hours_per_day: p.hoursPerDay,
+      current_pay_range: p.currentPayRange ?? '',
     }),
   });
 }
