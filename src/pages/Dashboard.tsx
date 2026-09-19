@@ -1560,16 +1560,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
               Please complete the embedded Values and DISC assessments below.
             </DialogDescription>
           </DialogHeader>
-          <AssessmentStep
-            ref={assessmentRef}
-            contactId={contactId ?? ''}
-            email={profile.valueProposition ? undefined : undefined}
-            firstName={profile.firstName}
-            lastName={profile.lastName}
-            onPhaseChange={setAssessmentPhase}
-            onCompleted={() => { /* completion is confirmed via the Next/Submit check */ }}
-          />
-          <DialogFooter className="gap-2 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border pb-3">
             <button
               type="button"
               onClick={() => setAssessmentOpen(false)}
