@@ -68,7 +68,8 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
       + '(under about 8 MB each) or save one document at a time.',
     );
   }
-  const res = await fetch(url(path), {
+  const hasUpload = typeof body === 'string' && body.includes('content_base64');
+  const send = () => fetch(url(path), {
     ...init,
     body,
     headers: {
@@ -76,17 +77,37 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
       ...(init.headers ?? {}),
     },
   });
+
+  // Uploads occasionally fail on a flaky connection or a transient gateway
+  // error, even for small files — retry once before surfacing an error.
+  let res: Response;
+  try {
+    res = await send();
+    if (hasUpload && (res.status >= 500 || res.status === 404 || res.status === 408)) {
+      await new Promise((r) => setTimeout(r, 1200));
+      res = await send();
+    }
+  } catch (networkError) {
+    if (!hasUpload) throw networkError;
+    await new Promise((r) => setTimeout(r, 1200));
+    res = await send();
+  }
+
   if (!res.ok) {
     let detail = '';
+    let raw = '';
     try {
-      const j = await res.json();
+      raw = await res.text();
+      const j = JSON.parse(raw);
       detail = typeof j?.detail === 'string' ? j.detail : '';
     } catch { /* non-JSON error page */ }
-    const hasUpload = typeof body === 'string' && body.includes('content_base64');
+    if (hasUpload) {
+      console.error('[upload failed]', path, res.status, raw.slice(0, 500));
+    }
     if (!detail || /^not found$/i.test(detail)) {
       detail = hasUpload
-        ? 'Upload failed — the file may be too large, or the server is unavailable. '
-          + 'Please try a smaller file and save again.'
+        ? `We couldn't save your file (server error ${res.status}). Please check your `
+          + 'connection and try saving again — if it keeps failing, try a different file.'
         : `Request failed (HTTP ${res.status}). Please try again.`;
     }
     throw new Error(detail);
