@@ -1601,7 +1601,15 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
                   ? `Try again in ${assessmentCooldown}s`
                   : assessmentPhase === 'disc' ? 'Submit' : 'Next'}
             </button>
-          </DialogFooter>
+          </div>
+          <AssessmentStep
+            ref={assessmentRef}
+            contactId={contactId ?? ''}
+            firstName={profile.firstName}
+            lastName={profile.lastName}
+            onPhaseChange={setAssessmentPhase}
+            onCompleted={() => { /* completion is confirmed via the Next/Submit check */ }}
+          />
         </DialogContent>
       </Dialog>
 
