@@ -78,7 +78,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         </p>
       </div>
 
-      <div>
+      <div data-field="preferredIndustry">
         <RequiredLabel>Preferred Industry</RequiredLabel>
         <SearchableSelect
           value={data.preferredIndustry}
@@ -100,7 +100,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         )}
       </div>
 
-      <div>
+      <div data-field="preferredRole">
         <div className="flex items-center justify-between gap-2">
           <RequiredLabel>Preferred Role (select up to 3)</RequiredLabel>
           <button
@@ -149,7 +149,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         )}
       </div>
 
-      <div>
+      <div data-field="schedule">
         <RequiredLabel>Current Availability</RequiredLabel>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <div>
