@@ -690,7 +690,6 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const daysSince = stageDate
     ? Math.floor((Date.now() - stageDate.getTime()) / (1000 * 60 * 60 * 24))
     : null;
-  const daysLeft = daysSince !== null ? Math.max(0, 60 - daysSince) : null;
   const reapplyLabel = stageDate ? 'Reapply' : 'Apply Now';
 
   // Section completeness (excludes work experience, certifications, portfolio)
