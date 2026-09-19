@@ -653,7 +653,7 @@ export interface DashboardResponse {
     [k: string]: unknown;
   };
   education: { education_level?: string; school_name?: string; school_location?: string; graduation_date?: string; degree?: string; other_degree?: string };
-  professional_background: { preferred_industry?: string; preferred_role?: string; preferred_bio?: string | null; availability?: string; hours_per_day?: string };
+  professional_background: { preferred_industry?: string; preferred_role?: string; preferred_bio?: string | null; availability?: string; hours_per_day?: string; current_pay_range?: string };
   work_experience: Array<Record<string, unknown>>;
   tools: Array<Record<string, unknown>>;
   skills: {

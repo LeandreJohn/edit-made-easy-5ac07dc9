@@ -1940,7 +1940,7 @@ const ProfessionalView = ({ data }: { data: ProfessionalBackground }) => (
       <Field label="Preferred Role" value={data.preferredRole} />
       <Field label="Availability" value={data.schedule} />
       <Field label="Hours Per Day" value={data.hoursPerDay} />
-      <Field label="Current Pay Range" value={data.currentPayRange} />
+      <Field label="Current Pay Range" value={data.currentPayRange ?? ''} />
     </div>
   </div>
 );
