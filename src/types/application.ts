@@ -49,6 +49,8 @@ export interface ProfessionalBackground {
   availability: string;
   schedule: string;
   hoursPerDay: string;
+  /** e.g. "$600–$799" or "Prefer not to Disclose". */
+  currentPayRange?: string;
 }
 
 export interface WorkExperience {

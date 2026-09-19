@@ -4,6 +4,7 @@ import { ProfessionalBackground } from '@/types/application';
 import RequiredLabel from '@/components/wizard/RequiredLabel';
 import SearchableSelect from '@/components/common/SearchableSelect';
 import RoleInfoModal from '@/components/common/RoleInfoModal';
+import PayRangeSlider from '@/components/common/PayRangeSlider';
 import { INDUSTRY_OPTIONS } from '@/data/industries';
 import { type RoleName } from '@/data/roleDescriptions';
 import { getRolesForIndustry } from '@/data/industryRoleMatrix';
@@ -77,7 +78,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         </p>
       </div>
 
-      <div>
+      <div data-field="preferredIndustry">
         <RequiredLabel>Preferred Industry</RequiredLabel>
         <SearchableSelect
           value={data.preferredIndustry}
@@ -99,7 +100,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         )}
       </div>
 
-      <div>
+      <div data-field="preferredRole">
         <div className="flex items-center justify-between gap-2">
           <RequiredLabel>Preferred Role (select up to 3)</RequiredLabel>
           <button
@@ -148,7 +149,7 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
         )}
       </div>
 
-      <div>
+      <div data-field="schedule">
         <RequiredLabel>Current Availability</RequiredLabel>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <div>
@@ -163,6 +164,11 @@ const ProfessionalBgStep = ({ data, onChange }: ProfessionalBgStepProps) => {
           </div>
         </div>
       </div>
+
+      <PayRangeSlider
+        value={data.currentPayRange}
+        onChange={(v) => update('currentPayRange', v)}
+      />
 
       <RoleInfoModal open={roleModalOpen} onOpenChange={setRoleModalOpen} initialRole={initialRole} />
     </div>

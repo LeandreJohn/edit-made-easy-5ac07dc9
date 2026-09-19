@@ -287,7 +287,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
 
 
         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3" data-field="firstName">
             <RequiredLabel>First Name</RequiredLabel>
             <input className="form-input" value={data.firstName} onChange={(e) => update('firstName', e.target.value)} />
           </div>
@@ -295,7 +295,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
             <label className="form-label">Middle Name</label>
             <input className="form-input" value={data.middleName} onChange={(e) => update('middleName', e.target.value)} />
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4" data-field="lastName">
             <RequiredLabel>Last Name</RequiredLabel>
             <input className="form-input" value={data.lastName} onChange={(e) => update('lastName', e.target.value)} />
           </div>
@@ -307,13 +307,13 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-        <div>
+        <div data-field="dateOfBirth">
           <RequiredLabel>Date of Birth</RequiredLabel>
           <input type="date" className="form-input" value={data.dateOfBirth} onChange={(e) => update('dateOfBirth', e.target.value)} />
         </div>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-5" data-field="phoneNumber">
         <RequiredLabel>Phone Number</RequiredLabel>
         <PhoneInput
           value={data.phoneNumber}
@@ -323,7 +323,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-        <div ref={langRef} className="relative">
+        <div ref={langRef} className="relative" data-field="languagesSpoken">
           <RequiredLabel>Languages Spoken</RequiredLabel>
           <button
             type="button"
@@ -376,7 +376,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
             </div>
           )}
         </div>
-        <div>
+        <div data-field="country">
           <RequiredLabel>Country</RequiredLabel>
           <SearchableSelect
             value={data.country}
@@ -385,7 +385,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
             placeholder="Select country..."
           />
         </div>
-        <div>
+        <div data-field="nationality">
           <RequiredLabel>Nationality</RequiredLabel>
           <SearchableSelect
             value={data.nationality}
@@ -425,11 +425,11 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
 
       {data.country === 'Philippines' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-          <div>
+          <div data-field="houseStreet">
             <RequiredLabel>House No. / Street</RequiredLabel>
             <input className="form-input" value={data.houseStreet} onChange={(e) => update('houseStreet', e.target.value)} />
           </div>
-          <div>
+          <div data-field="city">
             <RequiredLabel>City / Municipality</RequiredLabel>
             {citiesFailed ? (
               <input
@@ -448,7 +448,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
               />
             )}
           </div>
-          <div>
+          <div data-field="barangay">
             <RequiredLabel>Barangay</RequiredLabel>
             {citiesFailed || barangaysFailed ? (
               <input
@@ -477,7 +477,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2" data-field="address">
             <RequiredLabel>Street Address</RequiredLabel>
             <input
               className="form-input"
@@ -486,7 +486,7 @@ const PersonalInfoStep = ({ data, onChange }: PersonalInfoStepProps) => {
               placeholder="House / building number and street"
             />
           </div>
-          <div>
+          <div data-field="city">
             <RequiredLabel>City</RequiredLabel>
             <input
               className="form-input"

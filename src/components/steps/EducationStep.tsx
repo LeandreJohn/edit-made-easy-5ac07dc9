@@ -94,7 +94,7 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
           Select your highest level of education completed. If applicable, include your field of study, school, and year completed to strengthen your professional profile and help clients better understand your educational background. If you did not complete a degree program, you may indicate your undergraduate studies.
         </p>
       </div>
-      <div>
+      <div data-field="highestLevel">
         <RequiredLabel>Highest Level of Education</RequiredLabel>
         <div className="space-y-2 mt-2">
           {EDUCATION_LEVELS.map((level) => (
@@ -114,18 +114,18 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div data-field="schoolName">
           <RequiredLabel>School Name</RequiredLabel>
           <input className="form-input" value={data.schoolName} onChange={(e) => update('schoolName', e.target.value)} />
         </div>
-        <div>
+        <div data-field="schoolLocation">
           <RequiredLabel>School Location (City/Province/Country)</RequiredLabel>
           <input className="form-input" value={data.schoolLocation} onChange={(e) => update('schoolLocation', e.target.value)} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div data-field="graduationDate">
           {isUndergrad ? (
             <label className="form-label">Graduation Date (or expected)</label>
           ) : (
@@ -166,7 +166,7 @@ const EducationStep = ({ data, onChange }: EducationStepProps) => {
           )}
         </div>
         {data.highestLevel !== 'High School Graduate' && (
-          <div>
+          <div data-field="degreeField">
             <RequiredLabel>Degree / Field of Study</RequiredLabel>
             <select className="form-select" value={data.degreeField} onChange={(e) => update('degreeField', e.target.value)}>
               <option value="">Select field of study...</option>
