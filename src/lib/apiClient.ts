@@ -318,8 +318,33 @@ export async function updateComplianceFiles(contactId: string, payload: {
 
 // ------------------------ STEP UPDATES ------------------------
 
+/**
+ * Pull an applicant/contact ID out of a save response, tolerating the
+ * different spellings the backend may use (top level or one level nested).
+ */
+export function extractContactId(res: unknown): string | null {
+  const keys = ['contact_id', 'contactId', 'cid', 'CID', 'id'];
+  const pick = (obj: unknown): string | null => {
+    if (!obj || typeof obj !== 'object') return null;
+    const rec = obj as Record<string, unknown>;
+    for (const k of keys) {
+      const v = rec[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+    }
+    return null;
+  };
+  if (!res || typeof res !== 'object') return null;
+  const rec = res as Record<string, unknown>;
+  return pick(rec) ?? pick(rec.data) ?? pick(rec.contact) ?? null;
+}
+
+/**
+ * Saves Personal Info. If the backend hands back a different contact ID, it
+ * becomes the stored one and is returned so callers can switch over.
+ */
 export async function updatePersonalInfo(contactId: string, p: PersonalInfo, referrer = '') {
-  return request<{ success: boolean }>('/personal-info', {
+  const res = await request<{ success?: boolean; contact_id?: string } & Record<string, unknown>>('/personal-info', {
     method: 'PUT',
     body: JSON.stringify({
       contact_id: contactId,
@@ -348,7 +373,13 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
       photo: p.photo ? await toJsonUploadFile(p.photo) : null,
     }),
   });
+
+  const returned = extractContactId(res);
+  const nextContactId = returned && returned !== contactId ? returned : contactId;
+  if (nextContactId !== contactId) saveContactId(nextContactId);
+  return { ...res, contactId: nextContactId };
 }
+
 
 export function reapply(contactId: string, referrer: string, dateApplied: string) {
   return request<{ success: boolean }>('/reapply', {
