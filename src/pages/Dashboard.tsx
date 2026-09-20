@@ -137,7 +137,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  const contactId = loadContactId();
+  // Stored applicant ID. The Personal Info save may hand back a new one, in
+  // which case every later save uses the new value.
+  const [contactId, setContactId] = useState<string | null>(() => loadContactId());
+
 
   // Saved state
   const [profile, setProfile] = useState<PersonalInfo>(emptyProfile);
