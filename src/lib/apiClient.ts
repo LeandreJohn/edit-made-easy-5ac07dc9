@@ -318,8 +318,33 @@ export async function updateComplianceFiles(contactId: string, payload: {
 
 // ------------------------ STEP UPDATES ------------------------
 
+/**
+ * Pull an applicant/contact ID out of a save response, tolerating the
+ * different spellings the backend may use (top level or one level nested).
+ */
+export function extractContactId(res: unknown): string | null {
+  const keys = ['contact_id', 'contactId', 'cid', 'CID', 'id'];
+  const pick = (obj: unknown): string | null => {
+    if (!obj || typeof obj !== 'object') return null;
+    const rec = obj as Record<string, unknown>;
+    for (const k of keys) {
+      const v = rec[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+    }
+    return null;
+  };
+  if (!res || typeof res !== 'object') return null;
+  const rec = res as Record<string, unknown>;
+  return pick(rec) ?? pick(rec.data) ?? pick(rec.contact) ?? null;
+}
+
+/**
+ * Saves Personal Info. If the backend hands back a different contact ID, it
+ * becomes the stored one and is returned so callers can switch over.
+ */
 export async function updatePersonalInfo(contactId: string, p: PersonalInfo, referrer = '') {
-  return request<{ success: boolean }>('/personal-info', {
+  const res = await request<{ success?: boolean; contact_id?: string } & Record<string, unknown>>('/personal-info', {
     method: 'PUT',
     body: JSON.stringify({
       contact_id: contactId,
@@ -348,7 +373,13 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
       photo: p.photo ? await toJsonUploadFile(p.photo) : null,
     }),
   });
+
+  const returned = extractContactId(res);
+  const nextContactId = returned && returned !== contactId ? returned : contactId;
+  if (nextContactId !== contactId) saveContactId(nextContactId);
+  return { ...res, contactId: nextContactId };
 }
+
 
 export function reapply(contactId: string, referrer: string, dateApplied: string) {
   return request<{ success: boolean }>('/reapply', {
@@ -875,24 +906,27 @@ export async function submitSubstep(
   substep: number,
   data: ApplicationData,
   referrer = '',
-): Promise<void> {
+): Promise<string> {
   // Wizard substep order (Index.tsx):
   // 1 Personal · 2 Education · 3 ProfBg · 4 WorkExp · 5 Tools · 6 Skills ·
   // 7 Portfolio · 8 Certifications · 9 ValueProposition · 10 WorkSetup · 11 Compliance
   switch (substep) {
-    case 1: await updatePersonalInfo(contactId, data.personalInfo, referrer); return;
-    case 2: await updateEducation(contactId, data.education); return;
-    case 3: await updateProfessionalBackground(contactId, data.professionalBackground); return;
-    case 4: await updateWorkExperience(contactId, data.workExperiences); return;
-    case 5: await updateToolsPlatforms(contactId, data.selectedTools); return;
-    case 6: await updateSkills(contactId, data.selectedSkills, data.personalInfo.valueProposition); return;
-    case 7: await updatePortfolio(contactId, data.portfolioLink, fileNames(data.portfolioFiles), data.portfolioFiles); return;
-    case 8: await updateCertifications(contactId, data.certifications); return;
-    case 9: await updateValueProposition(contactId, data.personalInfo.valueProposition); return;
-    case 10: await updateWorkSetup(contactId, data.workSetup); return;
-    case 11: await updateCompliance(contactId, data.compliance); return;
+    case 1: return (await updatePersonalInfo(contactId, data.personalInfo, referrer)).contactId;
+
+    case 2: await updateEducation(contactId, data.education); break;
+    case 3: await updateProfessionalBackground(contactId, data.professionalBackground); break;
+    case 4: await updateWorkExperience(contactId, data.workExperiences); break;
+    case 5: await updateToolsPlatforms(contactId, data.selectedTools); break;
+    case 6: await updateSkills(contactId, data.selectedSkills, data.personalInfo.valueProposition); break;
+    case 7: await updatePortfolio(contactId, data.portfolioLink, fileNames(data.portfolioFiles), data.portfolioFiles); break;
+    case 8: await updateCertifications(contactId, data.certifications); break;
+    case 9: await updateValueProposition(contactId, data.personalInfo.valueProposition); break;
+    case 10: await updateWorkSetup(contactId, data.workSetup); break;
+    case 11: await updateCompliance(contactId, data.compliance); break;
   }
+  return contactId;
 }
+
 
 // ------------------------ ADMIN: ROLE FORMULAS & ASSESSMENT LINK ------------------------
 
