@@ -114,6 +114,14 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
     setLoggingIn(true);
     try {
       const res = await apiSignup(email.trim(), password, referredBy);
+      if (res?.existing) {
+        // The backend says this email already has an account — prompt a
+        // sign-in instead of continuing into the wizard.
+        setReadyOpen(false);
+        setNdaOpen(false);
+        setExistsOpen(true);
+        return;
+      }
       saveApplicantIdentity({ email: email.trim() });
       if (res?.contact_id) {
         saveContactId(res.contact_id);
