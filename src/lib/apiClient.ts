@@ -348,6 +348,7 @@ export async function updatePersonalInfo(contactId: string, p: PersonalInfo, ref
     method: 'PUT',
     body: JSON.stringify({
       contact_id: contactId,
+      email: loadApplicantIdentity()?.email ?? '',
       first_name: p.firstName,
       middle_name: p.middleName,
       last_name: p.lastName,

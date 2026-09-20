@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { login as apiLogin, signup as apiSignup, saveContactId, forgotPassword } from '@/lib/apiClient';
+import { login as apiLogin, signup as apiSignup, saveContactId, forgotPassword, saveApplicantIdentity } from '@/lib/apiClient';
 import PasswordInput from '@/components/common/PasswordInput';
 import NdaModal from '@/components/common/NdaModal';
 import welcomeBg from '@/assets/welcome-bg.png';
@@ -100,6 +100,7 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
     try {
       const res = await apiLogin(email.trim(), password);
       if (res?.contact_id) saveContactId(res.contact_id);
+      saveApplicantIdentity({ email: email.trim() });
       toast.success('Welcome back!');
       navigate(routeByTags(res?.tags));
     } catch (e) {
@@ -113,6 +114,7 @@ const WelcomeStep = ({ email, password, onEmailChange, onPasswordChange, onStart
     setLoggingIn(true);
     try {
       const res = await apiSignup(email.trim(), password, referredBy);
+      saveApplicantIdentity({ email: email.trim() });
       if (res?.contact_id) {
         saveContactId(res.contact_id);
         toast.success('Account created.');
