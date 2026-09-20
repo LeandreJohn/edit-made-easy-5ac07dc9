@@ -906,12 +906,13 @@ export async function submitSubstep(
   substep: number,
   data: ApplicationData,
   referrer = '',
-): Promise<void> {
+): Promise<string> {
   // Wizard substep order (Index.tsx):
   // 1 Personal · 2 Education · 3 ProfBg · 4 WorkExp · 5 Tools · 6 Skills ·
   // 7 Portfolio · 8 Certifications · 9 ValueProposition · 10 WorkSetup · 11 Compliance
   switch (substep) {
-    case 1: await updatePersonalInfo(contactId, data.personalInfo, referrer); return;
+    case 1: return (await updatePersonalInfo(contactId, data.personalInfo, referrer)).contactId;
+
     case 2: await updateEducation(contactId, data.education); return;
     case 3: await updateProfessionalBackground(contactId, data.professionalBackground); return;
     case 4: await updateWorkExperience(contactId, data.workExperiences); return;
