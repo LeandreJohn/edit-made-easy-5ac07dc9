@@ -579,11 +579,9 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     setSaving(true);
     try {
       switch (activeSection) {
-        case 'personal':
         case 'personal': {
           const saved = await updatePersonalInfo(contactId, draftProfile);
           if (saved.contactId && saved.contactId !== contactId) setContactId(saved.contactId);
-
           setProfile(draftProfile);
           if (draftProfile.photo) {
             const reader = new FileReader();
@@ -591,6 +589,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
             reader.readAsDataURL(draftProfile.photo);
           }
           break;
+        }
+
         case 'education':
           await updateEducation(contactId, draftEducation);
           setEducation(draftEducation);
