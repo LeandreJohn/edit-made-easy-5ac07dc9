@@ -580,7 +580,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     try {
       switch (activeSection) {
         case 'personal':
-          await updatePersonalInfo(contactId, draftProfile);
+        case 'personal': {
+          const saved = await updatePersonalInfo(contactId, draftProfile);
+          if (saved.contactId && saved.contactId !== contactId) setContactId(saved.contactId);
+
           setProfile(draftProfile);
           if (draftProfile.photo) {
             const reader = new FileReader();
