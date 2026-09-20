@@ -362,7 +362,8 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
     } else if (contactId) {
       try {
         setSubmitting(true);
-        await submitSubstep(contactId, currentSubStep, values, referrer);
+        // Personal Info may return a new contact ID — use it from here on.
+        const activeContactId = await submitSubstep(contactId, currentSubStep, values, referrer);
         if (currentSubStep === 1) {
           // Persist identity immediately after Personal Info saves.
           saveApplicantIdentity({
@@ -375,9 +376,10 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
         // the Work Setup step (substep 10) is saved so the wizard end no
         // longer needs a global submit endpoint.
         if (currentSubStep === 10) {
-          try { await finishApplication(contactId, todayMDT()); }
+          try { await finishApplication(activeContactId, todayMDT()); }
           catch (e) { console.warn('finish failed', e); }
         }
+
         setLastSavedAt(new Date());
         setDirty(false);
       } catch (e) {
