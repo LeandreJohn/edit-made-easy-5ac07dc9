@@ -913,18 +913,20 @@ export async function submitSubstep(
   switch (substep) {
     case 1: return (await updatePersonalInfo(contactId, data.personalInfo, referrer)).contactId;
 
-    case 2: await updateEducation(contactId, data.education); return;
-    case 3: await updateProfessionalBackground(contactId, data.professionalBackground); return;
-    case 4: await updateWorkExperience(contactId, data.workExperiences); return;
-    case 5: await updateToolsPlatforms(contactId, data.selectedTools); return;
-    case 6: await updateSkills(contactId, data.selectedSkills, data.personalInfo.valueProposition); return;
-    case 7: await updatePortfolio(contactId, data.portfolioLink, fileNames(data.portfolioFiles), data.portfolioFiles); return;
-    case 8: await updateCertifications(contactId, data.certifications); return;
-    case 9: await updateValueProposition(contactId, data.personalInfo.valueProposition); return;
-    case 10: await updateWorkSetup(contactId, data.workSetup); return;
-    case 11: await updateCompliance(contactId, data.compliance); return;
+    case 2: await updateEducation(contactId, data.education); break;
+    case 3: await updateProfessionalBackground(contactId, data.professionalBackground); break;
+    case 4: await updateWorkExperience(contactId, data.workExperiences); break;
+    case 5: await updateToolsPlatforms(contactId, data.selectedTools); break;
+    case 6: await updateSkills(contactId, data.selectedSkills, data.personalInfo.valueProposition); break;
+    case 7: await updatePortfolio(contactId, data.portfolioLink, fileNames(data.portfolioFiles), data.portfolioFiles); break;
+    case 8: await updateCertifications(contactId, data.certifications); break;
+    case 9: await updateValueProposition(contactId, data.personalInfo.valueProposition); break;
+    case 10: await updateWorkSetup(contactId, data.workSetup); break;
+    case 11: await updateCompliance(contactId, data.compliance); break;
   }
+  return contactId;
 }
+
 
 // ------------------------ ADMIN: ROLE FORMULAS & ASSESSMENT LINK ------------------------
 
