@@ -219,6 +219,9 @@ export interface AuthResponse {
   contact_id: string;
   /** Backend-issued contact tags (e.g. "Talent Pool") used for routing. */
   tags?: string[];
+  /** True when the email already has an account (signup returns it instead of an error). */
+  existing?: boolean;
+  message?: string;
 }
 
 /** Sign in an existing contact. Throws if the credentials are invalid. */
