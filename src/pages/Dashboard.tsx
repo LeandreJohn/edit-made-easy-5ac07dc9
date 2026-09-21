@@ -334,8 +334,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           degreeFieldOther: rawDegree && !isKnownDegree ? rawDegree : (e.other_degree || ''),
         });
         const pb = d.professional_background || {};
+        const rawIndustry = pb.preferred_industry || '';
+        const isKnownIndustry =
+          !rawIndustry || (INDUSTRY_OPTIONS as readonly string[]).includes(rawIndustry);
         setProfessional({
-          preferredIndustry: pb.preferred_industry || '',
+          preferredIndustry: isKnownIndustry ? rawIndustry : 'Others',
+          preferredIndustryOther: isKnownIndustry ? '' : rawIndustry,
           preferredRole: pb.preferred_role || '',
           availability: pb.availability || '',
           schedule: pb.availability || '',
