@@ -599,14 +599,12 @@ const Index = ({ defaultReferralLink }: IndexProps) => {
                 data={values.selectedTools}
                 onChange={(d: SelectedTool[]) => setField('selectedTools', d)}
                 selectedRoles={values.professionalBackground.preferredRole}
-                onSkip={() => skipToSubStep(6)}
               />
             )}
             {currentSubStep === 6 && (
               <SkillsStep
                 data={values.selectedSkills}
                 onChange={(d: SelectedSkill[]) => setField('selectedSkills', d)}
-                onSkip={() => skipToSubStep(7)}
               />
             )}
             {currentSubStep === 7 && (
