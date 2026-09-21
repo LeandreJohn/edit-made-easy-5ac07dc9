@@ -248,8 +248,12 @@ function mapRecord(rec: AdminApplicantRecord): AdminApplicant {
     title: str(e.title),
     employer: str(e.employer),
     location: str(e.location),
-    startDate: str(e.startDate ?? e.start_date),
-    endDate: str(e.endDate ?? e.end_date),
+    startDate: formatMonthYear(
+      pickDate(e, ['startdate', 'start', 'from', 'datestarted', 'startmonth', 'startedon']),
+    ),
+    endDate: formatMonthYear(
+      pickDate(e, ['enddate', 'end', 'to', 'dateended', 'endmonth', 'endedon']),
+    ),
     currentlyWorking: Boolean(e.currentlyWorking ?? e.current ?? e.currently_working ?? false),
     responsibilities: str(e.responsibilities),
     toolsPlatforms: str(e.toolsPlatforms ?? e.tools_platforms),
