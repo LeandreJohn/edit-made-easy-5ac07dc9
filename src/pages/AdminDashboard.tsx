@@ -180,6 +180,34 @@ function parseJsonObject(value: unknown): Record<string, unknown> | undefined {
 /** Coerce any nullable field into a trimmed display string. */
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v).trim());
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/** Pick a date value from any of the naming variants the backend may send. */
+const pickDate = (e: Record<string, unknown>, keys: string[]): string => {
+  for (const k of Object.keys(e)) {
+    if (keys.includes(k.toLowerCase().replace(/[\s_-]/g, ''))) {
+      const v = str(e[k]);
+      if (v) return v;
+    }
+  }
+  return '';
+};
+
+/** Render "2023-05", "05/2023", ISO dates or free text as "May 2023". */
+const formatMonthYear = (raw: string): string => {
+  const v = str(raw);
+  if (!v) return '';
+  let m = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/.exec(v);
+  if (m) return `${MONTH_NAMES[Number(m[2]) - 1] ?? ''} ${m[1]}`.trim();
+  m = /^(\d{1,2})[/-](\d{4})$/.exec(v);
+  if (m) return `${MONTH_NAMES[Number(m[1]) - 1] ?? ''} ${m[2]}`.trim();
+  m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(v);
+  if (m) return `${MONTH_NAMES[Number(m[1]) - 1] ?? ''} ${m[3]}`.trim();
+  return v;
+};
+
 /** Normalize a list of file URLs that may arrive as an array or a JSON string. */
 const fileList = (value: unknown): string[] =>
   parseList<unknown>(value)
