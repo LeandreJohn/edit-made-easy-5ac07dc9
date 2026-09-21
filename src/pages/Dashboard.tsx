@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { notificationsForTags } from '@/data/tagNotifications';
+import { INDUSTRY_OPTIONS } from '@/data/industries';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import EducationStep, { FIELDS_OF_STUDY } from '@/components/steps/EducationStep';
@@ -334,8 +335,12 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
           degreeFieldOther: rawDegree && !isKnownDegree ? rawDegree : (e.other_degree || ''),
         });
         const pb = d.professional_background || {};
+        const rawIndustry = pb.preferred_industry || '';
+        const isKnownIndustry =
+          !rawIndustry || (INDUSTRY_OPTIONS as readonly string[]).includes(rawIndustry);
         setProfessional({
-          preferredIndustry: pb.preferred_industry || '',
+          preferredIndustry: isKnownIndustry ? rawIndustry : 'Others',
+          preferredIndustryOther: isKnownIndustry ? '' : rawIndustry,
           preferredRole: pb.preferred_role || '',
           availability: pb.availability || '',
           schedule: pb.availability || '',
@@ -1942,7 +1947,14 @@ const EducationView = ({ data }: { data: Education }) => (
 const ProfessionalView = ({ data }: { data: ProfessionalBackground }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-      <Field label="Preferred Industry" value={data.preferredIndustry} />
+      <Field
+        label="Preferred Industry"
+        value={
+          data.preferredIndustry === 'Others'
+            ? (data.preferredIndustryOther || 'Others')
+            : data.preferredIndustry
+        }
+      />
       <Field label="Preferred Role" value={data.preferredRole} />
       <Field label="Availability" value={data.schedule} />
       <Field label="Hours Per Day" value={data.hoursPerDay} />

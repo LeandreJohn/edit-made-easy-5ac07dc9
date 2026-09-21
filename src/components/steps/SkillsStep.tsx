@@ -155,6 +155,12 @@ const SkillsStep = ({ data, onChange, onSkip }: SkillsStepProps) => {
         <p className="text-sm text-muted-foreground mt-1">
           Please choose only the skills you can perform confidently and consistently.
         </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          <span className="font-semibold text-foreground">Disclaimer:</span> Please rate only the Core Skills that are
+          relevant to your area of expertise. You may skip any skill that does not represent or apply to your
+          experience. You are not required to complete every item listed. For example, if you do not have Web
+          Development experience, you may skip the Web Development section.
+        </p>
       </div>
 
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">

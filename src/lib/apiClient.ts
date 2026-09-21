@@ -424,7 +424,10 @@ export function updateProfessionalBackground(contactId: string, p: ProfessionalB
     method: 'PUT',
     body: JSON.stringify({
       contact_id: contactId,
-      preferred_industry: p.preferredIndustry,
+      preferred_industry:
+        p.preferredIndustry === 'Others'
+          ? (p.preferredIndustryOther || '').trim() || 'Others'
+          : p.preferredIndustry,
       preferred_role: p.preferredRole,
       availability,
       hours_per_day: p.hoursPerDay,
