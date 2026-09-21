@@ -8,8 +8,6 @@ import { useCallback, useEffect, useState } from 'react';
  */
 export type SkipKey =
   | 'workExperience'
-  | 'tools'
-  | 'skills'
   | 'portfolio'
   | 'certifications';
 
@@ -59,7 +57,7 @@ export function setSkipAnswer(key: SkipKey, value: boolean | null): void {
 }
 
 export function clearSkipAnswers(): void {
-  (['workExperience', 'tools', 'skills', 'portfolio', 'certifications'] as SkipKey[])
+  (['workExperience', 'portfolio', 'certifications'] as SkipKey[])
     .forEach((k) => setSkipAnswer(k, null));
 }
 
@@ -100,8 +98,6 @@ export function useSkipAnswer(
 export function useAllSkipAnswers(): Record<SkipKey, boolean | null> {
   const read = (): Record<SkipKey, boolean | null> => ({
     workExperience: getSkipAnswer('workExperience'),
-    tools: getSkipAnswer('tools'),
-    skills: getSkipAnswer('skills'),
     portfolio: getSkipAnswer('portfolio'),
     certifications: getSkipAnswer('certifications'),
   });

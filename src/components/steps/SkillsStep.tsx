@@ -1,8 +1,6 @@
 import { SKILL_CATEGORIES, SelectedSkill, ProficiencyLevel, ALL_SKILLS_FLAT } from '@/types/application';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import SkipGate, { SkipGateBanner } from '@/components/wizard/SkipGate';
-import { useSkipAnswer } from '@/lib/skipAnswers';
 import {
   Accordion,
   AccordionContent,
@@ -17,8 +15,6 @@ interface SkillsStepProps {
   /** Optional — kept for backward compatibility. Value Proposition now lives in its own step. */
   valueProposition?: string;
   onValuePropositionChange?: (value: string) => void;
-  /** Wizard only — advance when the applicant answers "No". */
-  onSkip?: () => void;
 }
 
 const PROFICIENCY_LEVELS: ProficiencyLevel[] = ['Basic', 'Intermediate', 'Proficient', 'Expert'];
@@ -71,8 +67,7 @@ const SkillChip = ({ skill, selected, proficiency, open, onToggle, onSetProficie
 };
 
 
-const SkillsStep = ({ data, onChange, onSkip }: SkillsStepProps) => {
-  const [hasSkills, setHasSkills] = useSkipAnswer('skills', data.length > 0);
+const SkillsStep = ({ data, onChange }: SkillsStepProps) => {
   const [showProficiency, setShowProficiency] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showSuggest, setShowSuggest] = useState(false);
@@ -120,35 +115,13 @@ const SkillsStep = ({ data, onChange, onSkip }: SkillsStepProps) => {
   const countByCategory = (cat: string) =>
     data.filter((s) => s.category === cat).length;
 
-  if (hasSkills !== true) {
-    return (
-      <SkipGate
-        title="Skills & Core Competencies"
-        intro="Listing your core skills helps clients match you to the right work. If you'd rather not add any right now, you can continue without them."
-        question="Do you have skills you'd like to add?"
-        yesLabel="Yes, I have skills to add"
-        noLabel="No, not right now"
-        noTitle="No skills added"
-        noBody="You indicated you don't have skills to add right now. You can continue to the next step, or change your answer to add some."
-        answer={hasSkills}
-        onAnswer={(v) => {
-          if (v === false) onChange([]);
-          setHasSkills(v);
-        }}
-        onSkip={onSkip}
-      />
-    );
-  }
-
   return (
     <div className="animate-fade-in space-y-6">
-      <SkipGateBanner
-        title="Skills & Core Competencies"
-        body="Add the skills you can perform confidently and rate your proficiency for each."
-        onChangeAnswer={() => setHasSkills(null)}
-      />
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-        <p className="text-sm font-semibold text-foreground">Highlight your core skills.</p>
+        <p className="text-sm font-semibold text-foreground">Skills and Core Competencies</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          <span className="font-semibold text-foreground">Required:</span> Please indicate your relevant skills and core competencies. Providing accurate and relevant information helps us properly assess your profile and facilitate a faster and more suitable client matching process.
+        </p>
         <p className="text-sm text-muted-foreground mt-1">
           Select the skills that best represent your experience and the type of support you can provide to clients.
         </p>

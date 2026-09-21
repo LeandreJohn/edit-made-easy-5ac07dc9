@@ -782,9 +782,7 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     .filter(([k]) => !sectionChecks[k as keyof typeof sectionChecks])
     .map(([key, label]) => ({ key, label }));
 
-  // Sequential gating in sidebar order. Optional sections (work experience,
-  // tools, skills, portfolio, certifications) count as done once they hold data
-  // or the applicant answered "No" to their question.
+  // Sequential gating in sidebar order.
   const GATED_ORDER: SectionKey[] = [
     'personal', 'education', 'professional', 'workExperience', 'tools', 'skills',
     'portfolio', 'certifications', 'valueProp', 'workSetup', 'compliance',
@@ -814,14 +812,14 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     compliance: sectionChecks.compliance,
   };
 
-  /** Sections the applicant may move past — data, or an explicit "No" answer. */
+  /** Sections the applicant may move past — required data, or a permitted skip. */
   const sectionSatisfied: Record<SectionKey, boolean> = {
     ...sectionHasData,
     workExperience: hasRealWorkExperience
       || hasSavedNoExperience
       || skipAnswers.workExperience === false,
-    tools: sectionHasData.tools || skipAnswers.tools === false,
-    skills: sectionHasData.skills || skipAnswers.skills === false,
+    tools: sectionHasData.tools,
+    skills: sectionHasData.skills,
     portfolio: sectionHasData.portfolio || skipAnswers.portfolio === false,
     certifications: sectionHasData.certifications || skipAnswers.certifications === false,
   };
@@ -837,12 +835,10 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
     if (!anySectionHasData) clearSkipAnswers();
   }, [loading, anySectionHasData]);
 
-  // Only the required sections can hold a later section back. The optional
-  // ones (work experience, tools, skills, portfolio, certifications) keep their
-  // own Yes/No prompt inside the section but never lock anything behind them —
-  // a skipped answer isn't always remembered across sign-ins.
+  // Only required sections hold later sections back. Work experience,
+  // portfolio, and certifications retain their optional Yes/No prompts.
   const REQUIRED_GATES: SectionKey[] = [
-    'personal', 'education', 'professional', 'valueProp', 'workSetup',
+    'personal', 'education', 'professional', 'tools', 'skills', 'valueProp', 'workSetup',
   ];
 
   const isSectionLocked = (key: SectionKey): boolean => {
@@ -886,8 +882,8 @@ const Dashboard = ({ variant = 'reapply' }: DashboardProps) => {
       case 'personal': return isPersonalInfoValid(draftProfile);
       case 'education': return isEducationValid(draftEducation);
       case 'professional': return isProfessionalValid(draftProfessional);
-      case 'tools': return isToolsValid(draftTools) || skipAnswers.tools === false;
-      case 'skills': return isSkillsValid(draftSkills) || skipAnswers.skills === false;
+      case 'tools': return isToolsValid(draftTools);
+      case 'skills': return isSkillsValid(draftSkills);
       case 'valueProp': return isValuePropositionValid(draftProfile.valueProposition);
       case 'workSetup': return isWorkSetupValid({
         primaryDevice: draftWorkSetup.primaryDevice,

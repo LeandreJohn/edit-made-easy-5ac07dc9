@@ -110,6 +110,8 @@ export function isSubStepValid(subStep: number, values: ApplicationData): boolea
     case 1: return isPersonalInfoValid(values.personalInfo);
     case 2: return isEducationValid(values.education);
     case 3: return isProfessionalValid(values.professionalBackground);
+    case 5: return isToolsValid(values.selectedTools);
+    case 6: return isSkillsValid(values.selectedSkills);
     case 9: return isValuePropositionValid(values.personalInfo.valueProposition);
     case 10: {
       const w = values.workSetup;
